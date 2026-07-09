@@ -3,9 +3,9 @@
  * Design: Warm Academic Energy — Orange primary, Poppins headings, sticky with scroll-aware bg
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Phone } from "lucide-react";
+import { Menu, X, Phone, ChevronDown } from "lucide-react";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -18,12 +18,32 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const resourcesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (resourcesRef.current && !resourcesRef.current.contains(e.target as Node)) {
+        setResourcesOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/find-tutor", label: "Find Tutor" },
+    { href: "/subjects", label: "Subjects" },
     { href: "/become-tutor", label: "Become a Tutor" },
     { href: "/about", label: "About Us" },
     { href: "/contact", label: "Contact" },
+  ];
+
+  const resourceLinks = [
+    { href: "/blog", label: "📝 Blog & Study Tips" },
+    { href: "/faq", label: "❓ FAQ" },
+    { href: "/subjects", label: "📚 All Subjects" },
   ];
 
   const isActive = (href: string) =>
@@ -86,6 +106,36 @@ export default function Navbar() {
               ))}
             </nav>
 
+            {/* Resources Dropdown */}
+            <div className="hidden lg:block relative" ref={resourcesRef}>
+              <button
+                onClick={() => setResourcesOpen(!resourcesOpen)}
+                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all duration-150 flex items-center gap-1 ${
+                  location.startsWith("/blog") || location.startsWith("/faq")
+                    ? "text-[oklch(0.68_0.18_50)] bg-[oklch(0.95_0.03_50)]"
+                    : "text-[oklch(0.3_0.02_270)] hover:text-[oklch(0.68_0.18_50)] hover:bg-[oklch(0.97_0.01_80)]"
+                }`}
+                style={{ fontFamily: "'Poppins', sans-serif" }}
+              >
+                Resources <ChevronDown size={14} className={`transition-transform ${resourcesOpen ? "rotate-180" : ""}`} />
+              </button>
+              {resourcesOpen && (
+                <div className="absolute top-full right-0 mt-1 bg-white rounded-xl shadow-xl border border-[oklch(0.92_0.005_80)] py-2 w-52 z-50">
+                  {resourceLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="flex items-center px-4 py-2.5 text-sm font-medium hover:bg-[oklch(0.97_0.01_80)] transition-colors"
+                      style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}
+                      onClick={() => setResourcesOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Desktop CTAs */}
             <div className="hidden lg:flex items-center gap-3">
               <Link href="/become-tutor" className="btn-outline text-sm py-2 px-5">
@@ -126,6 +176,20 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              <div className="border-t border-[oklch(0.9_0.005_80)] mt-2 pt-2">
+                <p className="px-4 py-1 text-xs font-bold uppercase tracking-widest" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>Resources</p>
+                {resourceLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="block px-4 py-2.5 text-sm font-medium text-[oklch(0.3_0.02_270)] hover:bg-[oklch(0.97_0.01_80)] transition-colors"
+                    style={{ fontFamily: "'Poppins', sans-serif" }}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
               <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-[oklch(0.9_0.005_80)]">
                 <Link href="/become-tutor" className="btn-outline text-sm text-center" onClick={() => setMobileOpen(false)}>
                   Become a Tutor

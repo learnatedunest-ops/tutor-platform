@@ -9,6 +9,13 @@ import FindTutor from "./pages/FindTutor";
 import BecomeTutor from "./pages/BecomeTutor";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import TutorProfile from "./pages/TutorProfile";
+import Subjects from "./pages/Subjects";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import FAQ from "./pages/FAQ";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
 
 function Router() {
   return (
@@ -18,6 +25,13 @@ function Router() {
       <Route path="/become-tutor" component={BecomeTutor} />
       <Route path="/about" component={About} />
       <Route path="/contact" component={Contact} />
+      <Route path="/subjects" component={Subjects} />
+      <Route path="/blog" component={Blog} />
+      <Route path="/blog/:id" component={BlogPost} />
+      <Route path="/faq" component={FAQ} />
+      <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/tutor/:id" component={TutorProfile} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

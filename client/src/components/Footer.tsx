@@ -51,8 +51,11 @@ export default function Footer() {
               {[
                 { href: "/", label: "Home" },
                 { href: "/find-tutor", label: "Find a Tutor" },
+                { href: "/subjects", label: "All Subjects" },
                 { href: "/become-tutor", label: "Become a Tutor" },
                 { href: "/about", label: "About Us" },
+                { href: "/blog", label: "Blog & Study Tips" },
+                { href: "/faq", label: "FAQ" },
                 { href: "/contact", label: "Contact Us" },
               ].map((link) => (
                 <li key={link.href}>
@@ -75,20 +78,20 @@ export default function Footer() {
             </h4>
             <ul className="space-y-3">
               {[
-                "Mathematics",
-                "Science (Physics/Chemistry/Biology)",
-                "English Language",
-                "Commerce & Accounts",
-                "Competitive Exams (JEE/NEET)",
-                "Languages (French, German)",
+                { label: "Mathematics", href: "/find-tutor?subject=Mathematics" },
+                { label: "Science (Physics/Chemistry)", href: "/find-tutor?subject=Science" },
+                { label: "English Language", href: "/find-tutor?subject=English" },
+                { label: "Commerce & Accounts", href: "/find-tutor?subject=Commerce" },
+                { label: "JEE / NEET Prep", href: "/find-tutor?subject=Competitive+Exams" },
+                { label: "Computer Science", href: "/find-tutor?subject=Computer+Science" },
               ].map((subject) => (
-                <li key={subject}>
+                <li key={subject.label}>
                   <Link
-                    href="/find-tutor"
+                    href={subject.href}
                     className="text-sm transition-colors hover:text-[oklch(0.68_0.18_50)]"
                     style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}
                   >
-                    {subject}
+                    {subject.label}
                   </Link>
                 </li>
               ))}
@@ -144,10 +147,14 @@ export default function Footer() {
             © 2025 EduNest. All rights reserved.
           </p>
           <div className="flex gap-4">
-            {["Privacy Policy", "Terms of Service", "Refund Policy"].map((item) => (
-              <a key={item} href="#" className="text-xs transition-colors hover:text-[oklch(0.68_0.18_50)]" style={{ color: "oklch(0.5 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
-                {item}
-              </a>
+            {[
+              { label: "Privacy Policy", href: "/privacy" },
+              { label: "Terms of Service", href: "/terms" },
+              { label: "FAQ", href: "/faq" },
+            ].map((item) => (
+              <Link key={item.label} href={item.href} className="text-xs transition-colors hover:text-[oklch(0.68_0.18_50)]" style={{ color: "oklch(0.5 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
+                {item.label}
+              </Link>
             ))}
           </div>
         </div>
