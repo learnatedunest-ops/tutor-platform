@@ -36,6 +36,38 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+
+  // ─── Sitemap ────────────────────────────────────────────────────────────────
+  const SITE_URL = "https://edu-nest.manus.space";
+  const PAGES = [
+    { url: "/", priority: "1.0", changefreq: "weekly" },
+    { url: "/find-tutor", priority: "0.9", changefreq: "weekly" },
+    { url: "/subjects", priority: "0.9", changefreq: "monthly" },
+    { url: "/become-tutor", priority: "0.8", changefreq: "monthly" },
+    { url: "/about", priority: "0.7", changefreq: "monthly" },
+    { url: "/blog", priority: "0.8", changefreq: "weekly" },
+    { url: "/faq", priority: "0.7", changefreq: "monthly" },
+    { url: "/contact", priority: "0.7", changefreq: "monthly" },
+    { url: "/privacy", priority: "0.3", changefreq: "yearly" },
+    { url: "/terms", priority: "0.3", changefreq: "yearly" },
+  ];
+
+  app.get("/sitemap.xml", (_req, res) => {
+    const today = new Date().toISOString().split("T")[0];
+    const urls = PAGES.map(
+      ({ url, priority, changefreq }) =>
+        `  <url>\n    <loc>${SITE_URL}${url}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`
+    ).join("\n");
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
+    res.set("Content-Type", "application/xml");
+    res.send(xml);
+  });
+
+  // ─── Robots.txt ─────────────────────────────────────────────────────────────
+  app.get("/robots.txt", (_req, res) => {
+    res.set("Content-Type", "text/plain");
+    res.send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${SITE_URL}/sitemap.xml\n`);
+  });
   // tRPC API
   app.use(
     "/api/trpc",

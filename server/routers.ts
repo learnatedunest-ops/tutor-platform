@@ -1,7 +1,8 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { notifyOwner } from "./_core/notification";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   createInquiry,
   createTutorApplication,
@@ -56,6 +57,11 @@ export const appRouter = router({
       .input(inquirySchema)
       .mutation(async ({ input }) => {
         await createInquiry(input);
+        // Notify owner of new inquiry
+        await notifyOwner({
+          title: `📩 New Inquiry from ${input.name}`,
+          content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Role:** ${input.role}\n**Subject:** ${input.subject ?? "—"}\n**Area:** ${input.area ?? "—"}\n\n**Message:**\n${input.message}\n\nView all inquiries at https://edu-nest.manus.space/admin`,
+        }).catch(() => {/* non-blocking */});
         return { success: true };
       }),
 
@@ -79,6 +85,11 @@ export const appRouter = router({
       .input(tutorApplicationSchema)
       .mutation(async ({ input }) => {
         await createTutorApplication(input);
+        // Notify owner of new tutor application
+        await notifyOwner({
+          title: `🎓 New Tutor Application from ${input.name}`,
+          content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Qualification:** ${input.qualification}\n**Subjects:** ${input.subjects}\n**Experience:** ${input.experience}\n**Area:** ${input.area}\n**Mode:** ${input.mode.replace("_", " ")}\n\n**About:**\n${input.about ?? "—"}\n\nView all applications at https://edu-nest.manus.space/admin`,
+        }).catch(() => {/* non-blocking */});
         return { success: true };
       }),
 

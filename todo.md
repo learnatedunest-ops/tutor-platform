@@ -55,3 +55,10 @@
 - [x] Admin dashboard UI: inquiries table with status management
 - [x] Admin dashboard UI: tutor applications table with status management
 - [x] Status update mutation (new → contacted → resolved / pending → approved → rejected)
+
+## Next Steps Round 3
+- [x] Auto-grant admin role to owner (Amogha) on first login via ENV.ownerOpenId
+- [x] Email notification to learn.at.edunest@gmail.com on new inquiry submission
+- [x] Email notification to learn.at.edunest@gmail.com on new tutor application
+- [x] Generate /sitemap.xml endpoint listing all public pages
+- [x] Add robots.txt pointing to sitemap
