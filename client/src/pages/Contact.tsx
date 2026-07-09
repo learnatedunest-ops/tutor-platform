@@ -1,25 +1,66 @@
 /**
  * EduNest Contact Page
  * Design: Warm Academic Energy
+ * Form submissions are saved to the database via tRPC
  */
 
 import { useState } from "react";
 import { Link } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Phone, Mail, MapPin, Clock, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
+
+const inputClass =
+  "w-full px-4 py-3 rounded-xl border text-sm outline-none focus:ring-2 transition-all";
+const inputStyle = {
+  borderColor: "oklch(0.9 0.005 80)",
+  color: "oklch(0.14 0.02 270)",
+  fontFamily: "'Nunito', sans-serif",
+};
+const labelStyle = {
+  color: "oklch(0.3 0.02 270)",
+  fontFamily: "'Poppins', sans-serif",
+};
 
 export default function Contact() {
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", type: "", subject: "", message: "",
+    name: "",
+    email: "",
+    phone: "",
+    role: "" as "student" | "parent" | "tutor" | "institution" | "",
+    subject: "",
+    area: "",
+    message: "",
   });
   const [submitted, setSubmitted] = useState(false);
 
+  const submitMutation = trpc.inquiry.submit.useMutation({
+    onSuccess: () => {
+      setSubmitted(true);
+      toast.success("Message sent! We'll get back to you within 24 hours.");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Something went wrong. Please try again.");
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    toast.success("Message sent! We'll get back to you within 24 hours.");
+    if (!form.role) {
+      toast.error("Please select your role.");
+      return;
+    }
+    submitMutation.mutate({
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      role: form.role,
+      subject: form.subject || undefined,
+      area: form.area || undefined,
+      message: form.message,
+    });
   };
 
   return (
@@ -112,10 +153,22 @@ export default function Contact() {
                   <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
                     Message Sent!
                   </h3>
-                  <p className="mb-6" style={{ color: "oklch(0.5 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
-                    We'll get back to you within 24 hours.
+                  <p className="mb-2" style={{ color: "oklch(0.5 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
+                    Thank you, <strong>{form.name}</strong>! We've received your message and will get back to you within 24 hours.
                   </p>
-                  <Link href="/" className="btn-primary">Back to Home</Link>
+                  <p className="text-sm mb-6" style={{ color: "oklch(0.6 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
+                    For urgent queries, call us at{" "}
+                    <a href="tel:+918618635627" className="font-semibold" style={{ color: "oklch(0.68 0.18 50)" }}>+91-8618635627</a>
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <Link href="/" className="btn-primary">Back to Home</Link>
+                    <button
+                      onClick={() => { setSubmitted(false); setForm({ name: "", email: "", phone: "", role: "", subject: "", area: "", message: "" }); }}
+                      className="btn-outline"
+                    >
+                      Send Another
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
@@ -128,82 +181,104 @@ export default function Contact() {
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Full Name</label>
+                        <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Full Name *</label>
                         <input
                           type="text"
                           placeholder="Your name"
                           required
                           value={form.name}
                           onChange={(e) => setForm({ ...form, name: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl border text-sm outline-none"
-                          style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}
+                          className={inputClass}
+                          style={inputStyle}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Phone</label>
+                        <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Phone *</label>
                         <input
                           type="tel"
                           placeholder="+91 98765 43210"
+                          required
                           value={form.phone}
                           onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl border text-sm outline-none"
-                          style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}
+                          className={inputClass}
+                          style={inputStyle}
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Email Address</label>
+                      <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Email Address *</label>
                       <input
                         type="email"
                         placeholder="your@email.com"
                         required
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border text-sm outline-none"
-                        style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}
+                        className={inputClass}
+                        style={inputStyle}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>I am a...</label>
+                      <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>I am a... *</label>
                       <select
                         required
-                        value={form.type}
-                        onChange={(e) => setForm({ ...form, type: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border text-sm outline-none bg-white"
-                        style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}
+                        value={form.role}
+                        onChange={(e) => setForm({ ...form, role: e.target.value as typeof form.role })}
+                        className={`${inputClass} bg-white`}
+                        style={inputStyle}
                       >
                         <option value="">Select your role</option>
-                        <option>Student</option>
-                        <option>Parent</option>
-                        <option>Tutor</option>
-                        <option>Academic Institution</option>
+                        <option value="student">Student</option>
+                        <option value="parent">Parent</option>
+                        <option value="tutor">Tutor</option>
+                        <option value="institution">Academic Institution</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Subject</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Mathematics, Physics, English"
-                        value={form.subject}
-                        onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border text-sm outline-none"
-                        style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Subject</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Mathematics"
+                          value={form.subject}
+                          onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                          className={inputClass}
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Area in Bengaluru</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Koramangala"
+                          value={form.area}
+                          onChange={(e) => setForm({ ...form, area: e.target.value })}
+                          className={inputClass}
+                          style={inputStyle}
+                        />
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Message</label>
+                      <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Message *</label>
                       <textarea
                         placeholder="Tell us how we can help you..."
                         required
                         rows={4}
                         value={form.message}
                         onChange={(e) => setForm({ ...form, message: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border text-sm outline-none resize-none"
-                        style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}
+                        className={`${inputClass} resize-none`}
+                        style={inputStyle}
                       />
                     </div>
-                    <button type="submit" className="btn-primary w-full justify-center text-base py-3">
-                      Send Message <ArrowRight size={18} />
+                    <button
+                      type="submit"
+                      disabled={submitMutation.isPending}
+                      className="btn-primary w-full justify-center text-base py-3 disabled:opacity-60"
+                    >
+                      {submitMutation.isPending ? (
+                        <><Loader2 size={18} className="animate-spin" /> Sending...</>
+                      ) : (
+                        <>Send Message <ArrowRight size={18} /></>
+                      )}
                     </button>
                   </form>
                 </>

@@ -18,8 +18,10 @@ import {
   Smartphone,
   GraduationCap,
   BookOpen,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 const benefits = [
   {
@@ -63,14 +65,45 @@ const steps = [
 
 export default function BecomeTutor() {
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", subject: "", experience: "", city: "", mode: "",
+    name: "",
+    email: "",
+    phone: "",
+    qualification: "",
+    subjects: "",
+    experience: "",
+    area: "",
+    mode: "" as "home_tuition" | "online" | "both" | "",
+    about: "",
   });
   const [submitted, setSubmitted] = useState(false);
 
+  const submitMutation = trpc.tutorApplication.submit.useMutation({
+    onSuccess: () => {
+      setSubmitted(true);
+      toast.success("Application submitted! We'll contact you within 24 hours.");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Something went wrong. Please try again.");
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    toast.success("Application submitted! We'll contact you within 24 hours.");
+    if (!form.mode) {
+      toast.error("Please select your teaching mode.");
+      return;
+    }
+    submitMutation.mutate({
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      qualification: form.qualification,
+      subjects: form.subjects,
+      experience: form.experience,
+      area: form.area,
+      mode: form.mode,
+      about: form.about || undefined,
+    });
   };
 
   return (
@@ -122,8 +155,12 @@ export default function BecomeTutor() {
                   <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
                     Application Submitted!
                   </h3>
-                  <p className="mb-6" style={{ color: "oklch(0.5 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
-                    Our team will review your profile and contact you within 24 hours.
+                  <p className="mb-2" style={{ color: "oklch(0.5 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
+                    Thank you, <strong>{form.name}</strong>! Our team will review your profile and contact you within 24 hours.
+                  </p>
+                  <p className="text-sm mb-6" style={{ color: "oklch(0.6 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
+                    For urgent queries, call us at{" "}
+                    <a href="tel:+918618635627" className="font-semibold" style={{ color: "oklch(0.68 0.18 50)" }}>+91-8618635627</a>
                   </p>
                   <Link href="/" className="btn-primary">Back to Home</Link>
                 </div>
@@ -136,82 +173,63 @@ export default function BecomeTutor() {
                     Fill in your details and we'll get you started within 24 hours.
                   </p>
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    {[
-                      { key: "name", label: "Full Name", type: "text", placeholder: "Your full name" },
-                      { key: "email", label: "Email Address", type: "email", placeholder: "your@email.com" },
-                      { key: "phone", label: "Phone Number", type: "tel", placeholder: "+91 98765 43210" },
-                      { key: "city", label: "City", type: "text", placeholder: "e.g. Koramangala, Indiranagar, HSR Layout" },
-                    ].map(({ key, label, type, placeholder }) => (
-                      <div key={key}>
-                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
-                          {label}
-                        </label>
-                        <input
-                          type={type}
-                          placeholder={placeholder}
-                          required
-                          value={form[key as keyof typeof form]}
-                          onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-colors"
-                          style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}
-                          onFocus={(e) => (e.target.style.borderColor = "oklch(0.68 0.18 50)")}
-                          onBlur={(e) => (e.target.style.borderColor = "oklch(0.9 0.005 80)")}
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Full Name *</label>
+                        <input type="text" placeholder="Your full name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }} />
                       </div>
-                    ))}
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Phone *</label>
+                        <input type="tel" placeholder="+91 98765 43210" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }} />
+                      </div>
+                    </div>
                     <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
-                        Subject(s) You Teach
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Mathematics, Physics, English"
-                        required
-                        value={form.subject}
-                        onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border text-sm outline-none"
-                        style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}
-                      />
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Email Address *</label>
+                      <input type="email" placeholder="your@email.com" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Highest Qualification *</label>
+                      <input type="text" placeholder="e.g. B.Tech IIT, M.Sc Mathematics, B.Ed" required value={form.qualification} onChange={(e) => setForm({ ...form, qualification: e.target.value })} className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Subject(s) You Teach *</label>
+                      <input type="text" placeholder="e.g. Mathematics, Physics, English" required value={form.subjects} onChange={(e) => setForm({ ...form, subjects: e.target.value })} className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
-                          Experience
-                        </label>
-                        <select
-                          required
-                          value={form.experience}
-                          onChange={(e) => setForm({ ...form, experience: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl border text-sm outline-none bg-white"
-                          style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}
-                        >
+                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Experience *</label>
+                        <select required value={form.experience} onChange={(e) => setForm({ ...form, experience: e.target.value })} className="w-full px-4 py-3 rounded-xl border text-sm outline-none bg-white" style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>
                           <option value="">Select</option>
-                          <option>Less than 1 year</option>
-                          <option>1-3 years</option>
-                          <option>3-5 years</option>
-                          <option>5+ years</option>
+                          <option value="Less than 1 year">Less than 1 year</option>
+                          <option value="1-3 years">1-3 years</option>
+                          <option value="3-5 years">3-5 years</option>
+                          <option value="5+ years">5+ years</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
-                          Teaching Mode
-                        </label>
-                        <select
-                          required
-                          value={form.mode}
-                          onChange={(e) => setForm({ ...form, mode: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl border text-sm outline-none bg-white"
-                          style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}
-                        >
+                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Teaching Mode *</label>
+                        <select required value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value as typeof form.mode })} className="w-full px-4 py-3 rounded-xl border text-sm outline-none bg-white" style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>
                           <option value="">Select</option>
-                          <option>Home Tuition</option>
-                          <option>Online</option>
-                          <option>Both</option>
+                          <option value="home_tuition">Home Tuition</option>
+                          <option value="online">Online</option>
+                          <option value="both">Both</option>
                         </select>
                       </div>
                     </div>
-                    <button type="submit" className="btn-primary w-full justify-center text-base py-3">
-                      Submit Application <ArrowRight size={18} />
+                    <div>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Area in Bengaluru *</label>
+                      <input type="text" placeholder="e.g. Koramangala, Indiranagar, HSR Layout" required value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>About Yourself</label>
+                      <textarea placeholder="Tell us about your teaching style and experience..." rows={3} value={form.about} onChange={(e) => setForm({ ...form, about: e.target.value })} className="w-full px-4 py-3 rounded-xl border text-sm outline-none resize-none" style={{ borderColor: "oklch(0.9 0.005 80)", color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }} />
+                    </div>
+                    <button type="submit" disabled={submitMutation.isPending} className="btn-primary w-full justify-center text-base py-3 disabled:opacity-60">
+                      {submitMutation.isPending ? (
+                        <><Loader2 size={18} className="animate-spin" /> Submitting...</>
+                      ) : (
+                        <>Submit Application <ArrowRight size={18} /></>
+                      )}
                     </button>
                   </form>
                 </>
