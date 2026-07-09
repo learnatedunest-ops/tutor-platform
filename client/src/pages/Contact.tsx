@@ -1,5 +1,5 @@
 /**
- * EduConnect Contact Page
+ * EduNest Contact Page
  * Design: Warm Academic Energy
  */
 
@@ -61,9 +61,9 @@ export default function Contact() {
 
               <div className="space-y-5 mb-10">
                 {[
-                  { icon: Phone, label: "Phone", value: "+91-8107008788", href: "tel:+918107008788" },
-                  { icon: Mail, label: "Email", value: "hello@educonnect.in", href: "mailto:hello@educonnect.in" },
-                  { icon: MapPin, label: "Address", value: "Jaipur, Rajasthan, India 302001", href: "#" },
+                  { icon: Phone, label: "Phone", value: "+91-8618635627", href: "tel:+918618635627" },
+                  { icon: Mail, label: "Email", value: "learn.at.edunest@gmail.com", href: "mailto:learn.at.edunest@gmail.com" },
+                  { icon: MapPin, label: "Address", value: "Bengaluru, Karnataka, India 560001", href: "#" },
                   { icon: Clock, label: "Support Hours", value: "Mon–Sat, 9:00 AM – 7:00 PM IST", href: "#" },
                 ].map(({ icon: Icon, label, value, href }) => (
                   <div key={label} className="flex items-start gap-4">
@@ -94,7 +94,7 @@ export default function Contact() {
                     <span className="text-sm font-medium" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>Register as a Tutor</span>
                     <ArrowRight size={16} style={{ color: "oklch(0.68 0.18 50)" }} className="group-hover:translate-x-1 transition-transform" />
                   </Link>
-                  <a href="tel:+918107008788" className="flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-[oklch(0.96_0.01_80)] group">
+                  <a href="tel:+918618635627" className="flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-[oklch(0.96_0.01_80)] group">
                     <span className="text-sm font-medium" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>Call Us Directly</span>
                     <ArrowRight size={16} style={{ color: "oklch(0.68 0.18 50)" }} className="group-hover:translate-x-1 transition-transform" />
                   </a>

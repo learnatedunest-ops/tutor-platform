@@ -1,5 +1,5 @@
 /**
- * EduConnect Footer
+ * EduNest Footer
  * Design: Warm Academic Energy — Dark charcoal bg, orange accents
  */
 
@@ -15,13 +15,13 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <img src="/manus-storage/logo-symbol_3af76bb4.png" alt="EduConnect" className="w-8 h-8 object-contain" />
+              <img src="/manus-storage/logo-symbol_3af76bb4.png" alt="EduNest" className="w-8 h-8 object-contain" />
               <span className="text-2xl font-extrabold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.68 0.18 50)" }}>
-                Edu<span className="text-white">Connect</span>
+                Edu<span className="text-white">Nest</span>
               </span>
             </div>
             <p className="text-sm leading-relaxed mb-6" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
-              India's most trusted home tuition platform. Connecting passionate educators with curious learners since 2020.
+              Bengaluru's trusted home tuition platform. Connecting passionate educators with curious learners across the city.
             </p>
             <div className="flex gap-3">
               {[
@@ -103,20 +103,20 @@ export default function Footer() {
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <Phone size={16} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
-                <a href="tel:+918107008788" className="text-sm hover:text-[oklch(0.68_0.18_50)] transition-colors" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
-                  +91-8107008788
+                <a href="tel:+918618635627" className="text-sm hover:text-[oklch(0.68_0.18_50)] transition-colors" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
+                  +91-8618635627
                 </a>
               </li>
               <li className="flex items-start gap-3">
                 <Mail size={16} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
-                <a href="mailto:hello@educonnect.in" className="text-sm hover:text-[oklch(0.68_0.18_50)] transition-colors" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
-                  hello@educonnect.in
+                <a href="mailto:learn.at.edunest@gmail.com" className="text-sm hover:text-[oklch(0.68_0.18_50)] transition-colors" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
+                  learn.at.edunest@gmail.com
                 </a>
               </li>
               <li className="flex items-start gap-3">
                 <MapPin size={16} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
                 <span className="text-sm" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
-                  Jaipur, Rajasthan, India
+                  Bengaluru, Karnataka, India
                 </span>
               </li>
             </ul>
@@ -141,7 +141,7 @@ export default function Footer() {
       <div style={{ borderTop: "1px solid oklch(0.22 0.02 270)" }}>
         <div className="container py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs" style={{ color: "oklch(0.5 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
-            © 2024 EduConnect. All rights reserved.
+            © 2025 EduNest. All rights reserved.
           </p>
           <div className="flex gap-4">
             {["Privacy Policy", "Terms of Service", "Refund Policy"].map((item) => (

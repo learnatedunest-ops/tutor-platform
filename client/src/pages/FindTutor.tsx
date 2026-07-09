@@ -1,5 +1,5 @@
 /**
- * EduConnect Find Tutor Page
+ * EduNest Find Tutor Page
  * Design: Warm Academic Energy — Search interface with tutor cards
  */
 
@@ -40,14 +40,14 @@ const tutors = [
     experience: "6 years",
     rating: 4.9,
     reviews: 124,
-    location: "Jaipur, Rajasthan",
+    location: "Bengaluru, Karnataka",
     mode: ["Home Tuition", "Online"],
     grades: "Class 9-12",
     rate: "₹600/hr",
     initials: "PV",
     color: "#F47920",
     verified: true,
-    bio: "B.Tech from IIT Delhi. Specializes in making complex math and physics concepts simple and intuitive.",
+    bio: "B.Tech from IIT Bombay. Specializes in making complex math and physics concepts simple and intuitive.",
   },
   {
     name: "Rahul Sharma",
@@ -55,14 +55,14 @@ const tutors = [
     experience: "8 years",
     rating: 4.8,
     reviews: 98,
-    location: "Jaipur, Rajasthan",
+    location: "Bengaluru, Karnataka",
     mode: ["Home Tuition"],
     grades: "Class 10-12, NEET",
     rate: "₹700/hr",
     initials: "RS",
     color: "#6C63FF",
     verified: true,
-    bio: "M.Sc Chemistry from Delhi University. Helped 50+ students crack NEET with personalized study plans.",
+    bio: "M.Sc Chemistry from Bangalore University. Helped 50+ students crack NEET with personalized study plans.",
   },
   {
     name: "Anita Gupta",
@@ -70,14 +70,14 @@ const tutors = [
     experience: "10 years",
     rating: 5.0,
     reviews: 210,
-    location: "Jaipur, Rajasthan",
+    location: "Bengaluru, Karnataka",
     mode: ["Home Tuition", "Online"],
     grades: "Class 5-12",
     rate: "₹500/hr",
     initials: "AG",
     color: "#F47920",
     verified: true,
-    bio: "MA English from Rajasthan University. Expert in CBSE, ICSE, and IB English curriculum.",
+    bio: "MA English from Christ University, Bengaluru. Expert in CBSE, ICSE, and IB English curriculum.",
   },
   {
     name: "Vikram Singh",
@@ -85,14 +85,14 @@ const tutors = [
     experience: "5 years",
     rating: 4.7,
     reviews: 76,
-    location: "Jaipur, Rajasthan",
+    location: "Bengaluru, Karnataka",
     mode: ["Online"],
     grades: "Class 11-12, JEE",
     rate: "₹800/hr",
     initials: "VS",
     color: "#6C63FF",
     verified: true,
-    bio: "IIT Bombay graduate. Specialized in JEE Advanced preparation with a 90% success rate.",
+    bio: "IIT Madras graduate. Specialized in JEE Advanced preparation with a 90% success rate.",
   },
   {
     name: "Sunita Patel",
@@ -100,14 +100,14 @@ const tutors = [
     experience: "7 years",
     rating: 4.9,
     reviews: 88,
-    location: "Jaipur, Rajasthan",
+    location: "Bengaluru, Karnataka",
     mode: ["Home Tuition", "Online"],
     grades: "Class 11-12",
     rate: "₹550/hr",
     initials: "SP",
     color: "#F47920",
     verified: true,
-    bio: "CA qualified with 7 years of teaching experience. Makes accounts and economics easy to understand.",
+    bio: "CA qualified with 7 years of teaching experience in Bengaluru. Makes accounts and economics easy to understand.",
   },
   {
     name: "Deepak Joshi",
@@ -115,7 +115,7 @@ const tutors = [
     experience: "4 years",
     rating: 4.6,
     reviews: 54,
-    location: "Jaipur, Rajasthan",
+    location: "Bengaluru, Karnataka",
     mode: ["Home Tuition"],
     grades: "Class 6-10",
     rate: "₹450/hr",
@@ -147,7 +147,7 @@ export default function FindTutor() {
             Find Your Perfect Tutor
           </h1>
           <p className="text-lg text-white/90 mb-8 max-w-xl mx-auto" style={{ fontFamily: "'Nunito', sans-serif" }}>
-            Browse 2,500+ verified tutors across all subjects and grades. First demo class is free.
+            Browse 200+ verified tutors across all subjects and grades in Bengaluru. First demo class is free.
           </p>
 
           {/* Search Bar */}
@@ -167,7 +167,7 @@ export default function FindTutor() {
               <MapPin size={16} style={{ color: "oklch(0.68 0.18 50)" }} />
               <input
                 type="text"
-                placeholder="City / Location"
+                placeholder="Area in Bengaluru"
                 className="outline-none text-sm bg-transparent w-28"
                 style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}
               />

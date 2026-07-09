@@ -1,9 +1,9 @@
 /**
- * EduConnect Home Page — Enhanced
+ * EduNest Home Page — Enhanced
  * Design: Warm Academic Energy — Orange hero with diagonal cuts, recurring wave motifs,
  * asymmetric layouts, action-led CTAs, animated stats
  * Fonts: Poppins (headings), Nunito (body)
- * Primary: oklch(0.68 0.18 50) — EduConnect Orange
+ * Primary: oklch(0.68 0.18 50) — EduNest Orange
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -103,7 +103,7 @@ const testimonials = [
     name: "Priya Sharma",
     role: "Class 10 Student",
     subject: "Mathematics",
-    text: "EduConnect helped me find an amazing math tutor within 24 hours. My grades went from C to A in just two months. The tutor explains concepts so clearly!",
+    text: "EduNest helped me find an amazing math tutor within 24 hours. My grades went from C to A in just two months. The tutor explains concepts so clearly!",
     rating: 5,
     avatar: "PS",
     avatarBg: "#F47920",
@@ -112,7 +112,7 @@ const testimonials = [
     name: "Rahul Mehta",
     role: "Physics Tutor",
     subject: "Physics & Chemistry",
-    text: "As a tutor, EduConnect has given me a steady stream of serious students. The platform is easy to use and the support team is very responsive.",
+    text: "As a tutor, EduNest has given me a steady stream of serious students. The platform is easy to use and the support team is very responsive.",
     rating: 5,
     avatar: "RM",
     avatarBg: "#6C63FF",
@@ -121,7 +121,7 @@ const testimonials = [
     name: "Sunita Patel",
     role: "Parent of Class 8 Student",
     subject: "Science",
-    text: "My daughter was struggling with science. Within a week of joining EduConnect, she had a wonderful tutor who made learning fun. Highly recommend!",
+    text: "My daughter was struggling with science. Within a week of joining EduNest, she had a wonderful tutor who made learning fun. Highly recommend!",
     rating: 5,
     avatar: "SP",
     avatarBg: "#F47920",
@@ -192,7 +192,7 @@ export default function Home() {
             {/* Left: Text */}
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold mb-6" style={{ backgroundColor: "rgba(255,255,255,0.18)", color: "white", fontFamily: "'Nunito', sans-serif", backdropFilter: "blur(8px)" }}>
-                <Sparkles size={14} /> Trusted by 100,000+ Students Across India
+                <Sparkles size={14} /> Trusted by 5,000+ Students Across Bengaluru
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6" style={{ fontFamily: "'Poppins', sans-serif", letterSpacing: "-0.02em" }}>
                 Your Child's Best<br />
@@ -206,7 +206,7 @@ export default function Home() {
                 <Link href="/find-tutor" className="btn-white text-base px-8 py-3.5 shadow-lg">
                   Find My Tutor <ArrowRight size={18} />
                 </Link>
-                <a href="tel:+918107008788" className="inline-flex items-center gap-2 text-base px-8 py-3.5 rounded-lg font-semibold transition-all duration-150" style={{ border: "2px solid rgba(255,255,255,0.5)", color: "white", fontFamily: "'Poppins', sans-serif" }}>
+                <a href="tel:+918618635627" className="inline-flex items-center gap-2 text-base px-8 py-3.5 rounded-lg font-semibold transition-all duration-150" style={{ border: "2px solid rgba(255,255,255,0.5)", color: "white", fontFamily: "'Poppins', sans-serif" }}>
                   <Phone size={16} /> Call Us Now
                 </a>
               </div>
@@ -240,7 +240,7 @@ export default function Home() {
                     <Award size={20} style={{ color: "#F47920" }} />
                   </div>
                   <div>
-                    <div className="text-xs font-bold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>2,500+ Tutors</div>
+                    <div className="text-xs font-bold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>200+ Tutors</div>
                     <div className="text-xs" style={{ color: "oklch(0.5 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>Ready to teach today</div>
                   </div>
                 </div>
@@ -315,9 +315,9 @@ export default function Home() {
       <section style={{ backgroundColor: "oklch(0.14 0.02 270)" }} className="py-16">
         <div className="container">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 divide-x divide-white/10">
-            <StatItem target={100000} suffix="+" label="Happy Students" />
-            <StatItem target={2500} suffix="+" label="Expert Tutors" />
-            <StatItem target={50} suffix="+" label="Cities Covered" />
+            <StatItem target={5000} suffix="+" label="Happy Students" />
+            <StatItem target={200} suffix="+" label="Expert Tutors" />
+            <StatItem target={15} suffix="+" label="Areas in Bengaluru" />
             <StatItem target={98} suffix="%" label="Satisfaction Rate" />
           </div>
         </div>
@@ -452,7 +452,7 @@ export default function Home() {
               Simple Process
             </p>
             <h2 className="section-title mb-3" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              How EduConnect Works
+              How EduNest Works
             </h2>
             <div className="w-16 h-1 rounded-full mx-auto mb-4" style={{ backgroundColor: "#F47920" }} />
             <p className="section-subtitle max-w-2xl mx-auto">
@@ -554,7 +554,7 @@ export default function Home() {
             Ready to Transform Your Learning?
           </h2>
           <p className="text-lg mb-8 max-w-2xl mx-auto" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
-            Join over 100,000 students who found their perfect tutor on EduConnect. No commitment — just better learning.
+            Join over 5,000 students who found their perfect tutor on EduNest in Bengaluru. No commitment — just better learning.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/find-tutor" className="btn-primary text-base px-10 py-4">

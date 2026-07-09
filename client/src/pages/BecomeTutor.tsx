@@ -1,5 +1,5 @@
 /**
- * EduConnect Become a Tutor Page
+ * EduNest Become a Tutor Page
  * Design: Warm Academic Energy — Registration form + benefits
  */
 
@@ -34,8 +34,8 @@ const benefits = [
   },
   {
     icon: Users,
-    title: "Access 100K+ Students",
-    desc: "Tap into our massive student network across 50+ cities in India.",
+    title: "Access 5,000+ Students",
+    desc: "Tap into our growing student network across 15+ areas in Bengaluru.",
   },
   {
     icon: Shield,
@@ -87,14 +87,14 @@ export default function BecomeTutor() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold mb-6" style={{ backgroundColor: "oklch(0.68 0.18 50 / 0.2)", color: "oklch(0.82 0.14 75)", fontFamily: "'Nunito', sans-serif" }}>
-                <Star size={14} fill="oklch(0.82 0.14 75)" /> Join 2,500+ Active Tutors
+                <Star size={14} fill="oklch(0.82 0.14 75)" /> Join 200+ Active Tutors
               </div>
               <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6 leading-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
                 Share Your Knowledge.<br />
                 <span style={{ color: "oklch(0.68 0.18 50)" }}>Earn on Your Terms.</span>
               </h1>
               <p className="text-lg mb-8 leading-relaxed" style={{ color: "oklch(0.7 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
-                Join EduConnect and connect with thousands of students who need your expertise. Set your schedule, choose your students, and earn ₹500–₹2000 per hour.
+                Join EduNest and connect with students in Bengaluru who need your expertise. Set your schedule, choose your students, and earn ₹500–₹2000 per hour.
               </p>
               <div className="flex flex-wrap gap-4 mb-8">
                 {["Free to join", "No commission on first month", "Instant payouts"].map((item) => (
@@ -140,7 +140,7 @@ export default function BecomeTutor() {
                       { key: "name", label: "Full Name", type: "text", placeholder: "Your full name" },
                       { key: "email", label: "Email Address", type: "email", placeholder: "your@email.com" },
                       { key: "phone", label: "Phone Number", type: "tel", placeholder: "+91 98765 43210" },
-                      { key: "city", label: "City", type: "text", placeholder: "e.g. Jaipur, Delhi, Mumbai" },
+                      { key: "city", label: "City", type: "text", placeholder: "e.g. Koramangala, Indiranagar, HSR Layout" },
                     ].map(({ key, label, type, placeholder }) => (
                       <div key={key}>
                         <label className="block text-xs font-semibold mb-1.5" style={{ color: "oklch(0.3 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
@@ -226,9 +226,9 @@ export default function BecomeTutor() {
         <div className="container">
           <div className="text-center mb-14">
             <p className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
-              Why EduConnect
+              Why EduNest
             </p>
-            <h2 className="section-title orange-underline mb-4">Why Tutors Love EduConnect</h2>
+            <h2 className="section-title orange-underline mb-4">Why Tutors Love EduNest</h2>
             <p className="section-subtitle max-w-2xl mx-auto mt-6">
               We make it easy for talented educators to build a thriving tutoring career on their own terms.
             </p>

@@ -1,5 +1,5 @@
 /**
- * EduConnect Navbar
+ * EduNest Navbar
  * Design: Warm Academic Energy — Orange primary, Poppins headings, sticky with scroll-aware bg
  */
 
@@ -33,9 +33,9 @@ export default function Navbar() {
     <>
       {/* Announcement Bar */}
       <div className="bg-[oklch(0.14_0.02_270)] text-white text-center py-2 text-sm font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>
-        Over <strong className="text-[oklch(0.82_0.14_75)]">100,000 Students</strong> and <strong className="text-[oklch(0.82_0.14_75)]">2,500 Tutors</strong> trust EduConnect every month
-        <a href="tel:+918107008788" className="ml-4 inline-flex items-center gap-1 text-[oklch(0.82_0.14_75)] hover:text-white transition-colors">
-          <Phone size={12} /> +91-8107008788
+        Over <strong className="text-[oklch(0.82_0.14_75)]">5,000 Students</strong> and <strong className="text-[oklch(0.82_0.14_75)]">200 Tutors</strong> trust EduNest every month
+        <a href="tel:+918618635627" className="ml-4 inline-flex items-center gap-1 text-[oklch(0.82_0.14_75)] hover:text-white transition-colors">
+          <Phone size={12} /> +91-8618635627
         </a>
       </div>
 
@@ -53,7 +53,7 @@ export default function Navbar() {
             <Link href="/" className="flex items-center gap-2 group">
               <img
                 src="/manus-storage/logo-symbol_3af76bb4.png"
-                alt="EduConnect"
+                alt="EduNest"
                 className="w-9 h-9 object-contain"
               />
               <span
@@ -64,7 +64,7 @@ export default function Navbar() {
                   letterSpacing: "-0.02em",
                 }}
               >
-                Edu<span style={{ color: "oklch(0.14 0.02 270)" }}>Connect</span>
+                Edu<span style={{ color: "oklch(0.14 0.02 270)" }}>Nest</span>
               </span>
             </Link>
 

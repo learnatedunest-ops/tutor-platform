@@ -1,5 +1,5 @@
 /**
- * EduConnect About Page
+ * EduNest About Page
  * Design: Warm Academic Energy
  */
 
@@ -9,7 +9,7 @@ import Footer from "@/components/Footer";
 import { Target, Eye, Heart, ArrowRight } from "lucide-react";
 
 const team = [
-  { name: "Arjun Kapoor", role: "Founder & CEO", initials: "AK", color: "#F47920" },
+  { name: "Amogha", role: "Founder & CEO", initials: "AM", color: "#F47920" },
   { name: "Meera Singh", role: "Head of Tutors", initials: "MS", color: "#6C63FF" },
   { name: "Rohit Sharma", role: "CTO", initials: "RS", color: "#F47920" },
   { name: "Kavita Joshi", role: "Head of Operations", initials: "KJ", color: "#6C63FF" },
@@ -33,10 +33,10 @@ export default function About() {
       >
         <div className="container relative z-10 text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            About EduConnect
+            About EduNest
           </h1>
           <p className="text-lg text-white/90 max-w-2xl mx-auto" style={{ fontFamily: "'Nunito', sans-serif" }}>
-            We're on a mission to make quality education accessible to every student across India. Founded in 2020, EduConnect has grown to become one of India's most trusted home tuition platforms.
+            We're on a mission to make quality education accessible to every student in Bengaluru. EduNest connects students with the best local tutors for personalized, results-driven learning.
           </p>
         </div>
         <div className="absolute bottom-0 left-0 right-0" style={{ marginBottom: "-1px" }}>
@@ -52,15 +52,15 @@ export default function About() {
           <div className="grid lg:grid-cols-2 gap-16 items-center max-w-5xl mx-auto">
             <div>
               <p className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>Our Story</p>
-              <h2 className="section-title mb-6">From a Small Idea to 100,000+ Students</h2>
+              <h2 className="section-title mb-6">From a Small Idea to 5,000+ Students</h2>
               <p className="leading-relaxed mb-4" style={{ color: "oklch(0.4 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>
-                EduConnect was born out of a simple frustration: finding a good home tutor was unnecessarily hard. Parents spent weeks asking around, and qualified tutors had no easy way to reach students who needed them.
+                EduNest was born out of a simple frustration: finding a good home tutor in Bengaluru was unnecessarily hard. Parents spent weeks asking around, and qualified tutors had no easy way to reach students who needed them.
               </p>
               <p className="leading-relaxed mb-4" style={{ color: "oklch(0.4 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>
-                We built EduConnect to solve this — a platform where students and tutors can connect instantly, with full transparency on qualifications, pricing, and reviews.
+                We built EduNest to solve this — a platform where Bengaluru students and tutors can connect instantly, with full transparency on qualifications, pricing, and reviews.
               </p>
               <p className="leading-relaxed mb-8" style={{ color: "oklch(0.4 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>
-                Today, we serve over 100,000 students across 50+ cities, with 2,500+ verified tutors covering every subject from pre-primary to competitive exams.
+                Today, we serve over 5,000 students across 15+ areas in Bengaluru, with 200+ verified tutors covering every subject from pre-primary to competitive exams.
               </p>
               <Link href="/find-tutor" className="btn-primary">
                 Find a Tutor <ArrowRight size={16} />
@@ -68,9 +68,9 @@ export default function About() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { num: "100K+", label: "Students Served" },
-                { num: "2,500+", label: "Expert Tutors" },
-                { num: "50+", label: "Cities Covered" },
+                { num: "5,000+", label: "Students Served" },
+                { num: "200+", label: "Expert Tutors" },
+                { num: "15+", label: "Areas in Bengaluru" },
                 { num: "4.9★", label: "Average Rating" },
               ].map(({ num, label }) => (
                 <div key={label} className="card-hover bg-white rounded-2xl p-6 text-center border border-[oklch(0.9_0.005_80)]">
@@ -134,7 +134,7 @@ export default function About() {
             Ready to Join Our Community?
           </h2>
           <p className="text-lg text-white/90 mb-8 max-w-xl mx-auto" style={{ fontFamily: "'Nunito', sans-serif" }}>
-            Whether you're a student, parent, or tutor — there's a place for you at EduConnect.
+            Whether you're a student, parent, or tutor — there's a place for you at EduNest.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/find-tutor" className="btn-white">Find a Tutor <ArrowRight size={16} /></Link>
