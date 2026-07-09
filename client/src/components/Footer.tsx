@@ -15,7 +15,7 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <img src="/manus-storage/logo-symbol_3af76bb4.png" alt="EduNest" className="w-8 h-8 object-contain" />
+              <img src="/manus-storage/edunest-logo-v3_f012b9fe.png" alt="EduNest" className="w-8 h-8 object-contain" />
               <span className="text-2xl font-extrabold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.68 0.18 50)" }}>
                 Edu<span className="text-white">Nest</span>
               </span>
