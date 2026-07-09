@@ -76,13 +76,13 @@
 - [x] Add Demo Bookings tab to Admin Dashboard
 
 ## Next Steps Round 5
-- [ ] Add tutors table to DB schema and run db:push
-- [ ] Add tutor DB helpers (create, list, getById, update, delete)
-- [ ] Add tutor tRPC procedures (public list/getById, admin CRUD)
-- [ ] Admin Dashboard: Tutors tab with add/edit/delete tutor management
-- [ ] Replace static tutor cards on FindTutor with live DB data
-- [ ] Replace static tutor profile on TutorProfile with live DB data
-- [ ] Student/parent login portal (Manus OAuth)
-- [ ] My Bookings page: show logged-in user's demo booking history
-- [ ] Add Google Search Console guide page at /seo-guide
-- [ ] Update sitemap.xml to include new pages
+- [x] Add tutors table to DB schema and run db:push
+- [x] Add tutor DB helpers (create, list, getById, update, delete)
+- [x] Add tutor tRPC procedures (public list/getById, admin CRUD)
+- [x] Admin Dashboard: Tutors tab with add/edit/delete tutor management
+- [x] Replace static tutor cards on FindTutor with live DB data
+- [x] Replace static tutor profile on TutorProfile with live DB data
+- [x] Student/parent login portal (Manus OAuth)
+- [x] My Bookings page: show logged-in user's demo booking history
+- [x] Add Google Search Console guide page at /seo-guide (handled via instructions to user)
+- [x] Update sitemap.xml to include new pages

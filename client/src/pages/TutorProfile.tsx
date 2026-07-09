@@ -10,6 +10,7 @@ import { Link, useParams } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BookDemoModal from "@/components/BookDemoModal";
+import { trpc } from "@/lib/trpc";
 import {
   Star, MapPin, Clock, BookOpen, CheckCircle2, Award, GraduationCap,
   Phone, MessageSquare, ArrowLeft, Heart, Share2, ChevronDown, ChevronUp,
@@ -106,7 +107,55 @@ const defaultTutor = tutorsData["priya-verma"];
 export default function TutorProfile() {
   const params = useParams<{ id: string }>();
   const tutorId = params.id || "priya-verma";
-  const tutor = tutorsData[tutorId] || defaultTutor;
+
+  // If the ID is numeric, fetch from DB; otherwise use static data
+  const numericId = tutorId && /^\d+$/.test(tutorId) ? parseInt(tutorId) : null;
+  const { data: dbTutor, isLoading: dbLoading } = trpc.tutor.getById.useQuery(
+    { id: numericId! },
+    { enabled: numericId !== null }
+  );
+
+  // Build a unified tutor object from DB or static data
+  const staticTutor = tutorsData[tutorId] || defaultTutor;
+  const tutor = numericId && dbTutor
+    ? {
+        id: String(dbTutor.id),
+        name: dbTutor.name,
+        subject: dbTutor.subjects,
+        experience: dbTutor.experience,
+        rating: dbTutor.rating ?? 4.8,
+        reviews: dbTutor.reviewCount ?? 0,
+        location: `${dbTutor.area}, Bengaluru`,
+        mode: dbTutor.mode === "both" ? ["Home Tuition", "Online"] : dbTutor.mode === "home_tuition" ? ["Home Tuition"] : ["Online"],
+        grades: dbTutor.boards ?? "All Grades",
+        rate: `Contact for rate`,
+        initials: dbTutor.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase(),
+        color: "#F47920",
+        verified: dbTutor.isVerified === "yes",
+        bio: dbTutor.bio ?? "",
+        education: dbTutor.qualification ? [dbTutor.qualification] : [],
+        languages: ["English", "Kannada"],
+        subjects: dbTutor.subjects.split(",").map((s: string) => s.trim()),
+        availability: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+        totalStudents: dbTutor.reviewCount ?? 0,
+        successRate: 95,
+        about: dbTutor.bio ?? "",
+        teachingStyle: "Personalized, concept-focused teaching with regular practice and feedback.",
+        achievements: [],
+        reviewsList: [] as { name: string; rating: number; date: string; text: string; subject: string }[],
+      }
+    : staticTutor;
+
+  if (numericId !== null && dbLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.99 0.005 80)" }}>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[oklch(0.68_0.18_50)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p style={{ color: "oklch(0.55 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>Loading tutor profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [liked, setLiked] = useState(false);

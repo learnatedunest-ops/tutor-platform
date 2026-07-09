@@ -50,6 +50,7 @@ async function startServer() {
     { url: "/contact", priority: "0.7", changefreq: "monthly" },
     { url: "/privacy", priority: "0.3", changefreq: "yearly" },
     { url: "/terms", priority: "0.3", changefreq: "yearly" },
+    { url: "/seo-guide", priority: "0.4", changefreq: "monthly" },
   ];
 
   app.get("/sitemap.xml", (_req, res) => {
