@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Link, useParams } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BookDemoModal from "@/components/BookDemoModal";
 import {
   Star, MapPin, Clock, BookOpen, CheckCircle2, Award, GraduationCap,
   Phone, MessageSquare, ArrowLeft, Heart, Share2, ChevronDown, ChevronUp,
@@ -113,10 +114,10 @@ export default function TutorProfile() {
 
   const displayedReviews = showAllReviews ? tutor.reviewsList : tutor.reviewsList.slice(0, 2);
 
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
+
   const handleBookDemo = () => {
-    toast.success("Demo class request sent! Priya will contact you within 2 hours.", {
-      description: "Check your phone for a confirmation SMS.",
-    });
+    setDemoModalOpen(true);
   };
 
   const handleShare = () => {
@@ -499,6 +500,13 @@ export default function TutorProfile() {
       </main>
 
       <Footer />
+
+      <BookDemoModal
+        open={demoModalOpen}
+        onClose={() => setDemoModalOpen(false)}
+        tutorName={tutor.name}
+        tutorSubject={tutor.subject}
+      />
     </div>
   );
 }

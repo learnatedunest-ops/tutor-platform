@@ -8,6 +8,7 @@ import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BookDemoModal from "@/components/BookDemoModal";
 import {
   Search,
   MapPin,
@@ -220,7 +221,10 @@ const tutors = [
 ];
 
 export default function FindTutor() {
-  const [searchText, setSearchText] = useState("");
+  const [demoModal, setDemoModal] = useState<{ open: boolean; tutorName: string; tutorSubject: string }>({
+    open: false, tutorName: "", tutorSubject: "",
+  });
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedArea, setSelectedArea] = useState("All Areas");
   const [selectedGrade, setSelectedGrade] = useState("All Grades");
   const [selectedMode, setSelectedMode] = useState("All Modes");
@@ -238,9 +242,9 @@ export default function FindTutor() {
   const filteredTutors = useMemo(() => {
     return tutors.filter((t) => {
       const matchesSearch =
-        !searchText ||
-        t.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        t.subject.toLowerCase().includes(searchText.toLowerCase());
+        !searchQuery ||
+        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.subject.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesSubject =
         selectedSubject === "All Subjects" || t.subjectKey === selectedSubject;
       const matchesGrade =
@@ -251,10 +255,10 @@ export default function FindTutor() {
         selectedArea === "All Areas" || t.area === selectedArea;
       return matchesSearch && matchesSubject && matchesGrade && matchesMode && matchesArea;
     });
-  }, [searchText, selectedSubject, selectedGrade, selectedMode, selectedArea]);
+  }, [searchQuery, selectedSubject, selectedGrade, selectedMode, selectedArea]);
 
   const clearAll = () => {
-    setSearchText("");
+    setSearchQuery("");
     setSelectedSubject("All Subjects");
     setSelectedGrade("All Grades");
     setSelectedMode("All Modes");
@@ -286,8 +290,8 @@ export default function FindTutor() {
               <input
                 type="text"
                 placeholder="Search by subject or tutor name..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 outline-none text-sm bg-transparent"
                 style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Nunito', sans-serif" }}
               />
@@ -513,9 +517,12 @@ export default function FindTutor() {
                   </div>
 
                   <div className="px-6 pb-5 flex gap-2">
-                    <Link href="/contact" className="flex-1 btn-primary text-xs py-2 text-center justify-center">
+                    <button
+                      onClick={() => setDemoModal({ open: true, tutorName: tutor.name, tutorSubject: tutor.subject })}
+                      className="flex-1 btn-primary text-xs py-2 text-center justify-center"
+                    >
                       Book Demo Class
-                    </Link>
+                    </button>
                     <Link href={`/tutor/${tutor.id}`} className="flex-1 btn-outline text-xs py-2 text-center justify-center">
                       View Profile
                     </Link>
@@ -524,6 +531,14 @@ export default function FindTutor() {
               ))}
             </div>
           )}
+
+          {/* Book Demo Modal */}
+          <BookDemoModal
+            open={demoModal.open}
+            onClose={() => setDemoModal({ open: false, tutorName: "", tutorSubject: "" })}
+            tutorName={demoModal.tutorName}
+            tutorSubject={demoModal.tutorSubject}
+          />
 
           {/* Load more */}
           {filteredTutors.length > 0 && (

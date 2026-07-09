@@ -62,3 +62,15 @@
 - [x] Email notification to learn.at.edunest@gmail.com on new tutor application
 - [x] Generate /sitemap.xml endpoint listing all public pages
 - [x] Add robots.txt pointing to sitemap
+
+## Next Steps Round 4
+- [ ] Add demo_bookings table to schema and run db:push
+- [ ] Add createDemoBooking and getAllDemoBookings DB helpers
+- [ ] Add demoBooking.submit tRPC procedure with notifyOwner
+- [ ] Build BookDemoModal component with date/time picker and form
+- [ ] Wire BookDemoModal to tutor cards on FindTutor page
+- [ ] Wire BookDemoModal to TutorProfile page
+- [ ] Integrate Resend API for Gmail email delivery on inquiry submit
+- [ ] Integrate Resend API for Gmail email delivery on tutor application submit
+- [ ] Integrate Resend API for Gmail email delivery on demo booking submit
+- [ ] Add Demo Bookings tab to Admin Dashboard

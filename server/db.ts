@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertInquiry, InsertTutorApplication, inquiries, InsertUser, tutorApplications, users } from "../drizzle/schema";
+import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertTutorApplication, inquiries, InsertUser, tutorApplications, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -127,4 +127,24 @@ export async function updateTutorApplicationStatus(id: number, status: "pending"
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(tutorApplications).set({ status }).where(eq(tutorApplications.id, id));
+}
+
+// ─── Demo Bookings ────────────────────────────────────────────────────────────────
+
+export async function createDemoBooking(data: InsertDemoBooking) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(demoBookings).values(data);
+}
+
+export async function getAllDemoBookings(): Promise<DemoBooking[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(demoBookings).orderBy(desc(demoBookings.createdAt));
+}
+
+export async function updateDemoBookingStatus(id: number, status: "pending" | "confirmed" | "completed" | "cancelled") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(demoBookings).set({ status }).where(eq(demoBookings.id, id));
 }

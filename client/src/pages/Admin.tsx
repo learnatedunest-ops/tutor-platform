@@ -27,6 +27,7 @@ import {
 
 type InquiryStatus = "new" | "contacted" | "resolved";
 type ApplicationStatus = "pending" | "approved" | "rejected";
+type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 
 const STATUS_COLORS: Record<string, string> = {
   new: "bg-blue-100 text-blue-700 border-blue-200",
@@ -49,7 +50,7 @@ function formatDate(date: Date | string) {
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "applications">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "applications" | "bookings">("inquiries");
 
   // Fetch data
   const {
@@ -64,6 +65,12 @@ export default function Admin() {
     refetch: refetchApps,
   } = trpc.tutorApplication.list.useQuery(undefined, { enabled: isAuthenticated && user?.role === "admin" });
 
+  const {
+    data: bookings,
+    isLoading: loadingBookings,
+    refetch: refetchBookings,
+  } = trpc.demoBooking.list.useQuery(undefined, { enabled: isAuthenticated && user?.role === "admin" });
+
   // Mutations
   const updateInquiryStatus = trpc.inquiry.updateStatus.useMutation({
     onSuccess: () => {
@@ -71,6 +78,14 @@ export default function Admin() {
       toast.success("Status updated");
     },
     onError: () => toast.error("Failed to update status"),
+  });
+
+  const updateBookingStatus = trpc.demoBooking.updateStatus.useMutation({
+    onSuccess: () => {
+      refetchBookings();
+      toast.success("Booking status updated");
+    },
+    onError: () => toast.error("Failed to update booking status"),
   });
 
   const updateAppStatus = trpc.tutorApplication.updateStatus.useMutation({
@@ -143,6 +158,7 @@ export default function Admin() {
 
   const newInquiries = inquiries?.filter(i => i.status === "new").length ?? 0;
   const pendingApps = applications?.filter(a => a.status === "pending").length ?? 0;
+  const pendingBookings = bookings?.filter(b => b.status === "pending").length ?? 0;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "oklch(0.97 0.005 80)", fontFamily: "'Nunito', sans-serif" }}>
@@ -181,6 +197,8 @@ export default function Admin() {
             { label: "New Inquiries", value: newInquiries, icon: Mail, color: "#3b82f6" },
             { label: "Total Applications", value: applications?.length ?? 0, icon: GraduationCap, color: "oklch(0.14 0.02 270)" },
             { label: "Pending Applications", value: pendingApps, icon: Clock, color: "#f59e0b" },
+            { label: "Demo Bookings", value: bookings?.length ?? 0, icon: BookOpen, color: "#22c55e" },
+            { label: "Pending Bookings", value: pendingBookings, icon: Users, color: "#8b5cf6" },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color}18` }}>
@@ -195,8 +213,8 @@ export default function Admin() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          {(["inquiries", "applications"] as const).map(tab => (
+        <div className="flex gap-2 mb-6 flex-wrap">
+          {(["inquiries", "applications", "bookings"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -209,13 +227,15 @@ export default function Admin() {
             >
               {tab === "inquiries" ? (
                 <span className="flex items-center gap-2"><MessageSquare size={15} /> Contact Inquiries {newInquiries > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{newInquiries}</span>}</span>
-              ) : (
+              ) : tab === "applications" ? (
                 <span className="flex items-center gap-2"><GraduationCap size={15} /> Tutor Applications {pendingApps > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingApps}</span>}</span>
+              ) : (
+                <span className="flex items-center gap-2"><BookOpen size={15} /> Demo Bookings {pendingBookings > 0 && <span className="bg-white text-green-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingBookings}</span>}</span>
               )}
             </button>
           ))}
           <button
-            onClick={() => { refetchInquiries(); refetchApps(); }}
+            onClick={() => { refetchInquiries(); refetchApps(); refetchBookings(); }}
             className="ml-auto flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             <RefreshCw size={15} /> Refresh
@@ -293,6 +313,93 @@ export default function Admin() {
                             <option value="new">New</option>
                             <option value="contacted">Contacted</option>
                             <option value="resolved">Resolved</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Demo Bookings Table */}
+        {activeTab === "bookings" && (
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                Demo Class Bookings ({bookings?.length ?? 0})
+              </h2>
+            </div>
+            {loadingBookings ? (
+              <div className="p-12 text-center text-gray-400">
+                <div className="w-8 h-8 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                Loading bookings...
+              </div>
+            ) : !bookings?.length ? (
+              <div className="p-12 text-center text-gray-400">
+                <BookOpen size={40} className="mx-auto mb-3 opacity-30" />
+                <p>No demo bookings yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-left">
+                      {["#", "Student", "Contact", "Tutor", "Subject / Grade", "Schedule", "Mode", "Status", "Actions"].map(h => (
+                        <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {bookings.map(bk => (
+                      <tr key={bk.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-4 text-gray-400 font-mono text-xs">{bk.id}</td>
+                        <td className="px-4 py-4 font-semibold text-gray-800 whitespace-nowrap">{bk.studentName}</td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col gap-0.5">
+                            <a href={`mailto:${bk.studentEmail}`} className="flex items-center gap-1 text-blue-600 hover:underline text-xs">
+                              <Mail size={11} /> {bk.studentEmail}
+                            </a>
+                            <a href={`tel:${bk.studentPhone}`} className="flex items-center gap-1 text-green-600 hover:underline text-xs">
+                              <Phone size={11} /> {bk.studentPhone}
+                            </a>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-700 font-medium whitespace-nowrap">{bk.tutorName}</td>
+                        <td className="px-4 py-4 text-xs text-gray-600">
+                          <div className="flex items-center gap-1"><BookOpen size={11} /> {bk.subject}</div>
+                          <div className="text-gray-400 mt-0.5">{bk.grade}</div>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-700">
+                          <div className="font-semibold">{bk.preferredDate}</div>
+                          <div className="text-gray-400 flex items-center gap-1"><Clock size={10} /> {bk.preferredTime}</div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full capitalize">{bk.mode.replace("_", " ")}</span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${
+                            bk.status === "pending" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
+                            bk.status === "confirmed" ? "bg-blue-100 text-blue-700 border-blue-200" :
+                            bk.status === "completed" ? "bg-green-100 text-green-700 border-green-200" :
+                            "bg-red-100 text-red-700 border-red-200"
+                          }`}>
+                            {bk.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <select
+                            value={bk.status}
+                            onChange={e => updateBookingStatus.mutate({ id: bk.id, status: e.target.value as BookingStatus })}
+                            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 cursor-pointer hover:border-green-400 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300"
+                            disabled={updateBookingStatus.isPending}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
                           </select>
                         </td>
                       </tr>

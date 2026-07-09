@@ -59,3 +59,27 @@ export const tutorApplications = mysqlTable("tutor_applications", {
 
 export type TutorApplication = typeof tutorApplications.$inferSelect;
 export type InsertTutorApplication = typeof tutorApplications.$inferInsert;
+
+/**
+ * Demo class booking requests
+ */
+export const demoBookings = mysqlTable("demo_bookings", {
+  id: int("id").autoincrement().primaryKey(),
+  tutorName: varchar("tutorName", { length: 128 }).notNull(),
+  tutorSubject: varchar("tutorSubject", { length: 128 }).notNull(),
+  studentName: varchar("studentName", { length: 128 }).notNull(),
+  studentEmail: varchar("studentEmail", { length: 320 }).notNull(),
+  studentPhone: varchar("studentPhone", { length: 20 }).notNull(),
+  grade: varchar("grade", { length: 64 }).notNull(),
+  subject: varchar("subject", { length: 128 }).notNull(),
+  preferredDate: varchar("preferredDate", { length: 32 }).notNull(),
+  preferredTime: varchar("preferredTime", { length: 32 }).notNull(),
+  mode: mysqlEnum("mode", ["home_tuition", "online"]).notNull(),
+  message: text("message"),
+  status: mysqlEnum("status", ["pending", "confirmed", "completed", "cancelled"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DemoBooking = typeof demoBookings.$inferSelect;
+export type InsertDemoBooking = typeof demoBookings.$inferInsert;

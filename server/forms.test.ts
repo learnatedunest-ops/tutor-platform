@@ -124,10 +124,9 @@ describe("inquiry.list", () => {
     expect(Array.isArray(result)).toBe(true);
   });
 
-  it("returns empty array for non-admin user (restricted)", async () => {
+  it("throws FORBIDDEN for non-admin user (restricted)", async () => {
     const caller = appRouter.createCaller(createUserContext());
-    const result = await caller.inquiry.list();
-    expect(result).toEqual([]);
+    await expect(caller.inquiry.list()).rejects.toThrow();
   });
 });
 
@@ -189,9 +188,8 @@ describe("tutorApplication.list", () => {
     expect(Array.isArray(result)).toBe(true);
   });
 
-  it("returns empty array for non-admin user (restricted)", async () => {
+  it("throws FORBIDDEN for non-admin user (restricted)", async () => {
     const caller = appRouter.createCaller(createUserContext());
-    const result = await caller.tutorApplication.list();
-    expect(result).toEqual([]);
+    await expect(caller.tutorApplication.list()).rejects.toThrow();
   });
 });

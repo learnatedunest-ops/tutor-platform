@@ -1,13 +1,17 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { notifyOwner } from "./_core/notification";
+import { sendDemoBookingEmail, sendInquiryEmail, sendTutorApplicationEmail } from "./email";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, router } from "./_core/trpc";
 import {
+  createDemoBooking,
   createInquiry,
   createTutorApplication,
+  getAllDemoBookings,
   getAllInquiries,
   getAllTutorApplications,
+  updateDemoBookingStatus,
   updateInquiryStatus,
   updateTutorApplicationStatus,
 } from "./db";
@@ -37,6 +41,20 @@ const tutorApplicationSchema = z.object({
   about: z.string().max(2000).optional(),
 });
 
+const demoBookingSchema = z.object({
+  tutorName: z.string().min(2).max(128),
+  tutorSubject: z.string().min(2).max(128),
+  studentName: z.string().min(2).max(128),
+  studentEmail: z.string().email(),
+  studentPhone: z.string().min(10).max(20),
+  grade: z.string().min(1).max(64),
+  subject: z.string().min(2).max(128),
+  preferredDate: z.string().min(1).max(32),
+  preferredTime: z.string().min(1).max(32),
+  mode: z.enum(["home_tuition", "online"]),
+  message: z.string().max(1000).optional(),
+});
+
 // ─── Router ────────────────────────────────────────────────────────────────────
 
 export const appRouter = router({
@@ -57,20 +75,16 @@ export const appRouter = router({
       .input(inquirySchema)
       .mutation(async ({ input }) => {
         await createInquiry(input);
-        // Notify owner of new inquiry
         await notifyOwner({
           title: `📩 New Inquiry from ${input.name}`,
           content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Role:** ${input.role}\n**Subject:** ${input.subject ?? "—"}\n**Area:** ${input.area ?? "—"}\n\n**Message:**\n${input.message}\n\nView all inquiries at https://edu-nest.manus.space/admin`,
         }).catch(() => {/* non-blocking */});
+        await sendInquiryEmail(input).catch(() => {/* non-blocking */});
         return { success: true };
       }),
 
-    // Admin only — list all inquiries
-    list: adminProcedure.query(async () => {
-      return getAllInquiries();
-    }),
+    list: adminProcedure.query(async () => getAllInquiries()),
 
-    // Admin only — update status
     updateStatus: adminProcedure
       .input(z.object({ id: z.number(), status: z.enum(["new", "contacted", "resolved"]) }))
       .mutation(async ({ input }) => {
@@ -85,24 +99,44 @@ export const appRouter = router({
       .input(tutorApplicationSchema)
       .mutation(async ({ input }) => {
         await createTutorApplication(input);
-        // Notify owner of new tutor application
         await notifyOwner({
           title: `🎓 New Tutor Application from ${input.name}`,
           content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Qualification:** ${input.qualification}\n**Subjects:** ${input.subjects}\n**Experience:** ${input.experience}\n**Area:** ${input.area}\n**Mode:** ${input.mode.replace("_", " ")}\n\n**About:**\n${input.about ?? "—"}\n\nView all applications at https://edu-nest.manus.space/admin`,
         }).catch(() => {/* non-blocking */});
+        await sendTutorApplicationEmail(input).catch(() => {/* non-blocking */});
         return { success: true };
       }),
 
-    // Admin only — list all applications
-    list: adminProcedure.query(async () => {
-      return getAllTutorApplications();
-    }),
+    list: adminProcedure.query(async () => getAllTutorApplications()),
 
-    // Admin only — update status
     updateStatus: adminProcedure
       .input(z.object({ id: z.number(), status: z.enum(["pending", "approved", "rejected"]) }))
       .mutation(async ({ input }) => {
         await updateTutorApplicationStatus(input.id, input.status);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Demo Bookings ──────────────────────────────────────────────────────────
+  demoBooking: router({
+    submit: publicProcedure
+      .input(demoBookingSchema)
+      .mutation(async ({ input }) => {
+        await createDemoBooking(input);
+        await notifyOwner({
+          title: `📚 Demo Class Booked with ${input.tutorName}`,
+          content: `**Student:** ${input.studentName}\n**Email:** ${input.studentEmail}\n**Phone:** ${input.studentPhone}\n**Grade:** ${input.grade}\n**Subject:** ${input.subject}\n**Tutor:** ${input.tutorName} (${input.tutorSubject})\n**Date:** ${input.preferredDate}\n**Time:** ${input.preferredTime}\n**Mode:** ${input.mode.replace("_", " ")}\n\n**Message:** ${input.message ?? "—"}\n\nManage at https://edu-nest.manus.space/admin`,
+        }).catch(() => {});
+        await sendDemoBookingEmail(input).catch(() => {/* non-blocking */});
+        return { success: true };
+      }),
+
+    list: adminProcedure.query(async () => getAllDemoBookings()),
+
+    updateStatus: adminProcedure
+      .input(z.object({ id: z.number(), status: z.enum(["pending", "confirmed", "completed", "cancelled"]) }))
+      .mutation(async ({ input }) => {
+        await updateDemoBookingStatus(input.id, input.status);
         return { success: true };
       }),
   }),
