@@ -79,7 +79,7 @@ export const appRouter = router({
           title: `📩 New Inquiry from ${input.name}`,
           content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Role:** ${input.role}\n**Subject:** ${input.subject ?? "—"}\n**Area:** ${input.area ?? "—"}\n\n**Message:**\n${input.message}\n\nView all inquiries at https://edu-nest.manus.space/admin`,
         }).catch(() => {/* non-blocking */});
-        await sendInquiryEmail(input).catch(() => {/* non-blocking */});
+        await sendInquiryEmail(input).catch((err) => console.error("[Email] Failed to send inquiry email:", err));
         return { success: true };
       }),
 
@@ -103,7 +103,7 @@ export const appRouter = router({
           title: `🎓 New Tutor Application from ${input.name}`,
           content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Qualification:** ${input.qualification}\n**Subjects:** ${input.subjects}\n**Experience:** ${input.experience}\n**Area:** ${input.area}\n**Mode:** ${input.mode.replace("_", " ")}\n\n**About:**\n${input.about ?? "—"}\n\nView all applications at https://edu-nest.manus.space/admin`,
         }).catch(() => {/* non-blocking */});
-        await sendTutorApplicationEmail(input).catch(() => {/* non-blocking */});
+        await sendTutorApplicationEmail(input).catch((err) => console.error("[Email] Failed to send tutor application email:", err));
         return { success: true };
       }),
 
@@ -126,8 +126,8 @@ export const appRouter = router({
         await notifyOwner({
           title: `📚 Demo Class Booked with ${input.tutorName}`,
           content: `**Student:** ${input.studentName}\n**Email:** ${input.studentEmail}\n**Phone:** ${input.studentPhone}\n**Grade:** ${input.grade}\n**Subject:** ${input.subject}\n**Tutor:** ${input.tutorName} (${input.tutorSubject})\n**Date:** ${input.preferredDate}\n**Time:** ${input.preferredTime}\n**Mode:** ${input.mode.replace("_", " ")}\n\n**Message:** ${input.message ?? "—"}\n\nManage at https://edu-nest.manus.space/admin`,
-        }).catch(() => {});
-        await sendDemoBookingEmail(input).catch(() => {/* non-blocking */});
+        }).catch((err) => console.error("[Notify] Failed to send owner notification:", err));
+        await sendDemoBookingEmail(input).catch((err) => console.error("[Email] Failed to send demo booking email:", err));
         return { success: true };
       }),
 

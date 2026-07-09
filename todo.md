@@ -64,13 +64,13 @@
 - [x] Add robots.txt pointing to sitemap
 
 ## Next Steps Round 4
-- [ ] Add demo_bookings table to schema and run db:push
-- [ ] Add createDemoBooking and getAllDemoBookings DB helpers
-- [ ] Add demoBooking.submit tRPC procedure with notifyOwner
-- [ ] Build BookDemoModal component with date/time picker and form
-- [ ] Wire BookDemoModal to tutor cards on FindTutor page
-- [ ] Wire BookDemoModal to TutorProfile page
-- [ ] Integrate Resend API for Gmail email delivery on inquiry submit
-- [ ] Integrate Resend API for Gmail email delivery on tutor application submit
-- [ ] Integrate Resend API for Gmail email delivery on demo booking submit
-- [ ] Add Demo Bookings tab to Admin Dashboard
+- [x] Add demo_bookings table to schema and run db:push
+- [x] Add createDemoBooking and getAllDemoBookings DB helpers
+- [x] Add demoBooking.submit tRPC procedure with notifyOwner
+- [x] Build BookDemoModal component with date/time picker and form
+- [x] Wire BookDemoModal to tutor cards on FindTutor page
+- [x] Wire BookDemoModal to TutorProfile page
+- [x] Integrate Resend API for Gmail email delivery on inquiry submit
+- [x] Integrate Resend API for Gmail email delivery on tutor application submit
+- [x] Integrate Resend API for Gmail email delivery on demo booking submit
+- [x] Add Demo Bookings tab to Admin Dashboard
