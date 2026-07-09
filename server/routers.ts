@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   createInquiry,
   createTutorApplication,
@@ -60,20 +60,14 @@ export const appRouter = router({
       }),
 
     // Admin only — list all inquiries
-    list: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") {
-        return [];
-      }
+    list: adminProcedure.query(async () => {
       return getAllInquiries();
     }),
 
     // Admin only — update status
-    updateStatus: protectedProcedure
+    updateStatus: adminProcedure
       .input(z.object({ id: z.number(), status: z.enum(["new", "contacted", "resolved"]) }))
-      .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== "admin") {
-          throw new Error("Forbidden");
-        }
+      .mutation(async ({ input }) => {
         await updateInquiryStatus(input.id, input.status);
         return { success: true };
       }),
@@ -89,20 +83,14 @@ export const appRouter = router({
       }),
 
     // Admin only — list all applications
-    list: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") {
-        return [];
-      }
+    list: adminProcedure.query(async () => {
       return getAllTutorApplications();
     }),
 
     // Admin only — update status
-    updateStatus: protectedProcedure
+    updateStatus: adminProcedure
       .input(z.object({ id: z.number(), status: z.enum(["pending", "approved", "rejected"]) }))
-      .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== "admin") {
-          throw new Error("Forbidden");
-        }
+      .mutation(async ({ input }) => {
         await updateTutorApplicationStatus(input.id, input.status);
         return { success: true };
       }),

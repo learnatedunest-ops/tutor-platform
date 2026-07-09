@@ -41,3 +41,17 @@
 - [x] Scroll-reveal animations
 - [x] Animated stats counter
 - [x] Responsive design (mobile-first)
+
+## SEO & Social
+- [x] Open Graph meta tags (og:title, og:description, og:image, og:url) in index.html
+- [x] Twitter Card meta tags
+- [x] Per-page SEO meta tags (title, description, keywords) using react-helmet or dynamic head
+- [x] City-specific keywords for Bengaluru neighbourhoods
+
+## Admin Dashboard
+- [x] Admin-only tRPC procedures to list/update inquiries
+- [x] Admin-only tRPC procedures to list/update tutor applications
+- [x] Protected /admin route (requires Manus login + admin role)
+- [x] Admin dashboard UI: inquiries table with status management
+- [x] Admin dashboard UI: tutor applications table with status management
+- [x] Status update mutation (new → contacted → resolved / pending → approved → rejected)
