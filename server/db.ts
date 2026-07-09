@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertTutorApplication, inquiries, InsertUser, tutorApplications, users } from "../drizzle/schema";
+import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertTutor, InsertTutorApplication, inquiries, InsertUser, tutorApplications, tutors, Tutor, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -147,4 +147,51 @@ export async function updateDemoBookingStatus(id: number, status: "pending" | "c
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(demoBookings).set({ status }).where(eq(demoBookings.id, id));
+}
+
+// ─── Tutors ───────────────────────────────────────────────────────────────────
+
+export async function createTutor(data: InsertTutor): Promise<Tutor> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(tutors).values(data);
+  const result = await db.select().from(tutors).orderBy(desc(tutors.createdAt)).limit(1);
+  return result[0]!;
+}
+
+export async function getAllTutors(): Promise<Tutor[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tutors).where(eq(tutors.isActive, "yes")).orderBy(desc(tutors.createdAt));
+}
+
+export async function getAllTutorsAdmin(): Promise<Tutor[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tutors).orderBy(desc(tutors.createdAt));
+}
+
+export async function getTutorById(id: number): Promise<Tutor | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(tutors).where(eq(tutors.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateTutor(id: number, data: Partial<InsertTutor>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(tutors).set(data).where(eq(tutors.id, id));
+}
+
+export async function deleteTutor(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(tutors).where(eq(tutors.id, id));
+}
+
+export async function getDemoBookingsByEmail(email: string): Promise<DemoBooking[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(demoBookings).where(eq(demoBookings.studentEmail, email)).orderBy(desc(demoBookings.createdAt));
 }

@@ -138,6 +138,9 @@ export default function Navbar() {
 
             {/* Desktop CTAs */}
             <div className="hidden lg:flex items-center gap-3">
+              <Link href="/portal" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
+                My Portal
+              </Link>
               <Link href="/become-tutor" className="btn-outline text-sm py-2 px-5">
                 Become a Tutor
               </Link>

@@ -1,0 +1,23 @@
+CREATE TABLE `tutors` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`name` varchar(128) NOT NULL,
+	`email` varchar(320),
+	`phone` varchar(20),
+	`photo` varchar(512),
+	`subjects` varchar(512) NOT NULL,
+	`qualification` varchar(256) NOT NULL,
+	`experience` varchar(64) NOT NULL,
+	`area` varchar(128) NOT NULL,
+	`areas` varchar(512),
+	`mode` enum('home_tuition','online','both') NOT NULL DEFAULT 'both',
+	`rating` varchar(8) NOT NULL DEFAULT '4.8',
+	`reviewCount` int NOT NULL DEFAULT 0,
+	`bio` text,
+	`languages` varchar(256) DEFAULT 'English, Kannada',
+	`boards` varchar(256) DEFAULT 'CBSE, ICSE',
+	`isVerified` enum('yes','no') NOT NULL DEFAULT 'yes',
+	`isActive` enum('yes','no') NOT NULL DEFAULT 'yes',
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `tutors_id` PRIMARY KEY(`id`)
+);

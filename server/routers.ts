@@ -3,16 +3,23 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { notifyOwner } from "./_core/notification";
 import { sendDemoBookingEmail, sendInquiryEmail, sendTutorApplicationEmail } from "./email";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   createDemoBooking,
   createInquiry,
+  createTutor,
   createTutorApplication,
+  deleteTutor,
   getAllDemoBookings,
   getAllInquiries,
+  getAllTutors,
+  getAllTutorsAdmin,
+  getDemoBookingsByEmail,
+  getTutorById,
   getAllTutorApplications,
   updateDemoBookingStatus,
   updateInquiryStatus,
+  updateTutor,
   updateTutorApplicationStatus,
 } from "./db";
 import { z } from "zod";
@@ -53,6 +60,26 @@ const demoBookingSchema = z.object({
   preferredTime: z.string().min(1).max(32),
   mode: z.enum(["home_tuition", "online"]),
   message: z.string().max(1000).optional(),
+});
+
+const tutorCreateSchema = z.object({
+  name: z.string().min(2).max(128),
+  email: z.string().email().optional(),
+  phone: z.string().min(10).max(20).optional(),
+  photo: z.string().url().optional(),
+  subjects: z.string().min(2).max(512),
+  qualification: z.string().min(2).max(256),
+  experience: z.string().min(1).max(64),
+  area: z.string().min(2).max(128),
+  areas: z.string().max(512).optional(),
+  mode: z.enum(["home_tuition", "online", "both"]).default("both"),
+  rating: z.string().max(8).optional(),
+  reviewCount: z.number().int().min(0).optional(),
+  bio: z.string().max(2000).optional(),
+  languages: z.string().max(256).optional(),
+  boards: z.string().max(256).optional(),
+  isVerified: z.enum(["yes", "no"]).default("yes"),
+  isActive: z.enum(["yes", "no"]).default("yes"),
 });
 
 // ─── Router ────────────────────────────────────────────────────────────────────
@@ -139,6 +166,51 @@ export const appRouter = router({
         await updateDemoBookingStatus(input.id, input.status);
         return { success: true };
       }),
+  }),
+
+  // ─── Tutors (public read, admin write) ──────────────────────────────────────
+  tutor: router({
+    list: publicProcedure.query(async () => getAllTutors()),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const t = await getTutorById(input.id);
+        if (!t) throw new Error("Tutor not found");
+        return t;
+      }),
+
+    create: adminProcedure
+      .input(tutorCreateSchema)
+      .mutation(async ({ input }) => {
+        const t = await createTutor(input);
+        return t;
+      }),
+
+    update: adminProcedure
+      .input(tutorCreateSchema.partial().extend({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await updateTutor(id, data);
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteTutor(input.id);
+        return { success: true };
+      }),
+
+    listAdmin: adminProcedure.query(async () => getAllTutorsAdmin()),
+  }),
+
+  // ─── My Bookings (logged-in students/parents) ───────────────────────────────
+  myBookings: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user.email) return [];
+      return getDemoBookingsByEmail(ctx.user.email);
+    }),
   }),
 });
 

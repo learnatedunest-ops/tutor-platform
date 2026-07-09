@@ -1,7 +1,7 @@
 /**
  * EduNest Admin Dashboard
  * Protected route — requires Manus login + admin role
- * Shows all contact inquiries and tutor applications with status management
+ * Tabs: Contact Inquiries | Tutor Applications | Demo Bookings | Manage Tutors
  */
 
 import { useState } from "react";
@@ -10,24 +10,15 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { toast } from "sonner";
 import {
-  Users,
-  BookOpen,
-  Mail,
-  Phone,
-  MapPin,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  MessageSquare,
-  GraduationCap,
-  RefreshCw,
-  LogOut,
-  ShieldAlert,
+  Users, BookOpen, Mail, Phone, MapPin, Clock,
+  CheckCircle2, XCircle, MessageSquare, GraduationCap,
+  RefreshCw, LogOut, ShieldAlert, Plus, Pencil, Trash2, UserCheck,
 } from "lucide-react";
 
 type InquiryStatus = "new" | "contacted" | "resolved";
 type ApplicationStatus = "pending" | "approved" | "rejected";
 type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
+type TutorMode = "home_tuition" | "online" | "both";
 
 const STATUS_COLORS: Record<string, string> = {
   new: "bg-blue-100 text-blue-700 border-blue-200",
@@ -38,65 +29,66 @@ const STATUS_COLORS: Record<string, string> = {
   rejected: "bg-red-100 text-red-700 border-red-200",
 };
 
+const EMPTY_TUTOR = {
+  name: "", email: "", phone: "", photo: "", subjects: "",
+  qualification: "", experience: "", area: "", areas: "",
+  mode: "both" as TutorMode, rating: "4.8", reviewCount: 0,
+  bio: "", languages: "English, Kannada", boards: "CBSE, ICSE",
+  isVerified: "yes" as "yes" | "no", isActive: "yes" as "yes" | "no",
+};
+
 function formatDate(date: Date | string) {
   return new Date(date).toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
   });
 }
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "applications" | "bookings">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "applications" | "bookings" | "tutors">("inquiries");
+  const [tutorForm, setTutorForm] = useState<typeof EMPTY_TUTOR>(EMPTY_TUTOR);
+  const [editingTutorId, setEditingTutorId] = useState<number | null>(null);
+  const [showTutorForm, setShowTutorForm] = useState(false);
+
+  const isAdmin = isAuthenticated && user?.role === "admin";
 
   // Fetch data
-  const {
-    data: inquiries,
-    isLoading: loadingInquiries,
-    refetch: refetchInquiries,
-  } = trpc.inquiry.list.useQuery(undefined, { enabled: isAuthenticated && user?.role === "admin" });
-
-  const {
-    data: applications,
-    isLoading: loadingApps,
-    refetch: refetchApps,
-  } = trpc.tutorApplication.list.useQuery(undefined, { enabled: isAuthenticated && user?.role === "admin" });
-
-  const {
-    data: bookings,
-    isLoading: loadingBookings,
-    refetch: refetchBookings,
-  } = trpc.demoBooking.list.useQuery(undefined, { enabled: isAuthenticated && user?.role === "admin" });
+  const { data: adminTutors, isLoading: loadingTutors, refetch: refetchTutors } =
+    trpc.tutor.listAdmin.useQuery(undefined, { enabled: isAdmin });
+  const { data: inquiries, isLoading: loadingInquiries, refetch: refetchInquiries } =
+    trpc.inquiry.list.useQuery(undefined, { enabled: isAdmin });
+  const { data: applications, isLoading: loadingApps, refetch: refetchApps } =
+    trpc.tutorApplication.list.useQuery(undefined, { enabled: isAdmin });
+  const { data: bookings, isLoading: loadingBookings, refetch: refetchBookings } =
+    trpc.demoBooking.list.useQuery(undefined, { enabled: isAdmin });
 
   // Mutations
   const updateInquiryStatus = trpc.inquiry.updateStatus.useMutation({
-    onSuccess: () => {
-      refetchInquiries();
-      toast.success("Status updated");
-    },
+    onSuccess: () => { refetchInquiries(); toast.success("Status updated"); },
     onError: () => toast.error("Failed to update status"),
   });
-
   const updateBookingStatus = trpc.demoBooking.updateStatus.useMutation({
-    onSuccess: () => {
-      refetchBookings();
-      toast.success("Booking status updated");
-    },
+    onSuccess: () => { refetchBookings(); toast.success("Booking status updated"); },
     onError: () => toast.error("Failed to update booking status"),
   });
-
   const updateAppStatus = trpc.tutorApplication.updateStatus.useMutation({
-    onSuccess: () => {
-      refetchApps();
-      toast.success("Status updated");
-    },
+    onSuccess: () => { refetchApps(); toast.success("Status updated"); },
     onError: () => toast.error("Failed to update status"),
   });
+  const createTutor = trpc.tutor.create.useMutation({
+    onSuccess: () => { refetchTutors(); setShowTutorForm(false); setTutorForm(EMPTY_TUTOR); setEditingTutorId(null); toast.success("Tutor added!"); },
+    onError: () => toast.error("Failed to add tutor"),
+  });
+  const updateTutorMutation = trpc.tutor.update.useMutation({
+    onSuccess: () => { refetchTutors(); setShowTutorForm(false); setTutorForm(EMPTY_TUTOR); setEditingTutorId(null); toast.success("Tutor updated!"); },
+    onError: () => toast.error("Failed to update tutor"),
+  });
+  const deleteTutorMutation = trpc.tutor.delete.useMutation({
+    onSuccess: () => { refetchTutors(); toast.success("Tutor deleted"); },
+    onError: () => toast.error("Failed to delete tutor"),
+  });
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
@@ -108,7 +100,6 @@ export default function Admin() {
     );
   }
 
-  // Not logged in
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
@@ -132,7 +123,6 @@ export default function Admin() {
     );
   }
 
-  // Logged in but not admin
   if (user?.role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
@@ -144,11 +134,7 @@ export default function Admin() {
           <p className="text-gray-500 mb-6" style={{ fontFamily: "'Nunito', sans-serif" }}>
             Your account does not have admin privileges. Please contact the site owner.
           </p>
-          <button
-            onClick={() => logout()}
-            className="w-full py-3 rounded-xl font-bold text-white bg-gray-700 transition-all hover:bg-gray-800"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
-          >
+          <button onClick={() => logout()} className="w-full py-3 rounded-xl font-bold text-white bg-gray-700 transition-all hover:bg-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
             Log Out
           </button>
         </div>
@@ -159,6 +145,7 @@ export default function Admin() {
   const newInquiries = inquiries?.filter(i => i.status === "new").length ?? 0;
   const pendingApps = applications?.filter(a => a.status === "pending").length ?? 0;
   const pendingBookings = bookings?.filter(b => b.status === "pending").length ?? 0;
+  const activeTutors = adminTutors?.filter(t => t.isActive === "yes").length ?? 0;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "oklch(0.97 0.005 80)", fontFamily: "'Nunito', sans-serif" }}>
@@ -175,15 +162,9 @@ export default function Admin() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600 hidden sm:block">
-              Welcome, <strong>{user.name ?? "Admin"}</strong>
-            </span>
-            <button
-              onClick={() => logout()}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 transition-colors"
-            >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Log Out</span>
+            <span className="text-sm text-gray-600 hidden sm:block">Welcome, <strong>{user.name ?? "Admin"}</strong></span>
+            <button onClick={() => logout()} className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 transition-colors">
+              <LogOut size={16} /><span className="hidden sm:inline">Log Out</span>
             </button>
           </div>
         </div>
@@ -191,22 +172,22 @@ export default function Admin() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           {[
             { label: "Total Inquiries", value: inquiries?.length ?? 0, icon: MessageSquare, color: "oklch(0.68 0.18 50)" },
             { label: "New Inquiries", value: newInquiries, icon: Mail, color: "#3b82f6" },
-            { label: "Total Applications", value: applications?.length ?? 0, icon: GraduationCap, color: "oklch(0.14 0.02 270)" },
-            { label: "Pending Applications", value: pendingApps, icon: Clock, color: "#f59e0b" },
+            { label: "Applications", value: applications?.length ?? 0, icon: GraduationCap, color: "oklch(0.14 0.02 270)" },
+            { label: "Pending Apps", value: pendingApps, icon: Clock, color: "#f59e0b" },
             { label: "Demo Bookings", value: bookings?.length ?? 0, icon: BookOpen, color: "#22c55e" },
-            { label: "Pending Bookings", value: pendingBookings, icon: Users, color: "#8b5cf6" },
+            { label: "Active Tutors", value: activeTutors, icon: UserCheck, color: "#8b5cf6" },
           ].map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color}18` }}>
-                <Icon size={22} style={{ color }} />
+            <div key={label} className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color}18` }}>
+                <Icon size={20} style={{ color }} />
               </div>
               <div>
-                <div className="text-2xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>{value}</div>
-                <div className="text-xs text-gray-500 font-medium">{label}</div>
+                <div className="text-xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>{value}</div>
+                <div className="text-xs text-gray-500 font-medium leading-tight">{label}</div>
               </div>
             </div>
           ))}
@@ -214,35 +195,230 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["inquiries", "applications", "bookings"] as const).map(tab => (
+          {(["inquiries", "applications", "bookings", "tutors"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                activeTab === tab
-                  ? "text-white shadow-sm"
-                  : "bg-white text-gray-500 hover:text-gray-700"
-              }`}
+              className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === tab ? "text-white shadow-sm" : "bg-white text-gray-500 hover:text-gray-700"}`}
               style={activeTab === tab ? { backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" } : { fontFamily: "'Poppins', sans-serif" }}
             >
               {tab === "inquiries" ? (
                 <span className="flex items-center gap-2"><MessageSquare size={15} /> Contact Inquiries {newInquiries > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{newInquiries}</span>}</span>
               ) : tab === "applications" ? (
                 <span className="flex items-center gap-2"><GraduationCap size={15} /> Tutor Applications {pendingApps > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingApps}</span>}</span>
-              ) : (
+              ) : tab === "bookings" ? (
                 <span className="flex items-center gap-2"><BookOpen size={15} /> Demo Bookings {pendingBookings > 0 && <span className="bg-white text-green-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingBookings}</span>}</span>
+              ) : (
+                <span className="flex items-center gap-2"><UserCheck size={15} /> Manage Tutors <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
               )}
             </button>
           ))}
           <button
-            onClick={() => { refetchInquiries(); refetchApps(); refetchBookings(); }}
+            onClick={() => { refetchInquiries(); refetchApps(); refetchBookings(); refetchTutors(); }}
             className="ml-auto flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             <RefreshCw size={15} /> Refresh
           </button>
         </div>
 
-        {/* Inquiries Table */}
+        {/* ── Tutors Management ── */}
+        {activeTab === "tutors" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                Manage Tutors ({adminTutors?.length ?? 0})
+              </h2>
+              <button
+                onClick={() => { setTutorForm(EMPTY_TUTOR); setEditingTutorId(null); setShowTutorForm(true); }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+                style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
+              >
+                <Plus size={15} /> Add Tutor
+              </button>
+            </div>
+
+            {showTutorForm && (
+              <div className="bg-white rounded-2xl shadow-sm p-6">
+                <h3 className="font-bold text-gray-800 mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                  {editingTutorId ? "Edit Tutor" : "Add New Tutor"}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {([
+                    { key: "name", label: "Full Name *", placeholder: "e.g. Priya Sharma" },
+                    { key: "subjects", label: "Subjects *", placeholder: "e.g. Mathematics, Physics" },
+                    { key: "qualification", label: "Qualification *", placeholder: "e.g. B.Tech IIT Bombay" },
+                    { key: "experience", label: "Experience *", placeholder: "e.g. 5 years" },
+                    { key: "area", label: "Primary Area *", placeholder: "e.g. Koramangala" },
+                    { key: "areas", label: "All Areas", placeholder: "e.g. Koramangala, Indiranagar" },
+                    { key: "email", label: "Email", placeholder: "tutor@email.com" },
+                    { key: "phone", label: "Phone", placeholder: "+91 9876543210" },
+                    { key: "photo", label: "Photo URL", placeholder: "https://..." },
+                    { key: "rating", label: "Rating", placeholder: "4.8" },
+                    { key: "languages", label: "Languages", placeholder: "English, Kannada" },
+                    { key: "boards", label: "Boards", placeholder: "CBSE, ICSE" },
+                  ] as { key: keyof typeof EMPTY_TUTOR; label: string; placeholder: string }[]).map(({ key, label, placeholder }) => (
+                    <div key={key}>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+                      <input
+                        type="text"
+                        value={String(tutorForm[key] ?? "")}
+                        onChange={e => setTutorForm(f => ({ ...f, [key]: key === "reviewCount" ? Number(e.target.value) : e.target.value }))}
+                        placeholder={placeholder}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                      />
+                    </div>
+                  ))}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Mode</label>
+                    <select value={tutorForm.mode} onChange={e => setTutorForm(f => ({ ...f, mode: e.target.value as TutorMode }))}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+                      <option value="both">Home + Online</option>
+                      <option value="home_tuition">Home Tuition Only</option>
+                      <option value="online">Online Only</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Verified</label>
+                    <select value={tutorForm.isVerified} onChange={e => setTutorForm(f => ({ ...f, isVerified: e.target.value as "yes" | "no" }))}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Active</label>
+                    <select value={tutorForm.isActive} onChange={e => setTutorForm(f => ({ ...f, isActive: e.target.value as "yes" | "no" }))}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Bio</label>
+                  <textarea
+                    value={tutorForm.bio}
+                    onChange={e => setTutorForm(f => ({ ...f, bio: e.target.value }))}
+                    placeholder="Short bio about the tutor..."
+                    rows={3}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none"
+                  />
+                </div>
+                <div className="flex gap-3 mt-5">
+                  <button
+                    onClick={() => {
+                      if (!tutorForm.name || !tutorForm.subjects || !tutorForm.qualification || !tutorForm.experience || !tutorForm.area) {
+                        toast.error("Please fill in all required fields"); return;
+                      }
+                      const payload = { ...tutorForm, photo: tutorForm.photo || undefined, email: tutorForm.email || undefined, phone: tutorForm.phone || undefined };
+                      if (editingTutorId) { updateTutorMutation.mutate({ id: editingTutorId, ...payload }); }
+                      else { createTutor.mutate(payload); }
+                    }}
+                    disabled={createTutor.isPending || updateTutorMutation.isPending}
+                    className="px-6 py-2.5 rounded-xl text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                    style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
+                  >
+                    {createTutor.isPending || updateTutorMutation.isPending ? "Saving..." : editingTutorId ? "Update Tutor" : "Add Tutor"}
+                  </button>
+                  <button
+                    onClick={() => { setShowTutorForm(false); setTutorForm(EMPTY_TUTOR); setEditingTutorId(null); }}
+                    className="px-6 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold transition-all hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              {loadingTutors ? (
+                <div className="p-12 text-center text-gray-400">
+                  <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  Loading tutors...
+                </div>
+              ) : !adminTutors?.length ? (
+                <div className="p-12 text-center text-gray-400">
+                  <UserCheck size={40} className="mx-auto mb-3 opacity-30" />
+                  <p>No tutors added yet. Click "Add Tutor" to get started.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 text-left">
+                        {["#", "Name", "Subjects", "Area", "Experience", "Mode", "Rating", "Status", "Actions"].map(h => (
+                          <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {adminTutors.map(t => (
+                        <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-4 text-gray-400 font-mono text-xs">{t.id}</td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: "oklch(0.68 0.18 50)" }}>
+                                {t.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-gray-800 whitespace-nowrap">{t.name}</div>
+                                {t.isVerified === "yes" && <div className="flex items-center gap-1 text-xs text-orange-500"><CheckCircle2 size={10} /> Verified</div>}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-xs text-gray-600 max-w-32"><p className="line-clamp-2">{t.subjects}</p></td>
+                          <td className="px-4 py-4 text-xs text-gray-600 whitespace-nowrap"><div className="flex items-center gap-1"><MapPin size={11} /> {t.area}</div></td>
+                          <td className="px-4 py-4 text-xs text-gray-600 whitespace-nowrap">{t.experience}</td>
+                          <td className="px-4 py-4 text-xs text-gray-600 capitalize whitespace-nowrap">{t.mode.replace("_", " ")}</td>
+                          <td className="px-4 py-4 text-xs font-semibold" style={{ color: "oklch(0.68 0.18 50)" }}>⭐ {t.rating}</td>
+                          <td className="px-4 py-4">
+                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${t.isActive === "yes" ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-500 border-gray-200"}`}>
+                              {t.isActive === "yes" ? "Active" : "Inactive"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setTutorForm({
+                                    name: t.name, email: t.email ?? "", phone: t.phone ?? "", photo: t.photo ?? "",
+                                    subjects: t.subjects, qualification: t.qualification, experience: t.experience,
+                                    area: t.area, areas: t.areas ?? "", mode: t.mode, rating: t.rating,
+                                    reviewCount: t.reviewCount, bio: t.bio ?? "", languages: t.languages ?? "",
+                                    boards: t.boards ?? "", isVerified: t.isVerified, isActive: t.isActive,
+                                  });
+                                  setEditingTutorId(t.id);
+                                  setShowTutorForm(true);
+                                  window.scrollTo({ top: 0, behavior: "smooth" });
+                                }}
+                                className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors" title="Edit"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (confirm(`Delete tutor "${t.name}"? This cannot be undone.`)) {
+                                    deleteTutorMutation.mutate({ id: t.id });
+                                  }
+                                }}
+                                className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors" title="Delete"
+                                disabled={deleteTutorMutation.isPending}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Contact Inquiries ── */}
         {activeTab === "inquiries" && (
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -277,32 +453,20 @@ export default function Admin() {
                         <td className="px-4 py-4 font-semibold text-gray-800 whitespace-nowrap">{inq.name}</td>
                         <td className="px-4 py-4">
                           <div className="flex flex-col gap-0.5">
-                            <a href={`mailto:${inq.email}`} className="flex items-center gap-1 text-blue-600 hover:underline text-xs">
-                              <Mail size={11} /> {inq.email}
-                            </a>
-                            <a href={`tel:${inq.phone}`} className="flex items-center gap-1 text-green-600 hover:underline text-xs">
-                              <Phone size={11} /> {inq.phone}
-                            </a>
+                            <a href={`mailto:${inq.email}`} className="flex items-center gap-1 text-blue-600 hover:underline text-xs"><Mail size={11} /> {inq.email}</a>
+                            <a href={`tel:${inq.phone}`} className="flex items-center gap-1 text-green-600 hover:underline text-xs"><Phone size={11} /> {inq.phone}</a>
                           </div>
                         </td>
-                        <td className="px-4 py-4">
-                          <span className="capitalize text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{inq.role}</span>
-                        </td>
+                        <td className="px-4 py-4"><span className="capitalize text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{inq.role}</span></td>
                         <td className="px-4 py-4 text-xs text-gray-600">
                           {inq.subject && <div className="flex items-center gap-1"><BookOpen size={11} /> {inq.subject}</div>}
                           {inq.area && <div className="flex items-center gap-1 text-gray-400"><MapPin size={11} /> {inq.area}</div>}
                         </td>
-                        <td className="px-4 py-4 max-w-[200px]">
-                          <p className="text-gray-600 text-xs line-clamp-2">{inq.message}</p>
-                        </td>
+                        <td className="px-4 py-4 max-w-[200px]"><p className="text-gray-600 text-xs line-clamp-2">{inq.message}</p></td>
                         <td className="px-4 py-4">
-                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${STATUS_COLORS[inq.status]}`}>
-                            {inq.status}
-                          </span>
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${STATUS_COLORS[inq.status]}`}>{inq.status}</span>
                         </td>
-                        <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">
-                          {formatDate(inq.createdAt)}
-                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">{formatDate(inq.createdAt)}</td>
                         <td className="px-4 py-4">
                           <select
                             value={inq.status}
@@ -324,13 +488,11 @@ export default function Admin() {
           </div>
         )}
 
-        {/* Demo Bookings Table */}
+        {/* ── Demo Bookings ── */}
         {activeTab === "bookings" && (
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                Demo Class Bookings ({bookings?.length ?? 0})
-              </h2>
+              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>Demo Class Bookings ({bookings?.length ?? 0})</h2>
             </div>
             {loadingBookings ? (
               <div className="p-12 text-center text-gray-400">
@@ -359,12 +521,8 @@ export default function Admin() {
                         <td className="px-4 py-4 font-semibold text-gray-800 whitespace-nowrap">{bk.studentName}</td>
                         <td className="px-4 py-4">
                           <div className="flex flex-col gap-0.5">
-                            <a href={`mailto:${bk.studentEmail}`} className="flex items-center gap-1 text-blue-600 hover:underline text-xs">
-                              <Mail size={11} /> {bk.studentEmail}
-                            </a>
-                            <a href={`tel:${bk.studentPhone}`} className="flex items-center gap-1 text-green-600 hover:underline text-xs">
-                              <Phone size={11} /> {bk.studentPhone}
-                            </a>
+                            <a href={`mailto:${bk.studentEmail}`} className="flex items-center gap-1 text-blue-600 hover:underline text-xs"><Mail size={11} /> {bk.studentEmail}</a>
+                            <a href={`tel:${bk.studentPhone}`} className="flex items-center gap-1 text-green-600 hover:underline text-xs"><Phone size={11} /> {bk.studentPhone}</a>
                           </div>
                         </td>
                         <td className="px-4 py-4 text-xs text-gray-700 font-medium whitespace-nowrap">{bk.tutorName}</td>
@@ -385,9 +543,7 @@ export default function Admin() {
                             bk.status === "confirmed" ? "bg-blue-100 text-blue-700 border-blue-200" :
                             bk.status === "completed" ? "bg-green-100 text-green-700 border-green-200" :
                             "bg-red-100 text-red-700 border-red-200"
-                          }`}>
-                            {bk.status}
-                          </span>
+                          }`}>{bk.status}</span>
                         </td>
                         <td className="px-4 py-4">
                           <select
@@ -411,13 +567,11 @@ export default function Admin() {
           </div>
         )}
 
-        {/* Applications Table */}
+        {/* ── Tutor Applications ── */}
         {activeTab === "applications" && (
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                Tutor Applications ({applications?.length ?? 0})
-              </h2>
+              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>Tutor Applications ({applications?.length ?? 0})</h2>
             </div>
             {loadingApps ? (
               <div className="p-12 text-center text-gray-400">
@@ -446,33 +600,21 @@ export default function Admin() {
                         <td className="px-4 py-4 font-semibold text-gray-800 whitespace-nowrap">{app.name}</td>
                         <td className="px-4 py-4">
                           <div className="flex flex-col gap-0.5">
-                            <a href={`mailto:${app.email}`} className="flex items-center gap-1 text-blue-600 hover:underline text-xs">
-                              <Mail size={11} /> {app.email}
-                            </a>
-                            <a href={`tel:${app.phone}`} className="flex items-center gap-1 text-green-600 hover:underline text-xs">
-                              <Phone size={11} /> {app.phone}
-                            </a>
+                            <a href={`mailto:${app.email}`} className="flex items-center gap-1 text-blue-600 hover:underline text-xs"><Mail size={11} /> {app.email}</a>
+                            <a href={`tel:${app.phone}`} className="flex items-center gap-1 text-green-600 hover:underline text-xs"><Phone size={11} /> {app.phone}</a>
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-xs text-gray-600 max-w-[140px]">
-                          <p className="line-clamp-2">{app.qualification}</p>
-                        </td>
-                        <td className="px-4 py-4 text-xs text-gray-600 max-w-[140px]">
-                          <p className="line-clamp-2">{app.subjects}</p>
-                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-600 max-w-[140px]"><p className="line-clamp-2">{app.qualification}</p></td>
+                        <td className="px-4 py-4 text-xs text-gray-600 max-w-[140px]"><p className="line-clamp-2">{app.subjects}</p></td>
                         <td className="px-4 py-4 text-xs text-gray-600 whitespace-nowrap">{app.experience}</td>
                         <td className="px-4 py-4 text-xs text-gray-600">
                           <div className="flex items-center gap-1"><MapPin size={11} /> {app.area}</div>
                           <div className="text-gray-400 mt-0.5 capitalize">{app.mode.replace("_", " ")}</div>
                         </td>
                         <td className="px-4 py-4">
-                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${STATUS_COLORS[app.status]}`}>
-                            {app.status}
-                          </span>
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${STATUS_COLORS[app.status]}`}>{app.status}</span>
                         </td>
-                        <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">
-                          {formatDate(app.createdAt)}
-                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">{formatDate(app.createdAt)}</td>
                         <td className="px-4 py-4">
                           <select
                             value={app.status}

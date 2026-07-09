@@ -9,6 +9,7 @@ import { Link } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BookDemoModal from "@/components/BookDemoModal";
+import { trpc } from "@/lib/trpc";
 import {
   Search,
   MapPin,
@@ -231,6 +232,33 @@ export default function FindTutor() {
   const [selectedSubject, setSelectedSubject] = useState("All Subjects");
   const [areaDropdownOpen, setAreaDropdownOpen] = useState(false);
 
+  // Fetch live tutors from DB, fall back to static data if empty
+  const { data: dbTutors, isLoading: tutorsLoading } = trpc.tutor.list.useQuery();
+  const liveTutors = useMemo(() => {
+    if (dbTutors && dbTutors.length > 0) {
+      return dbTutors.map((t) => ({
+        id: String(t.id),
+        name: t.name,
+        subject: t.subjects,
+        subjectKey: t.subjects.split(",")[0]?.trim() ?? t.subjects,
+        experience: t.experience,
+        rating: parseFloat(t.rating),
+        reviews: t.reviewCount,
+        area: t.area,
+        mode: t.mode === "both" ? ["Home Tuition", "Online"] : t.mode === "home_tuition" ? ["Home Tuition"] : ["Online"],
+        grades: "",
+        gradeKey: "All Grades",
+        rate: "",
+        initials: t.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2),
+        color: "#F47920",
+        verified: t.isVerified === "yes",
+        bio: t.bio ?? "",
+        photo: t.photo,
+      }));
+    }
+    return tutors; // fall back to static data
+  }, [dbTutors]);
+
   // Active filter chips
   const activeFilters = [
     selectedSubject !== "All Subjects" && { key: "subject", label: selectedSubject, clear: () => setSelectedSubject("All Subjects") },
@@ -240,7 +268,7 @@ export default function FindTutor() {
   ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
 
   const filteredTutors = useMemo(() => {
-    return tutors.filter((t) => {
+    return liveTutors.filter((t) => {
       const matchesSearch =
         !searchQuery ||
         t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -399,7 +427,7 @@ export default function FindTutor() {
               {bengaluruAreas.map((a) => <option key={a}>{a}</option>)}
             </select>
             <span className="ml-auto text-sm" style={{ color: "oklch(0.5 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
-              Showing <strong>{filteredTutors.length}</strong> of {tutors.length} tutors
+              {tutorsLoading ? "Loading tutors..." : <><strong>{filteredTutors.length}</strong> of {liveTutors.length} tutors</>}
             </span>
           </div>
 

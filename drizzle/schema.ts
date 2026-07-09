@@ -83,3 +83,32 @@ export const demoBookings = mysqlTable("demo_bookings", {
 
 export type DemoBooking = typeof demoBookings.$inferSelect;
 export type InsertDemoBooking = typeof demoBookings.$inferInsert;
+
+/**
+ * Verified tutor profiles displayed on the platform
+ */
+export const tutors = mysqlTable("tutors", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 20 }),
+  photo: varchar("photo", { length: 512 }),
+  subjects: varchar("subjects", { length: 512 }).notNull(),
+  qualification: varchar("qualification", { length: 256 }).notNull(),
+  experience: varchar("experience", { length: 64 }).notNull(),
+  area: varchar("area", { length: 128 }).notNull(),
+  areas: varchar("areas", { length: 512 }),
+  mode: mysqlEnum("mode", ["home_tuition", "online", "both"]).default("both").notNull(),
+  rating: varchar("rating", { length: 8 }).default("4.8").notNull(),
+  reviewCount: int("reviewCount").default(0).notNull(),
+  bio: text("bio"),
+  languages: varchar("languages", { length: 256 }).default("English, Kannada"),
+  boards: varchar("boards", { length: 256 }).default("CBSE, ICSE"),
+  isVerified: mysqlEnum("isVerified", ["yes", "no"]).default("yes").notNull(),
+  isActive: mysqlEnum("isActive", ["yes", "no"]).default("yes").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Tutor = typeof tutors.$inferSelect;
+export type InsertTutor = typeof tutors.$inferInsert;
