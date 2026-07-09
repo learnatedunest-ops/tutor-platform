@@ -89,6 +89,22 @@ export default function Admin() {
     onError: () => toast.error("Failed to delete tutor"),
   });
 
+  // Student requirements — must be declared before any early returns (Rules of Hooks)
+  const { data: requirements, isLoading: loadingRequirements, refetch: refetchRequirements } =
+    trpc.studentRequirement.list.useQuery(undefined, { enabled: isAdmin });
+  const updateRequirementStatus = trpc.studentRequirement.updateStatus.useMutation({
+    onSuccess: () => { refetchRequirements(); toast.success("Status updated"); },
+    onError: () => toast.error("Failed to update status"),
+  });
+
+  // Referrals — must be declared before any early returns (Rules of Hooks)
+  const { data: referrals, isLoading: loadingReferrals, refetch: refetchReferrals } =
+    trpc.referral.list.useQuery(undefined, { enabled: isAdmin });
+  const updateReferralStatus = trpc.referral.updateStatus.useMutation({
+    onSuccess: () => { refetchReferrals(); toast.success("Referral status updated"); },
+    onError: () => toast.error("Failed to update referral status"),
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
@@ -146,23 +162,7 @@ export default function Admin() {
   const pendingApps = applications?.filter(a => a.status === "pending").length ?? 0;
   const pendingBookings = bookings?.filter(b => b.status === "pending").length ?? 0;
   const activeTutors = adminTutors?.filter(t => t.isActive === "yes").length ?? 0;
-
-  // Student requirements
-  const { data: requirements, isLoading: loadingRequirements, refetch: refetchRequirements } =
-    trpc.studentRequirement.list.useQuery(undefined, { enabled: isAdmin });
-  const updateRequirementStatus = trpc.studentRequirement.updateStatus.useMutation({
-    onSuccess: () => { refetchRequirements(); toast.success("Status updated"); },
-    onError: () => toast.error("Failed to update status"),
-  });
   const newRequirements = requirements?.filter((r: { status: string }) => r.status === "new").length ?? 0;
-
-  // Referrals
-  const { data: referrals, isLoading: loadingReferrals, refetch: refetchReferrals } =
-    trpc.referral.list.useQuery(undefined, { enabled: isAdmin });
-  const updateReferralStatus = trpc.referral.updateStatus.useMutation({
-    onSuccess: () => { refetchReferrals(); toast.success("Referral status updated"); },
-    onError: () => toast.error("Failed to update referral status"),
-  });
   const pendingReferrals = referrals?.filter((r: { status: string }) => r.status === "pending").length ?? 0;
 
   return (
