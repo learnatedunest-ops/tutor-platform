@@ -29,6 +29,20 @@
       "when": 1783599110572,
       "tag": "0003_breezy_sentinels",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1783615839542,
+      "tag": "0004_narrow_typhoid_mary",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1783616536667,
+      "tag": "0005_massive_arachne",
+      "breakpoints": true
     }
   ]
 }

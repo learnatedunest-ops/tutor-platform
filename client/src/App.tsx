@@ -20,6 +20,7 @@ import WhatsAppButton from "./components/WhatsAppButton";
 import Admin from "./pages/Admin";
 import StudentPortal from "./pages/StudentPortal";
 import SEOGuide from "./pages/SEOGuide";
+import ReferFriend from "./pages/ReferFriend";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/portal" component={StudentPortal} />
       <Route path="/seo-guide" component={SEOGuide} />
+      <Route path="/refer" component={ReferFriend} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

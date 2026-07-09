@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertTutor, InsertTutorApplication, inquiries, InsertUser, tutorApplications, tutors, Tutor, users } from "../drizzle/schema";
+import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -194,4 +194,58 @@ export async function getDemoBookingsByEmail(email: string): Promise<DemoBooking
   const db = await getDb();
   if (!db) return [];
   return db.select().from(demoBookings).where(eq(demoBookings.studentEmail, email)).orderBy(desc(demoBookings.createdAt));
+}
+
+// ─── Student Requirements ────────────────────────────────────────────────────────────────────────────────
+
+export async function createStudentRequirement(data: InsertStudentRequirement): Promise<StudentRequirement> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(studentRequirements).values(data);
+  const result = await db.select().from(studentRequirements).orderBy(desc(studentRequirements.createdAt)).limit(1);
+  return result[0]!;
+}
+
+export async function getAllStudentRequirements(): Promise<StudentRequirement[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(studentRequirements).orderBy(desc(studentRequirements.createdAt));
+}
+
+export async function updateStudentRequirementStatus(
+  id: number,
+  status: "new" | "matching" | "matched" | "closed",
+  matchData?: { matchedTutorId?: number; matchedTutorName?: string; matchNotes?: string }
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(studentRequirements).set({ status, ...matchData }).where(eq(studentRequirements.id, id));
+}
+
+// ─── Referrals ────────────────────────────────────────────────────────────────
+
+import { referrals, InsertReferral, Referral } from "../drizzle/schema";
+
+export async function createReferral(data: Omit<InsertReferral, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(referrals).values(data);
+}
+
+export async function getAllReferrals(): Promise<Referral[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(referrals).orderBy(desc(referrals.createdAt));
+}
+
+export async function updateReferralStatus(
+  id: number,
+  status: "pending" | "joined" | "rewarded",
+  discountApplied?: "yes" | "no"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const updateData: Record<string, unknown> = { status };
+  if (discountApplied) updateData.discountApplied = discountApplied;
+  await db.update(referrals).set(updateData as Partial<InsertReferral>).where(eq(referrals.id, id));
 }

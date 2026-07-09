@@ -1,0 +1,23 @@
+CREATE TABLE `student_requirements` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`name` varchar(128) NOT NULL,
+	`email` varchar(320) NOT NULL,
+	`phone` varchar(20) NOT NULL,
+	`role` enum('student','parent') NOT NULL,
+	`studentName` varchar(128),
+	`grade` varchar(64) NOT NULL,
+	`board` enum('CBSE','ICSE','State','IB','IGCSE','Other') NOT NULL,
+	`subjects` varchar(512) NOT NULL,
+	`area` varchar(128) NOT NULL,
+	`mode` enum('home_tuition','online','both') NOT NULL,
+	`budget` varchar(64),
+	`preferredTime` varchar(128),
+	`additionalNotes` text,
+	`status` enum('new','matching','matched','closed') NOT NULL DEFAULT 'new',
+	`matchedTutorId` int,
+	`matchedTutorName` varchar(128),
+	`matchNotes` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `student_requirements_id` PRIMARY KEY(`id`)
+);

@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import {
   Users, BookOpen, Mail, Phone, MapPin, Clock,
   CheckCircle2, XCircle, MessageSquare, GraduationCap,
-  RefreshCw, LogOut, ShieldAlert, Plus, Pencil, Trash2, UserCheck,
+  RefreshCw, LogOut, ShieldAlert, Plus, Pencil, Trash2, UserCheck, Gift,
 } from "lucide-react";
 
 type InquiryStatus = "new" | "contacted" | "resolved";
@@ -32,7 +32,7 @@ const STATUS_COLORS: Record<string, string> = {
 const EMPTY_TUTOR = {
   name: "", email: "", phone: "", photo: "", subjects: "",
   qualification: "", experience: "", area: "", areas: "",
-  mode: "both" as TutorMode, rating: "4.8", reviewCount: 0,
+  mode: "both" as TutorMode, rating: "4.5", reviewCount: 0,
   bio: "", languages: "English, Kannada", boards: "CBSE, ICSE",
   isVerified: "yes" as "yes" | "no", isActive: "yes" as "yes" | "no",
 };
@@ -46,7 +46,7 @@ function formatDate(date: Date | string) {
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "applications" | "bookings" | "tutors">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "applications" | "bookings" | "tutors" | "requirements" | "referrals">("inquiries");
   const [tutorForm, setTutorForm] = useState<typeof EMPTY_TUTOR>(EMPTY_TUTOR);
   const [editingTutorId, setEditingTutorId] = useState<number | null>(null);
   const [showTutorForm, setShowTutorForm] = useState(false);
@@ -147,6 +147,24 @@ export default function Admin() {
   const pendingBookings = bookings?.filter(b => b.status === "pending").length ?? 0;
   const activeTutors = adminTutors?.filter(t => t.isActive === "yes").length ?? 0;
 
+  // Student requirements
+  const { data: requirements, isLoading: loadingRequirements, refetch: refetchRequirements } =
+    trpc.studentRequirement.list.useQuery(undefined, { enabled: isAdmin });
+  const updateRequirementStatus = trpc.studentRequirement.updateStatus.useMutation({
+    onSuccess: () => { refetchRequirements(); toast.success("Status updated"); },
+    onError: () => toast.error("Failed to update status"),
+  });
+  const newRequirements = requirements?.filter((r: { status: string }) => r.status === "new").length ?? 0;
+
+  // Referrals
+  const { data: referrals, isLoading: loadingReferrals, refetch: refetchReferrals } =
+    trpc.referral.list.useQuery(undefined, { enabled: isAdmin });
+  const updateReferralStatus = trpc.referral.updateStatus.useMutation({
+    onSuccess: () => { refetchReferrals(); toast.success("Referral status updated"); },
+    onError: () => toast.error("Failed to update referral status"),
+  });
+  const pendingReferrals = referrals?.filter((r: { status: string }) => r.status === "pending").length ?? 0;
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "oklch(0.97 0.005 80)", fontFamily: "'Nunito', sans-serif" }}>
       {/* Header */}
@@ -195,7 +213,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["inquiries", "applications", "bookings", "tutors"] as const).map(tab => (
+          {(["inquiries", "applications", "bookings", "requirements", "tutors", "referrals"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -208,13 +226,17 @@ export default function Admin() {
                 <span className="flex items-center gap-2"><GraduationCap size={15} /> Tutor Applications {pendingApps > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingApps}</span>}</span>
               ) : tab === "bookings" ? (
                 <span className="flex items-center gap-2"><BookOpen size={15} /> Demo Bookings {pendingBookings > 0 && <span className="bg-white text-green-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingBookings}</span>}</span>
+              ) : tab === "requirements" ? (
+                <span className="flex items-center gap-2"><Users size={15} /> Student Requirements {newRequirements > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{newRequirements}</span>}</span>
+              ) : tab === "referrals" ? (
+                <span className="flex items-center gap-2"><Gift size={15} /> Referrals {pendingReferrals > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingReferrals}</span>}</span>
               ) : (
                 <span className="flex items-center gap-2"><UserCheck size={15} /> Manage Tutors <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
               )}
             </button>
           ))}
           <button
-            onClick={() => { refetchInquiries(); refetchApps(); refetchBookings(); refetchTutors(); }}
+            onClick={() => { refetchInquiries(); refetchApps(); refetchBookings(); refetchTutors(); refetchRequirements(); refetchReferrals(); }}
             className="ml-auto flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             <RefreshCw size={15} /> Refresh
@@ -253,7 +275,7 @@ export default function Admin() {
                     { key: "email", label: "Email", placeholder: "tutor@email.com" },
                     { key: "phone", label: "Phone", placeholder: "+91 9876543210" },
                     { key: "photo", label: "Photo URL", placeholder: "https://..." },
-                    { key: "rating", label: "Rating", placeholder: "4.8" },
+                    { key: "rating", label: "Rating", placeholder: "4.5" },
                     { key: "languages", label: "Languages", placeholder: "English, Kannada" },
                     { key: "boards", label: "Boards", placeholder: "CBSE, ICSE" },
                   ] as { key: keyof typeof EMPTY_TUTOR; label: string; placeholder: string }[]).map(({ key, label, placeholder }) => (
@@ -625,6 +647,177 @@ export default function Admin() {
                             <option value="pending">Pending</option>
                             <option value="approved">Approved</option>
                             <option value="rejected">Rejected</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+        {/* ── Student Requirements ── */}
+        {activeTab === "requirements" && (
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                Student Requirements ({requirements?.length ?? 0})
+              </h2>
+              <span className="text-xs text-gray-400">Match these with registered tutors from the Manage Tutors tab</span>
+            </div>
+            {loadingRequirements ? (
+              <div className="p-12 text-center text-gray-400">
+                <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                Loading requirements...
+              </div>
+            ) : !requirements?.length ? (
+              <div className="p-12 text-center text-gray-400">
+                <Users size={40} className="mx-auto mb-3 opacity-30" />
+                <p className="font-semibold mb-1">No requirements yet.</p>
+                <p className="text-sm">When parents/students submit their tuition requirements, they'll appear here.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-left">
+                      {["#", "Name", "Contact", "Role", "Grade / Board", "Subjects", "Area", "Mode", "Budget", "Status", "Date", "Actions"].map(h => (
+                        <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {requirements.map((req: {
+                      id: number; name: string; email: string; phone: string; role: string;
+                      studentName?: string | null; grade: string; board: string; subjects: string;
+                      area: string; mode: string; budget?: string | null; preferredTime?: string | null;
+                      additionalNotes?: string | null; status: string; matchedTutorId?: number | null;
+                      createdAt: Date;
+                    }) => (
+                      <tr key={req.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-4 text-gray-400 font-mono text-xs">{req.id}</td>
+                        <td className="px-4 py-4">
+                          <div className="font-semibold text-gray-800 whitespace-nowrap">{req.name}</div>
+                          {req.studentName && <div className="text-xs text-gray-400">Student: {req.studentName}</div>}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col gap-0.5">
+                            <a href={`mailto:${req.email}`} className="flex items-center gap-1 text-blue-600 hover:underline text-xs"><Mail size={11} /> {req.email}</a>
+                            <a href={`tel:${req.phone}`} className="flex items-center gap-1 text-green-600 hover:underline text-xs"><Phone size={11} /> {req.phone}</a>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                            req.role === "parent" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                          }`}>{req.role}</span>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-600">
+                          <div className="font-medium">{req.grade}</div>
+                          <div className="text-gray-400">{req.board}</div>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-600 max-w-[140px]"><p className="line-clamp-2">{req.subjects}</p></td>
+                        <td className="px-4 py-4 text-xs text-gray-600 whitespace-nowrap">
+                          <div className="flex items-center gap-1"><MapPin size={11} /> {req.area}</div>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-600 capitalize whitespace-nowrap">{req.mode.replace("_", " ")}</td>
+                        <td className="px-4 py-4 text-xs text-gray-600 whitespace-nowrap">{req.budget || "—"}</td>
+                        <td className="px-4 py-4">
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${
+                            req.status === "new" ? "bg-blue-100 text-blue-700 border-blue-200" :
+                            req.status === "matched" ? "bg-green-100 text-green-700 border-green-200" :
+                            req.status === "matching" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
+                            "bg-gray-100 text-gray-500 border-gray-200"
+                          }`}>{req.status}</span>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">{formatDate(req.createdAt)}</td>
+                        <td className="px-4 py-4">
+                          <select
+                            value={req.status}
+                            onChange={e => updateRequirementStatus.mutate({ id: req.id, status: e.target.value as "new" | "matching" | "matched" | "closed" })}
+                            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 cursor-pointer hover:border-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-300"
+                            disabled={updateRequirementStatus.isPending}
+                          >
+                            <option value="new">New</option>
+                            <option value="matching">Matching</option>
+                            <option value="matched">Matched</option>
+                            <option value="closed">Closed</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+        {/* ── Referrals ── */}
+        {activeTab === "referrals" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                Referrals ({referrals?.length ?? 0})
+              </h2>
+            </div>
+            {loadingReferrals ? (
+              <div className="flex justify-center py-12">
+                <div className="w-8 h-8 border-4 border-[oklch(0.68_0.18_50)] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : !referrals?.length ? (
+              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                <Gift size={40} className="mx-auto mb-3 text-gray-300" />
+                <p className="text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>No referrals yet.</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      {["Referrer", "Referee", "Code", "Status", "Discount", "Date", "Action"].map(h => (
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {referrals.map((ref: { id: number; referrerName: string; referrerEmail: string; referrerPhone?: string | null; refereeName: string; refereeEmail: string; refereePhone?: string | null; referralCode: string; status: string; discountApplied: string; createdAt: Date | string }) => (
+                      <tr key={ref.id} className="hover:bg-orange-50/30 transition-colors">
+                        <td className="px-4 py-4">
+                          <div className="font-semibold text-gray-800 text-xs">{ref.referrerName}</div>
+                          <div className="text-gray-400 text-xs">{ref.referrerEmail}</div>
+                          {ref.referrerPhone && <div className="text-gray-400 text-xs">{ref.referrerPhone}</div>}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="font-semibold text-gray-800 text-xs">{ref.refereeName}</div>
+                          <div className="text-gray-400 text-xs">{ref.refereeEmail}</div>
+                          {ref.refereePhone && <div className="text-gray-400 text-xs">{ref.refereePhone}</div>}
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className="font-mono text-xs font-bold tracking-wider px-2 py-1 rounded-lg" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)" }}>{ref.referralCode}</span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${
+                            ref.status === "pending" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
+                            ref.status === "joined" ? "bg-blue-100 text-blue-700 border-blue-200" :
+                            "bg-green-100 text-green-700 border-green-200"
+                          }`}>{ref.status}</span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                            ref.discountApplied === "yes" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                          }`}>{ref.discountApplied === "yes" ? "Applied" : "Pending"}</span>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">{formatDate(ref.createdAt)}</td>
+                        <td className="px-4 py-4">
+                          <select
+                            value={ref.status}
+                            onChange={e => updateReferralStatus.mutate({ id: ref.id, status: e.target.value as "pending" | "joined" | "rewarded", discountApplied: e.target.value === "rewarded" ? "yes" : undefined })}
+                            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 cursor-pointer hover:border-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-300"
+                            disabled={updateReferralStatus.isPending}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="joined">Joined</option>
+                            <option value="rewarded">Rewarded</option>
                           </select>
                         </td>
                       </tr>

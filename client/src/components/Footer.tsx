@@ -57,6 +57,7 @@ export default function Footer() {
                 { href: "/blog", label: "Blog & Study Tips" },
                 { href: "/faq", label: "FAQ" },
                 { href: "/contact", label: "Contact Us" },
+                { href: "/refer", label: "Refer a Friend" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link

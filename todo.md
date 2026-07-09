@@ -86,3 +86,19 @@
 - [x] My Bookings page: show logged-in user's demo booking history
 - [x] Add Google Search Console guide page at /seo-guide (handled via instructions to user)
 - [x] Update sitemap.xml to include new pages
+
+## Next Steps Round 6
+- [x] Add student_requirements table to DB schema and run db:push
+- [x] Add studentRequirement tRPC procedures (submit, admin list, update status, match tutor)
+- [x] Rewrite Find a Tutor page as a parent/student requirement registration form
+- [x] Add Requirements tab to Admin Dashboard with tutor matching UI
+- [x] Fix unrealistic ratings (4.9/5 everywhere) to realistic varied values
+- [x] Add Refer a Friend feature with referral link generation
+- [x] Add referrals table to DB schema and run db:push
+- [x] Add referral tRPC procedures (submit, admin list, update status)
+- [x] Build ReferFriend.tsx page at /refer with form, success state, copy/share referral code
+- [x] Add /refer route to App.tsx
+- [x] Add Referrals tab to Admin Dashboard (6th tab)
+- [x] Add Refer a Friend link to Navbar Resources dropdown and Footer Quick Links
+- [x] Add /refer to sitemap.xml
+- [x] All 14 tests passing, 0 TypeScript errors

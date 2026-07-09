@@ -71,7 +71,7 @@ export default function About() {
                 { num: "5,000+", label: "Students Served" },
                 { num: "200+", label: "Expert Tutors" },
                 { num: "15+", label: "Areas in Bengaluru" },
-                { num: "4.9★", label: "Average Rating" },
+                { num: "4.6★", label: "Average Rating" },
               ].map(({ num, label }) => (
                 <div key={label} className="card-hover bg-white rounded-2xl p-6 text-center border border-[oklch(0.9_0.005_80)]">
                   <div className="text-3xl font-extrabold mb-1" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>{num}</div>

@@ -7,11 +7,15 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import {
   createDemoBooking,
   createInquiry,
+  createReferral,
+  createStudentRequirement,
   createTutor,
   createTutorApplication,
   deleteTutor,
   getAllDemoBookings,
   getAllInquiries,
+  getAllReferrals,
+  getAllStudentRequirements,
   getAllTutors,
   getAllTutorsAdmin,
   getDemoBookingsByEmail,
@@ -19,6 +23,8 @@ import {
   getAllTutorApplications,
   updateDemoBookingStatus,
   updateInquiryStatus,
+  updateReferralStatus,
+  updateStudentRequirementStatus,
   updateTutor,
   updateTutorApplicationStatus,
 } from "./db";
@@ -206,11 +212,92 @@ export const appRouter = router({
   }),
 
   // ─── My Bookings (logged-in students/parents) ───────────────────────────────
+
+  // ─── Student Requirements ─────────────────────────────────────────────────────
+  studentRequirement: router({
+    submit: publicProcedure
+      .input(z.object({
+        name: z.string().min(2).max(128),
+        email: z.string().email(),
+        phone: z.string().min(10).max(20),
+        role: z.enum(["student", "parent"]),
+        studentName: z.string().max(128).optional(),
+        grade: z.string().min(1).max(64),
+        board: z.enum(["CBSE", "ICSE", "State", "IB", "IGCSE", "Other"]),
+        subjects: z.string().min(2).max(512),
+        area: z.string().min(2).max(128),
+        mode: z.enum(["home_tuition", "online", "both"]),
+        budget: z.string().max(64).optional(),
+        preferredTime: z.string().max(128).optional(),
+        additionalNotes: z.string().max(2000).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await createStudentRequirement(input);
+        await notifyOwner({
+          title: `👨‍🎓 New Tutor Requirement from ${input.name}`,
+          content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Role:** ${input.role}\n**Grade:** ${input.grade} (${input.board})\n**Subjects:** ${input.subjects}\n**Area:** ${input.area}\n**Mode:** ${input.mode.replace("_", " ")}\n**Budget:** ${input.budget ?? "—"}\n**Preferred Time:** ${input.preferredTime ?? "—"}\n\n**Notes:** ${input.additionalNotes ?? "—"}\n\nMatch a tutor at https://edu-nest.manus.space/admin`,
+        }).catch(() => {/* non-blocking */});
+        return { success: true };
+      }),
+
+    list: adminProcedure.query(async () => getAllStudentRequirements()),
+
+    updateStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["new", "matching", "matched", "closed"]),
+        matchedTutorId: z.number().optional(),
+        matchedTutorName: z.string().optional(),
+        matchNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, status, ...matchData } = input;
+        await updateStudentRequirementStatus(id, status, matchData);
+        return { success: true };
+      }),
+  }),
+
   myBookings: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user.email) return [];
       return getDemoBookingsByEmail(ctx.user.email);
     }),
+  }),
+
+  // ─── Referrals ─────────────────────────────────────────────────────────────
+  referral: router({
+    submit: publicProcedure
+      .input(z.object({
+        referrerName: z.string().min(2).max(128),
+        referrerEmail: z.string().email(),
+        referrerPhone: z.string().max(20).optional(),
+        refereeName: z.string().min(2).max(128),
+        refereeEmail: z.string().email(),
+        refereePhone: z.string().max(20).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // Generate a unique 8-char referral code
+        const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+        await createReferral({ ...input, referralCode: code });
+        await notifyOwner({
+          title: `🎁 New Referral from ${input.referrerName}`,
+          content: `**Referrer:** ${input.referrerName} (${input.referrerEmail})\n**Referred:** ${input.refereeName} (${input.refereeEmail})\n**Code:** ${code}\n\nManage at https://edu-nest.manus.space/admin`,
+        }).catch(() => {/* non-blocking */});
+        return { success: true, referralCode: code };
+      }),
+
+    list: adminProcedure.query(async () => getAllReferrals()),
+
+    updateStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "joined", "rewarded"]),
+        discountApplied: z.enum(["yes", "no"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await updateReferralStatus(input.id, input.status, input.discountApplied);
+        return { success: true };
+      }),
   }),
 });
 

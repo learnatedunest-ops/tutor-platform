@@ -252,8 +252,8 @@ export default function Home() {
                     <Star size={20} style={{ color: "#F47920" }} fill="#F47920" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>4.9 / 5 Rating</div>
-                    <div className="text-xs" style={{ color: "oklch(0.5 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>From 50,000+ reviews</div>
+                    <div className="text-xs font-bold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>4.6 / 5 Rating</div>
+                    <div className="text-xs" style={{ color: "oklch(0.5 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>From 800+ reviews</div>
                   </div>
                 </div>
               </div>

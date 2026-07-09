@@ -44,6 +44,7 @@ export default function Navbar() {
     { href: "/blog", label: "📝 Blog & Study Tips" },
     { href: "/faq", label: "❓ FAQ" },
     { href: "/subjects", label: "📚 All Subjects" },
+    { href: "/refer", label: "🎁 Refer a Friend" },
   ];
 
   const isActive = (href: string) =>
