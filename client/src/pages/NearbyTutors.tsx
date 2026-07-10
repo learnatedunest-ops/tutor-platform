@@ -2,6 +2,7 @@
  * EduNest — Nearby Tutors
  * For logged-in students/parents: shows approved tutors sorted by distance.
  * Uses browser geolocation. Requires student profile to be set up first.
+ * Includes full-profile modal with education, work experience, and Book Demo button.
  */
 
 import { useState, useEffect } from "react";
@@ -13,12 +14,39 @@ import { startLogin } from "@/const";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import {
   MapPin, BookOpen, Clock, GraduationCap,
   Loader2, Navigation, AlertCircle, RefreshCw, Users,
-  CheckCircle2, Star, Calendar, Home, Send
+  CheckCircle2, Star, Calendar, Home, Send, Briefcase,
+  Phone, Globe, X, ChevronRight
 } from "lucide-react";
 
-/** Per-tutor Book Demo button with real status tracking */
+// ─── Types ────────────────────────────────────────────────────────────────────
+type TutorRow = {
+  id: number;
+  name: string;
+  phone: string;
+  qualification: string;
+  subjects: string;
+  experience: string;
+  mode: string;
+  boards: string | null;
+  languages: string | null;
+  bio: string | null;
+  area: string | null;
+  education: string | null;
+  workExperience: string | null;
+  distKm: number | string;
+};
+
+// ─── Book Demo Button ─────────────────────────────────────────────────────────
 function BookDemoButton({ tutorProfileId }: { tutorProfileId: number }) {
   const utils = trpc.useUtils();
   const { data: existingInterest, isLoading: statusLoading } =
@@ -70,15 +98,167 @@ function BookDemoButton({ tutorProfileId }: { tutorProfileId: number }) {
   );
 }
 
+// ─── Mode Label ───────────────────────────────────────────────────────────────
 function ModeLabel({ mode }: { mode: string }) {
   const map: Record<string, string> = {
     home_tuition: "Home Tuition",
     online: "Online",
-    both: "Both",
+    both: "Both (Home & Online)",
   };
   return <span>{map[mode] ?? mode}</span>;
 }
 
+// ─── Full Profile Modal ───────────────────────────────────────────────────────
+function TutorProfileModal({
+  tutor,
+  open,
+  onClose,
+}: {
+  tutor: TutorRow | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  if (!tutor) return null;
+
+  const initials = tutor.name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg w-full p-0 overflow-hidden rounded-2xl" style={{ fontFamily: "'Nunito', sans-serif" }}>
+        {/* Header band */}
+        <div className="px-6 pt-6 pb-4" style={{ background: "linear-gradient(135deg, oklch(0.68 0.18 50) 0%, oklch(0.60 0.20 45) 100%)" }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-4">
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shrink-0"
+                style={{ backgroundColor: "rgba(255,255,255,0.25)", color: "#fff", fontFamily: "'Poppins', sans-serif" }}
+              >
+                {initials}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                  {tutor.name}
+                </h2>
+                <p className="text-sm text-white/80">{tutor.qualification}</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <MapPin size={12} className="text-white/70" />
+                  <span className="text-xs text-white/80">{tutor.area ?? "Bengaluru"} · {tutor.distKm} km away</span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-white/70 hover:text-white transition-colors mt-0.5"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Quick badges */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: "rgba(255,255,255,0.2)", color: "#fff" }}>
+              <ModeLabel mode={tutor.mode} />
+            </span>
+            <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: "rgba(255,255,255,0.2)", color: "#fff" }}>
+              {tutor.experience}
+            </span>
+            {tutor.boards && (
+              <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                {tutor.boards}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Scrollable body */}
+        <ScrollArea className="max-h-[60vh]">
+          <div className="px-6 py-5 space-y-5">
+
+            {/* Subjects */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+                Subjects
+              </p>
+              <p className="text-sm text-gray-700">{tutor.subjects}</p>
+            </div>
+
+            {/* Languages */}
+            {tutor.languages && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+                  Languages
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {tutor.languages.split(",").map((l) => (
+                    <span key={l.trim()} className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">
+                      {l.trim()}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Bio */}
+            {tutor.bio && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+                  About
+                </p>
+                <p className="text-sm text-gray-600 leading-relaxed">{tutor.bio}</p>
+              </div>
+            )}
+
+            {/* Education */}
+            {tutor.education && (
+              <div className="rounded-xl p-4" style={{ backgroundColor: "oklch(0.97 0.005 80)", border: "1px solid oklch(0.92 0.005 80)" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <GraduationCap size={15} style={{ color: "oklch(0.68 0.18 50)" }} />
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+                    Education
+                  </p>
+                </div>
+                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
+                  {tutor.education}
+                </pre>
+              </div>
+            )}
+
+            {/* Work Experience */}
+            {tutor.workExperience && (
+              <div className="rounded-xl p-4" style={{ backgroundColor: "oklch(0.97 0.005 80)", border: "1px solid oklch(0.92 0.005 80)" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Briefcase size={15} style={{ color: "oklch(0.68 0.18 50)" }} />
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+                    Work Experience
+                  </p>
+                </div>
+                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
+                  {tutor.workExperience}
+                </pre>
+              </div>
+            )}
+
+            {/* Contact hint */}
+            <div className="rounded-xl p-3 text-xs text-center" style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8" }}>
+              Book a free demo class below — EduNest will share full contact details after confirmation.
+            </div>
+
+            {/* Book Demo CTA */}
+            <BookDemoButton tutorProfileId={tutor.id} />
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function NearbyTutors() {
   const [, navigate] = useLocation();
   const { loading, isAuthenticated } = useAuth();
@@ -87,6 +267,7 @@ export default function NearbyTutors() {
   const [locError, setLocError] = useState("");
   const [locLoading, setLocLoading] = useState(false);
   const [radiusKm, setRadiusKm] = useState(10);
+  const [selectedTutor, setSelectedTutor] = useState<TutorRow | null>(null);
 
   // Check if student has a profile
   const { data: myProfile, isLoading: profileLoading } = trpc.studentProfile.getMyProfile.useQuery(
@@ -125,6 +306,13 @@ export default function NearbyTutors() {
     );
   };
 
+  // Role gate: only students can access this page
+  useEffect(() => {
+    if (!roleLoading && isAuthenticated && userRole === "tutor") {
+      navigate("/tutor-dashboard");
+    }
+  }, [roleLoading, isAuthenticated, userRole, navigate]);
+
   if (loading || profileLoading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
@@ -132,13 +320,6 @@ export default function NearbyTutors() {
       </div>
     );
   }
-
-  // Role gate: only students can access this page
-  useEffect(() => {
-    if (!roleLoading && isAuthenticated && userRole === "tutor") {
-      navigate("/tutor-dashboard");
-    }
-  }, [roleLoading, isAuthenticated, userRole, navigate]);
 
   if (!isAuthenticated) {
     return (
@@ -189,6 +370,13 @@ export default function NearbyTutors() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "oklch(0.97 0.005 80)", fontFamily: "'Nunito', sans-serif" }}>
       <SEO title="Tutors Near Me — EduNest" description="Find verified tutors near you on EduNest." url="https://edu-nest.manus.space/nearby-tutors" />
+
+      {/* Full Profile Modal */}
+      <TutorProfileModal
+        tutor={selectedTutor}
+        open={!!selectedTutor}
+        onClose={() => setSelectedTutor(null)}
+      />
 
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-40">
@@ -372,69 +560,85 @@ export default function NearbyTutors() {
             {nearbyTutors.map((tutor) => (
               <div
                 key={tutor.id}
-                className="bg-white rounded-2xl shadow-sm border p-5 transition-all hover:shadow-md"
+                className="bg-white rounded-2xl shadow-sm border transition-all hover:shadow-md"
                 style={{ borderColor: "oklch(0.92 0.005 80)" }}
               >
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
-                      {tutor.name.charAt(0).toUpperCase()}
+                {/* Card body — clickable to open modal */}
+                <button
+                  className="w-full text-left p-5 focus:outline-none"
+                  onClick={() => setSelectedTutor({ ...tutor, distKm: String(tutor.distKm) } as TutorRow)}
+                  aria-label={`View full profile of ${tutor.name}`}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+                        {tutor.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
+                          {tutor.name}
+                        </h3>
+                        <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>{tutor.qualification}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-base font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
-                        {tutor.name}
-                      </h3>
-                      <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>{tutor.qualification}</p>
+                    <div className="text-right shrink-0">
+                      <div className="flex items-center gap-1 justify-end" style={{ color: "oklch(0.68 0.18 50)" }}>
+                        <MapPin size={12} />
+                        <span className="text-sm font-bold" style={{ fontFamily: "'Poppins', sans-serif" }}>{typeof tutor.distKm === 'number' ? tutor.distKm.toFixed(1) : tutor.distKm} km</span>
+                      </div>
+                      <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>away</p>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="flex items-center gap-1 justify-end" style={{ color: "oklch(0.68 0.18 50)" }}>
-                      <MapPin size={12} />
-                      <span className="text-sm font-bold" style={{ fontFamily: "'Poppins', sans-serif" }}>{tutor.distKm} km</span>
-                    </div>
-                    <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>away</p>
-                  </div>
-                </div>
 
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
-                    <ModeLabel mode={tutor.mode} />
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8", fontFamily: "'Poppins', sans-serif" }}>
-                    {tutor.experience}
-                  </span>
-                  {tutor.boards && (
-                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "#F0FDF4", color: "#15803D", fontFamily: "'Poppins', sans-serif" }}>
-                      {tutor.boards}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+                      <ModeLabel mode={tutor.mode} />
                     </span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs mb-4">
-                  <div className="flex items-center gap-1.5" style={{ color: "oklch(0.45 0.01 270)" }}>
-                    <BookOpen size={12} style={{ color: "oklch(0.68 0.18 50)" }} />
-                    <span className="truncate">{tutor.subjects}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8", fontFamily: "'Poppins', sans-serif" }}>
+                      {tutor.experience}
+                    </span>
+                    {tutor.boards && (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "#F0FDF4", color: "#15803D", fontFamily: "'Poppins', sans-serif" }}>
+                        {tutor.boards}
+                      </span>
+                    )}
                   </div>
-                  {tutor.area && (
+
+                  <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                     <div className="flex items-center gap-1.5" style={{ color: "oklch(0.45 0.01 270)" }}>
-                      <MapPin size={12} style={{ color: "oklch(0.68 0.18 50)" }} />
-                      <span>{tutor.area}</span>
+                      <BookOpen size={12} style={{ color: "oklch(0.68 0.18 50)" }} />
+                      <span className="truncate">{tutor.subjects}</span>
+                    </div>
+                    {tutor.area && (
+                      <div className="flex items-center gap-1.5" style={{ color: "oklch(0.45 0.01 270)" }}>
+                        <MapPin size={12} style={{ color: "oklch(0.68 0.18 50)" }} />
+                        <span>{tutor.area}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {tutor.education && (
+                    <div className="mb-3 p-3 rounded-xl" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
+                      <p className="text-xs font-semibold mb-1" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>Education</p>
+                      <p className="text-xs line-clamp-1" style={{ color: "oklch(0.45 0.01 270)" }}>{tutor.education}</p>
                     </div>
                   )}
-                </div>
 
-                {tutor.education && (
-                  <div className="mb-3 p-3 rounded-xl" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
-                    <p className="text-xs font-semibold mb-1" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>Education</p>
-                    <p className="text-xs line-clamp-2" style={{ color: "oklch(0.45 0.01 270)" }}>{tutor.education}</p>
+                  {tutor.bio && (
+                    <p className="text-xs mb-3 line-clamp-2" style={{ color: "oklch(0.45 0.01 270)" }}>{tutor.bio}</p>
+                  )}
+
+                  {/* View full profile hint */}
+                  <div className="flex items-center gap-1 text-xs font-semibold" style={{ color: "oklch(0.68 0.18 50)" }}>
+                    <ChevronRight size={13} />
+                    View full profile
                   </div>
-                )}
+                </button>
 
-                {tutor.bio && (
-                  <p className="text-xs mb-4 line-clamp-2" style={{ color: "oklch(0.45 0.01 270)" }}>{tutor.bio}</p>
-                )}
-
-                <BookDemoButton tutorProfileId={tutor.id} />
+                {/* Book Demo — separate from modal trigger */}
+                <div className="px-5 pb-5">
+                  <BookDemoButton tutorProfileId={tutor.id} />
+                </div>
               </div>
             ))}
           </div>

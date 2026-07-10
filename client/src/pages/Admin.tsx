@@ -788,7 +788,7 @@ export default function Admin() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 text-left">
-                      {["#", "Name", "Contact", "Qualification", "Subjects", "Experience", "Mode", "Location", "Fee", "Status", "Submitted", "Actions"].map(h => (
+                      {["#", "Name", "Contact", "Qualification", "Subjects", "Experience", "Mode", "Location", "Education & Experience", "Status", "Submitted", "Actions"].map(h => (
                         <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -797,8 +797,9 @@ export default function Admin() {
                     {tutorProfiles.map((p: {
                       id: number; name: string; phone: string; email?: string | null;
                       qualification: string; subjects: string; experience: string;
-                      mode: string; fullAddress?: string | null; latitude?: string | null; longitude?: string | null;
-                      firstMonthFee?: string | null; nextMonthFee?: string | null;
+                      mode: string; area?: string | null; latitude?: string | null; longitude?: string | null;
+                      education?: string | null; workExperience?: string | null;
+                      bio?: string | null; boards?: string | null; languages?: string | null;
                       status: string; createdAt: Date | string;
                     }) => (
                       <tr key={p.id} className="hover:bg-gray-50 transition-colors">
@@ -815,13 +816,36 @@ export default function Admin() {
                         <td className="px-4 py-4 text-xs text-gray-600 whitespace-nowrap">{p.experience}</td>
                         <td className="px-4 py-4 text-xs text-gray-600 whitespace-nowrap capitalize">{p.mode.replace("_", " ")}</td>
                         <td className="px-4 py-4 text-xs text-gray-600 max-w-[140px]">
-                          {p.fullAddress ? <p className="line-clamp-2">{p.fullAddress}</p> : (
+                          {p.area ? <p className="line-clamp-1">{p.area}</p> : (
                             p.latitude ? <span className="text-gray-400">{parseFloat(p.latitude).toFixed(4)}, {parseFloat(p.longitude ?? "0").toFixed(4)}</span> : <span className="text-gray-300">Not set</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 text-xs text-gray-600 whitespace-nowrap">
-                          {p.firstMonthFee && <div>1st: ₹{p.firstMonthFee}</div>}
-                          {p.nextMonthFee && <div>Next: ₹{p.nextMonthFee}</div>}
+                        {/* Education & Work Experience — expandable */}
+                        <td className="px-4 py-4 text-xs text-gray-600 max-w-[220px]">
+                          {(p.education || p.workExperience) ? (
+                            <details className="group">
+                              <summary className="cursor-pointer text-orange-600 font-semibold hover:text-orange-700 list-none flex items-center gap-1 select-none">
+                                <span className="group-open:hidden">▶ View</span>
+                                <span className="hidden group-open:inline">▼ Hide</span>
+                              </summary>
+                              <div className="mt-2 space-y-2">
+                                {p.education && (
+                                  <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-orange-500 mb-0.5">Education</p>
+                                    <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">{p.education}</p>
+                                  </div>
+                                )}
+                                {p.workExperience && (
+                                  <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-blue-500 mb-0.5">Work Experience</p>
+                                    <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">{p.workExperience}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </details>
+                          ) : (
+                            <span className="text-gray-300">Not provided</span>
+                          )}
                         </td>
                         <td className="px-4 py-4">
                           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${STATUS_COLORS[p.status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>{p.status}</span>

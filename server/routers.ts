@@ -53,25 +53,25 @@ import { z } from "zod";
 // ─── Validation schemas ────────────────────────────────────────────────────────
 
 const inquirySchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(128),
-  email: z.string().email("Please enter a valid email"),
-  phone: z.string().min(10, "Please enter a valid phone number").max(20),
+  name: z.string().min(2, "Name must be at least 2 characters").max(128).trim(),
+  email: z.string().email("Please enter a valid email").max(256).trim().toLowerCase(),
+  phone: z.string().min(10, "Please enter a valid phone number").max(20).trim(),
   role: z.enum(["student", "parent", "tutor", "institution"]),
-  subject: z.string().max(128).optional(),
-  area: z.string().max(128).optional(),
-  message: z.string().min(10, "Message must be at least 10 characters"),
+  subject: z.string().max(128).trim().optional(),
+  area: z.string().max(128).trim().optional(),
+  message: z.string().min(10, "Message must be at least 10 characters").max(2000).trim(),
 });
 
 const tutorApplicationSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(128),
-  email: z.string().email("Please enter a valid email"),
-  phone: z.string().min(10, "Please enter a valid phone number").max(20),
-  qualification: z.string().min(2).max(256),
-  subjects: z.string().min(2).max(512),
-  experience: z.string().min(1).max(64),
-  area: z.string().min(2).max(128),
+  name: z.string().min(2, "Name must be at least 2 characters").max(128).trim(),
+  email: z.string().email("Please enter a valid email").max(256).trim().toLowerCase(),
+  phone: z.string().min(10, "Please enter a valid phone number").max(20).trim(),
+  qualification: z.string().min(2).max(256).trim(),
+  subjects: z.string().min(2).max(512).trim(),
+  experience: z.string().min(1).max(64).trim(),
+  area: z.string().min(2).max(128).trim(),
   mode: z.enum(["home_tuition", "online", "both"]),
-  about: z.string().max(2000).optional(),
+  about: z.string().max(2000).trim().optional(),
 });
 
 const demoBookingSchema = z.object({
@@ -358,9 +358,9 @@ export const appRouter = router({
     // Get nearby active student profiles (for approved tutors)
     getNearbyStudents: protectedProcedure
       .input(z.object({
-        latitude: z.number(),
-        longitude: z.number(),
-        radiusKm: z.number().default(10),
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
+        radiusKm: z.number().min(1).max(50).default(10),
       }))
       .query(async ({ ctx, input }) => {
         // Verify tutor is approved
@@ -435,9 +435,9 @@ export const appRouter = router({
     // Get nearby approved tutors (for students)
     getNearbyTutors: protectedProcedure
       .input(z.object({
-        latitude: z.number(),
-        longitude: z.number(),
-        radiusKm: z.number().default(10),
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
+        radiusKm: z.number().min(1).max(50).default(10),
       }))
       .query(async ({ input }) => {
         const tutorList = await getApprovedTutorProfiles();

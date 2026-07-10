@@ -180,3 +180,9 @@
 - [x] Fix Express Interest persistence — show "Interest Expressed" state after page refresh (query existing interest on load)
 - [x] Run pnpm test (14 passing), 0 TypeScript errors
 - [x] Save checkpoint
+
+## Round 14 — Full Profile Modal, Admin Education Display, Interest Bug Fix, Security
+- [x] Add full tutor profile modal on NearbyTutors page (all details + education + workExperience + Book Demo button)
+- [x] Add education/workExperience display in Admin Tutor Profiles tab (expandable section)
+- [x] Fix tutor interest approval bug: show accepted/declined status in TutorDashboard instead of generic "Interest Expressed"
+- [x] Security hardening: helmet.js, rate limiting, input validation, CORS tightening, CSP headers

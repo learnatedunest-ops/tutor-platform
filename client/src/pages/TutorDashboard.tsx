@@ -55,12 +55,16 @@ export default function TutorDashboard() {
     { enabled: isAuthenticated }
   );
 
-  // Build the expressed IDs set from DB data + local optimistic updates
+  // Build a map of studentProfileId → status from DB data + local optimistic adds
+  // This lets us show accepted/declined states after admin approval
   const [localExpressedIds, setLocalExpressedIds] = useState<Set<number>>(new Set());
-  const expressedIds = new Set([
-    ...(myInterests?.map(i => i.studentProfileId) ?? []),
-    ...Array.from(localExpressedIds),
-  ]);
+  const interestStatusMap = new Map<number, string>(
+    myInterests?.map(i => [i.studentProfileId, i.status]) ?? []
+  );
+  // Locally added (optimistic) ones not yet in DB response default to 'pending'
+  Array.from(localExpressedIds).forEach(id => {
+    if (!interestStatusMap.has(id)) interestStatusMap.set(id, 'pending');
+  });
 
   // Express Interest mutation
   const expressInterest = trpc.tutorInterest.express.useMutation({
@@ -453,11 +457,31 @@ export default function TutorDashboard() {
                   </div>
                 )}
 
-                {/* Express Interest */}
-                {expressedIds.has(student.id) ? (
-                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm" style={{ backgroundColor: "oklch(0.95 0.05 145)", color: "oklch(0.35 0.12 145)", fontFamily: "'Poppins', sans-serif" }}>
-                    <CheckCircle2 size={14} /> Interest Expressed
-                  </div>
+                {/* Express Interest — shows real status from DB after admin action */}
+                {interestStatusMap.has(student.id) ? (
+                  (() => {
+                    const status = interestStatusMap.get(student.id)!;
+                    if (status === 'accepted') {
+                      return (
+                        <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm" style={{ backgroundColor: "#DCFCE7", color: "#15803D", fontFamily: "'Poppins', sans-serif" }}>
+                          <CheckCircle2 size={14} /> Interest Accepted — EduNest will contact you!
+                        </div>
+                      );
+                    }
+                    if (status === 'declined') {
+                      return (
+                        <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm" style={{ backgroundColor: "#FEE2E2", color: "#DC2626", fontFamily: "'Poppins', sans-serif" }}>
+                          <AlertCircle size={14} /> Interest Declined
+                        </div>
+                      );
+                    }
+                    // pending (default)
+                    return (
+                      <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm" style={{ backgroundColor: "oklch(0.95 0.05 145)", color: "oklch(0.35 0.12 145)", fontFamily: "'Poppins', sans-serif" }}>
+                        <CheckCircle2 size={14} /> Interest Expressed — Awaiting Review
+                      </div>
+                    );
+                  })()
                 ) : (
                   <button
                     onClick={() => expressInterest.mutate({ studentProfileId: student.id })}
