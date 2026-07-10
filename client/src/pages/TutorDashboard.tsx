@@ -97,6 +97,13 @@ export default function TutorDashboard() {
     );
   };
 
+  // Role gate: only tutors can access this page — MUST be before any early return
+  useEffect(() => {
+    if (!roleLoading && isAuthenticated && userRole === "student") {
+      navigate("/nearby-tutors");
+    }
+  }, [roleLoading, isAuthenticated, userRole, navigate]);
+
   if (loading || profileLoading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
@@ -104,13 +111,6 @@ export default function TutorDashboard() {
       </div>
     );
   }
-
-  // Role gate: only tutors can access this page
-  useEffect(() => {
-    if (!roleLoading && isAuthenticated && userRole === "student") {
-      navigate("/nearby-tutors");
-    }
-  }, [roleLoading, isAuthenticated, userRole, navigate]);
 
   if (!isAuthenticated) {
     return (
@@ -264,10 +264,10 @@ export default function TutorDashboard() {
               <MapPin size={14} style={{ color: "oklch(0.68 0.18 50)" }} />
               <span>{myProfile.area ?? "Location set"}</span>
             </div>
-            {myProfile.firstMonthFee && (
+            {myProfile.education && (
               <div className="flex items-center gap-1.5" style={{ color: "oklch(0.35 0.02 270)" }}>
-                <IndianRupee size={14} style={{ color: "oklch(0.68 0.18 50)" }} />
-                <span>₹{myProfile.firstMonthFee} first month</span>
+                <BookOpen size={14} style={{ color: "oklch(0.68 0.18 50)" }} />
+                <span className="truncate max-w-xs">{myProfile.education.split("\n")[0]}</span>
               </div>
             )}
           </div>

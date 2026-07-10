@@ -191,13 +191,9 @@ export const tutorProfiles = mysqlTable("tutor_profiles", {
   languages: varchar("languages", { length: 256 }).default("English, Kannada").notNull(),
   mode: mysqlEnum("mode", ["home_tuition", "online", "both"]).default("both").notNull(),
   bio: text("bio"),
-  // Schedule & fees
-  demoTime: varchar("demoTime", { length: 128 }),       // e.g. "10:00 AM - 12:00 PM"
-  regularTime: varchar("regularTime", { length: 128 }), // e.g. "04:30 PM - 05:30 PM"
-  sessionDuration: varchar("sessionDuration", { length: 64 }), // e.g. "1.0 hr/day"
-  daysPerWeek: varchar("daysPerWeek", { length: 128 }),  // e.g. "mon, tue, wed, thu, fri"
-  firstMonthFee: varchar("firstMonthFee", { length: 32 }),
-  nextMonthFee: varchar("nextMonthFee", { length: 32 }),
+  // Education & Work Experience
+  education: text("education"),        // e.g. "B.Tech IIT Bombay (2015-2019), M.Sc Mathematics Delhi University (2019-2021)"
+  workExperience: text("workExperience"), // e.g. "Senior Maths Tutor at Byju's (2021-2023), Freelance tutor (2023-present)"
   // Location
   latitude: decimal("latitude", { precision: 10, scale: 7 }),
   longitude: decimal("longitude", { precision: 10, scale: 7 }),

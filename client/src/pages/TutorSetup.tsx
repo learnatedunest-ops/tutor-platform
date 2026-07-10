@@ -28,7 +28,7 @@ const DAY_LABELS: Record<string, string> = {
 const STEPS = [
   { id: 1, label: "Personal Info" },
   { id: 2, label: "Teaching Details" },
-  { id: 3, label: "Schedule & Fees" },
+  { id: 3, label: "Education & Experience" },
   { id: 4, label: "Location" },
 ];
 
@@ -43,12 +43,8 @@ interface FormData {
   languages: string;
   mode: "home_tuition" | "online" | "both";
   bio: string;
-  demoTime: string;
-  regularTime: string;
-  sessionDuration: string;
-  daysPerWeek: string[];
-  firstMonthFee: string;
-  nextMonthFee: string;
+  education: string;
+  workExperience: string;
   latitude: number | null;
   longitude: number | null;
   fullAddress: string;
@@ -58,10 +54,8 @@ interface FormData {
 const INITIAL: FormData = {
   name: "", email: "", phone: "", qualification: "", subjects: "",
   experience: "", boards: "CBSE, ICSE", languages: "English, Kannada",
-  mode: "both", bio: "", demoTime: "", regularTime: "",
-  sessionDuration: "1 hr/day", daysPerWeek: ["mon", "tue", "wed", "thu", "fri"],
-  firstMonthFee: "", nextMonthFee: "", latitude: null, longitude: null,
-  fullAddress: "", area: "",
+  mode: "both", bio: "", education: "", workExperience: "",
+  latitude: null, longitude: null, fullAddress: "", area: "",
 };
 
 function LocationPicker({ onLocation }: { onLocation: (lat: number, lng: number, address: string) => void }) {
@@ -185,12 +179,8 @@ export default function TutorSetup() {
         languages: existingProfile.languages ?? "English, Kannada",
         mode: existingProfile.mode,
         bio: existingProfile.bio ?? "",
-        demoTime: existingProfile.demoTime ?? "",
-        regularTime: existingProfile.regularTime ?? "",
-        sessionDuration: existingProfile.sessionDuration ?? "1 hr/day",
-        daysPerWeek: existingProfile.daysPerWeek ? existingProfile.daysPerWeek.split(",").map(d => d.trim()) : ["mon", "tue", "wed", "thu", "fri"],
-        firstMonthFee: existingProfile.firstMonthFee ?? "",
-        nextMonthFee: existingProfile.nextMonthFee ?? "",
+        education: existingProfile.education ?? "",
+        workExperience: existingProfile.workExperience ?? "",
         latitude: existingProfile.latitude ? parseFloat(existingProfile.latitude) : null,
         longitude: existingProfile.longitude ? parseFloat(existingProfile.longitude) : null,
         fullAddress: existingProfile.fullAddress ?? "",
@@ -212,15 +202,6 @@ export default function TutorSetup() {
   const set = (key: keyof FormData, value: string | number | null | string[]) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
-  const toggleDay = (day: string) => {
-    setForm(prev => ({
-      ...prev,
-      daysPerWeek: prev.daysPerWeek.includes(day)
-        ? prev.daysPerWeek.filter(d => d !== day)
-        : [...prev.daysPerWeek, day],
-    }));
-  };
-
   const handleSubmit = () => {
     if (!form.name || !form.phone || !form.qualification || !form.subjects || !form.experience) {
       toast.error("Please fill in all required fields.");
@@ -228,7 +209,6 @@ export default function TutorSetup() {
     }
     saveMutation.mutate({
       ...form,
-      daysPerWeek: form.daysPerWeek.join(", "),
       latitude: form.latitude ?? undefined,
       longitude: form.longitude ?? undefined,
     });
@@ -453,65 +433,36 @@ export default function TutorSetup() {
             </div>
           )}
 
-          {/* Step 3: Schedule & Fees */}
+          {/* Step 3: Education & Work Experience */}
           {step === 3 && (
             <div className="space-y-5">
               <h2 className="text-lg font-bold mb-4" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
-                <Clock size={18} className="inline mr-2" style={{ color: "oklch(0.68 0.18 50)" }} />
-                Schedule & Fees
+                <GraduationCap size={18} className="inline mr-2" style={{ color: "oklch(0.68 0.18 50)" }} />
+                Education & Work Experience
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls} style={labelStyle}>Demo Class Time</label>
-                  <input className={inputCls} style={inputStyle} value={form.demoTime} onChange={e => set("demoTime", e.target.value)} placeholder="e.g. 10:00 AM - 12:00 PM" />
-                </div>
-                <div>
-                  <label className={labelCls} style={labelStyle}>Regular Class Time</label>
-                  <input className={inputCls} style={inputStyle} value={form.regularTime} onChange={e => set("regularTime", e.target.value)} placeholder="e.g. 04:30 PM - 05:30 PM" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls} style={labelStyle}>Session Duration</label>
-                  <input className={inputCls} style={inputStyle} value={form.sessionDuration} onChange={e => set("sessionDuration", e.target.value)} placeholder="e.g. 1 hr/day" />
-                </div>
+              <div>
+                <label className={labelCls} style={labelStyle}>Educational Qualifications</label>
+                <textarea
+                  className={inputCls}
+                  style={{ ...inputStyle, resize: "none" }}
+                  rows={4}
+                  value={form.education}
+                  onChange={e => set("education", e.target.value)}
+                  placeholder={`e.g.\nB.Tech in Computer Science — IIT Bombay (2015–2019)\nM.Sc Mathematics — Delhi University (2019–2021)`}
+                />
+                <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>List your degrees, institutions, and years. One per line.</p>
               </div>
               <div>
-                <label className={labelCls} style={labelStyle}>Available Days</label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {DAYS.map(day => (
-                    <button
-                      key={day}
-                      type="button"
-                      onClick={() => toggleDay(day)}
-                      className="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all"
-                      style={{
-                        backgroundColor: form.daysPerWeek.includes(day) ? "oklch(0.68 0.18 50)" : "white",
-                        color: form.daysPerWeek.includes(day) ? "white" : "oklch(0.45 0.01 270)",
-                        border: form.daysPerWeek.includes(day) ? "none" : "1px solid oklch(0.88 0.005 80)",
-                        fontFamily: "'Poppins', sans-serif",
-                      }}
-                    >
-                      {DAY_LABELS[day]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls} style={labelStyle}>First Month Fee (₹)</label>
-                  <div className="relative">
-                    <IndianRupee size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "oklch(0.65 0.01 270)" }} />
-                    <input className={inputCls} style={{ ...inputStyle, paddingLeft: "2rem" }} value={form.firstMonthFee} onChange={e => set("firstMonthFee", e.target.value)} placeholder="e.g. 2700" />
-                  </div>
-                </div>
-                <div>
-                  <label className={labelCls} style={labelStyle}>Next Month Fee (₹)</label>
-                  <div className="relative">
-                    <IndianRupee size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "oklch(0.65 0.01 270)" }} />
-                    <input className={inputCls} style={{ ...inputStyle, paddingLeft: "2rem" }} value={form.nextMonthFee} onChange={e => set("nextMonthFee", e.target.value)} placeholder="e.g. 4500" />
-                  </div>
-                </div>
+                <label className={labelCls} style={labelStyle}>Work Experience</label>
+                <textarea
+                  className={inputCls}
+                  style={{ ...inputStyle, resize: "none" }}
+                  rows={4}
+                  value={form.workExperience}
+                  onChange={e => set("workExperience", e.target.value)}
+                  placeholder={`e.g.\nSenior Maths Tutor — Byju's (2021–2023)\nFreelance Home Tutor, Bengaluru (2023–present)`}
+                />
+                <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>List your teaching roles, organisations, and years. One per line.</p>
               </div>
             </div>
           )}

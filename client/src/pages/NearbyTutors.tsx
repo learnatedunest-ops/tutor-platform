@@ -421,34 +421,12 @@ export default function NearbyTutors() {
                       <span>{tutor.area}</span>
                     </div>
                   )}
-                  {tutor.regularTime && (
-                    <div className="flex items-center gap-1.5" style={{ color: "oklch(0.45 0.01 270)" }}>
-                      <Clock size={12} style={{ color: "oklch(0.68 0.18 50)" }} />
-                      <span>{tutor.regularTime}</span>
-                    </div>
-                  )}
-                  {tutor.daysPerWeek && (
-                    <div className="flex items-center gap-1.5" style={{ color: "oklch(0.45 0.01 270)" }}>
-                      <Calendar size={12} style={{ color: "oklch(0.68 0.18 50)" }} />
-                      <span>{tutor.daysPerWeek}</span>
-                    </div>
-                  )}
                 </div>
 
-                {(tutor.firstMonthFee || tutor.nextMonthFee) && (
-                  <div className="flex gap-4 mb-4 p-3 rounded-xl" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
-                    {tutor.firstMonthFee && (
-                      <div className="text-center">
-                        <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>First Month</p>
-                        <p className="text-sm font-bold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>₹{tutor.firstMonthFee}</p>
-                      </div>
-                    )}
-                    {tutor.nextMonthFee && (
-                      <div className="text-center">
-                        <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>Next Month</p>
-                        <p className="text-sm font-bold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>₹{tutor.nextMonthFee}</p>
-                      </div>
-                    )}
+                {tutor.education && (
+                  <div className="mb-3 p-3 rounded-xl" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
+                    <p className="text-xs font-semibold mb-1" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>Education</p>
+                    <p className="text-xs line-clamp-2" style={{ color: "oklch(0.45 0.01 270)" }}>{tutor.education}</p>
                   </div>
                 )}
 
