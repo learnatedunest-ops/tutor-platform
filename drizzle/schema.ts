@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { decimal, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -167,3 +167,88 @@ export const referrals = mysqlTable("referrals", {
 
 export type Referral = typeof referrals.$inferSelect;
 export type InsertReferral = typeof referrals.$inferInsert;
+
+/**
+ * Tutor self-registration profiles (linked to users table via userId)
+ * Created when a tutor completes their profile after login.
+ * Pending admin approval before they appear in the tutors table.
+ */
+export const tutorProfiles = mysqlTable("tutor_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),          // FK → users.id
+  tutorTableId: int("tutorTableId"),                 // FK → tutors.id (set after admin approval)
+  // Personal
+  name: varchar("name", { length: 128 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  photo: varchar("photo", { length: 512 }),
+  // Academic
+  qualification: varchar("qualification", { length: 256 }).notNull(),
+  subjects: varchar("subjects", { length: 512 }).notNull(),
+  experience: varchar("experience", { length: 64 }).notNull(),
+  boards: varchar("boards", { length: 256 }).default("CBSE, ICSE").notNull(),
+  languages: varchar("languages", { length: 256 }).default("English, Kannada").notNull(),
+  mode: mysqlEnum("mode", ["home_tuition", "online", "both"]).default("both").notNull(),
+  bio: text("bio"),
+  // Schedule & fees
+  demoTime: varchar("demoTime", { length: 128 }),       // e.g. "10:00 AM - 12:00 PM"
+  regularTime: varchar("regularTime", { length: 128 }), // e.g. "04:30 PM - 05:30 PM"
+  sessionDuration: varchar("sessionDuration", { length: 64 }), // e.g. "1.0 hr/day"
+  daysPerWeek: varchar("daysPerWeek", { length: 128 }),  // e.g. "mon, tue, wed, thu, fri"
+  firstMonthFee: varchar("firstMonthFee", { length: 32 }),
+  nextMonthFee: varchar("nextMonthFee", { length: 32 }),
+  // Location
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  fullAddress: text("fullAddress"),
+  area: varchar("area", { length: 128 }),
+  // Status
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TutorProfile = typeof tutorProfiles.$inferSelect;
+export type InsertTutorProfile = typeof tutorProfiles.$inferInsert;
+
+/**
+ * Student / parent self-registration profiles (linked to users table via userId)
+ * Created when a student/parent completes their profile after login.
+ * Their requirement is immediately visible to nearby approved tutors.
+ */
+export const studentProfiles = mysqlTable("student_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),          // FK → users.id
+  // Who is registering
+  name: varchar("name", { length: 128 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  role: mysqlEnum("role", ["student", "parent"]).notNull(),
+  studentName: varchar("studentName", { length: 128 }), // if parent is registering
+  // Academic requirement
+  grade: varchar("grade", { length: 64 }).notNull(),
+  board: mysqlEnum("board", ["CBSE", "ICSE", "State", "IB", "IGCSE", "Other"]).notNull(),
+  subjects: varchar("subjects", { length: 512 }).notNull(),
+  mode: mysqlEnum("mode", ["home_tuition", "online", "both"]).notNull(),
+  // Schedule
+  demoTime: varchar("demoTime", { length: 128 }),       // preferred demo class time
+  regularTime: varchar("regularTime", { length: 128 }), // preferred regular class time
+  daysPerWeek: varchar("daysPerWeek", { length: 128 }),  // e.g. "mon, tue, wed"
+  sessionsPerWeek: varchar("sessionsPerWeek", { length: 32 }), // e.g. "5"
+  sessionDuration: varchar("sessionDuration", { length: 64 }), // e.g. "1 hr"
+  // Budget
+  budget: varchar("budget", { length: 64 }),
+  specialRequirements: text("specialRequirements"),
+  // Location
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  fullAddress: text("fullAddress"),
+  area: varchar("area", { length: 128 }),
+  // Status
+  isActive: mysqlEnum("isActive", ["yes", "no"]).default("yes").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StudentProfile = typeof studentProfiles.$inferSelect;
+export type InsertStudentProfile = typeof studentProfiles.$inferInsert;

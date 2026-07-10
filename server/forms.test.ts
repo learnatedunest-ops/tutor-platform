@@ -2,6 +2,17 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
+// Mock notification and email so tests don't make real network calls
+vi.mock("./_core/notification", () => ({
+  notifyOwner: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("./email", () => ({
+  sendInquiryEmail: vi.fn().mockResolvedValue(undefined),
+  sendTutorApplicationEmail: vi.fn().mockResolvedValue(undefined),
+  sendDemoBookingEmail: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Mock the db module so tests don't need a real DB connection
 vi.mock("./db", () => ({
   createInquiry: vi.fn().mockResolvedValue(undefined),
@@ -13,6 +24,36 @@ vi.mock("./db", () => ({
   upsertUser: vi.fn().mockResolvedValue(undefined),
   getUserByOpenId: vi.fn().mockResolvedValue(undefined),
   getDb: vi.fn().mockResolvedValue(null),
+  // Demo bookings
+  createDemoBooking: vi.fn().mockResolvedValue(undefined),
+  getAllDemoBookings: vi.fn().mockResolvedValue([]),
+  updateDemoBookingStatus: vi.fn().mockResolvedValue(undefined),
+  getDemoBookingsByEmail: vi.fn().mockResolvedValue([]),
+  // Tutors
+  createTutor: vi.fn().mockResolvedValue({ id: 1 }),
+  getAllTutors: vi.fn().mockResolvedValue([]),
+  getAllTutorsAdmin: vi.fn().mockResolvedValue([]),
+  getTutorById: vi.fn().mockResolvedValue(null),
+  updateTutor: vi.fn().mockResolvedValue(undefined),
+  deleteTutor: vi.fn().mockResolvedValue(undefined),
+  // Student requirements
+  createStudentRequirement: vi.fn().mockResolvedValue(undefined),
+  getAllStudentRequirements: vi.fn().mockResolvedValue([]),
+  updateStudentRequirementStatus: vi.fn().mockResolvedValue(undefined),
+  // Referrals
+  createReferral: vi.fn().mockResolvedValue(undefined),
+  getAllReferrals: vi.fn().mockResolvedValue([]),
+  updateReferralStatus: vi.fn().mockResolvedValue(undefined),
+  // Tutor profiles
+  upsertTutorProfile: vi.fn().mockResolvedValue({ id: 1, status: 'pending' }),
+  getTutorProfileByUserId: vi.fn().mockResolvedValue(null),
+  getAllTutorProfiles: vi.fn().mockResolvedValue([]),
+  updateTutorProfileStatus: vi.fn().mockResolvedValue(undefined),
+  getApprovedTutorProfiles: vi.fn().mockResolvedValue([]),
+  // Student profiles
+  upsertStudentProfile: vi.fn().mockResolvedValue({ id: 1 }),
+  getStudentProfileByUserId: vi.fn().mockResolvedValue(null),
+  getActiveStudentProfiles: vi.fn().mockResolvedValue([]),
 }));
 
 function createPublicContext(): TrpcContext {

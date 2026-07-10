@@ -43,6 +43,13 @@
       "when": 1783616536667,
       "tag": "0005_massive_arachne",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1783680477623,
+      "tag": "0006_medical_lester",
+      "breakpoints": true
     }
   ]
 }

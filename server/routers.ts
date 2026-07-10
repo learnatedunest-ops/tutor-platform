@@ -27,6 +27,14 @@ import {
   updateStudentRequirementStatus,
   updateTutor,
   updateTutorApplicationStatus,
+  upsertTutorProfile,
+  getTutorProfileByUserId,
+  getAllTutorProfiles,
+  updateTutorProfileStatus,
+  upsertStudentProfile,
+  getStudentProfileByUserId,
+  getActiveStudentProfiles,
+  getApprovedTutorProfiles,
 } from "./db";
 import { z } from "zod";
 
@@ -262,6 +270,167 @@ export const appRouter = router({
       if (!ctx.user.email) return [];
       return getDemoBookingsByEmail(ctx.user.email);
     }),
+  }),
+
+  // ─── Tutor Profiles ──────────────────────────────────────────────────────
+  tutorProfile: router({
+    // Get the logged-in tutor's own profile
+    getMyProfile: protectedProcedure.query(async ({ ctx }) => {
+      return getTutorProfileByUserId(ctx.user.id);
+    }),
+
+    // Create or update the logged-in tutor's profile
+    save: protectedProcedure
+      .input(z.object({
+        name: z.string().min(2).max(128),
+        email: z.string().email(),
+        phone: z.string().min(10).max(20),
+        qualification: z.string().min(2).max(256),
+        subjects: z.string().min(2).max(512),
+        experience: z.string().min(1).max(64),
+        boards: z.string().max(256).optional(),
+        languages: z.string().max(256).optional(),
+        mode: z.enum(["home_tuition", "online", "both"]),
+        bio: z.string().max(2000).optional(),
+        demoTime: z.string().max(128).optional(),
+        regularTime: z.string().max(128).optional(),
+        sessionDuration: z.string().max(64).optional(),
+        daysPerWeek: z.string().max(128).optional(),
+        firstMonthFee: z.string().max(32).optional(),
+        nextMonthFee: z.string().max(32).optional(),
+        latitude: z.number().optional(),
+        longitude: z.number().optional(),
+        fullAddress: z.string().max(1000).optional(),
+        area: z.string().max(128).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const profile = await upsertTutorProfile(ctx.user.id, {
+          ...input,
+          latitude: input.latitude?.toString(),
+          longitude: input.longitude?.toString(),
+          status: "pending",
+        });
+        // Notify Amogha
+        await notifyOwner({
+          title: `👨‍🏫 New Tutor Profile: ${input.name}`,
+          content: `**Name:** ${input.name}\n**Subjects:** ${input.subjects}\n**Experience:** ${input.experience}\n**Mode:** ${input.mode}\n**Location:** ${input.fullAddress ?? input.area ?? 'Not provided'}\n\nReview at https://edu-nest.manus.space/admin`,
+        }).catch(() => {});
+        return { success: true, profile };
+      }),
+
+    // Admin: list all tutor profiles
+    listAll: adminProcedure.query(async () => getAllTutorProfiles()),
+
+    // Admin: approve or reject a tutor profile
+    updateStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "approved", "rejected"]),
+      }))
+      .mutation(async ({ input }) => {
+        await updateTutorProfileStatus(input.id, input.status);
+        return { success: true };
+      }),
+
+    // Get nearby active student profiles (for approved tutors)
+    getNearbyStudents: protectedProcedure
+      .input(z.object({
+        latitude: z.number(),
+        longitude: z.number(),
+        radiusKm: z.number().default(10),
+      }))
+      .query(async ({ ctx, input }) => {
+        // Verify tutor is approved
+        const myProfile = await getTutorProfileByUserId(ctx.user.id);
+        if (!myProfile || myProfile.status !== "approved") return [];
+        const students = await getActiveStudentProfiles();
+        // Haversine distance filter
+        const R = 6371;
+        return students
+          .filter(s => s.latitude && s.longitude)
+          .map(s => {
+            const lat1 = input.latitude * Math.PI / 180;
+            const lat2 = parseFloat(s.latitude!) * Math.PI / 180;
+            const dLat = (parseFloat(s.latitude!) - input.latitude) * Math.PI / 180;
+            const dLon = (parseFloat(s.longitude!) - input.longitude) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+            const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return { ...s, distKm: Math.round(distKm * 10) / 10 };
+          })
+          .filter(s => s.distKm <= input.radiusKm)
+          .sort((a, b) => a.distKm - b.distKm);
+      }),
+  }),
+
+  // ─── Student Profiles ─────────────────────────────────────────────────────
+  studentProfile: router({
+    // Get the logged-in student/parent's own profile
+    getMyProfile: protectedProcedure.query(async ({ ctx }) => {
+      return getStudentProfileByUserId(ctx.user.id);
+    }),
+
+    // Create or update the logged-in student/parent's profile
+    save: protectedProcedure
+      .input(z.object({
+        name: z.string().min(2).max(128),
+        email: z.string().email(),
+        phone: z.string().min(10).max(20),
+        role: z.enum(["student", "parent"]),
+        studentName: z.string().max(128).optional(),
+        grade: z.string().min(1).max(64),
+        board: z.enum(["CBSE", "ICSE", "State", "IB", "IGCSE", "Other"]),
+        subjects: z.string().min(2).max(512),
+        mode: z.enum(["home_tuition", "online", "both"]),
+        demoTime: z.string().max(128).optional(),
+        regularTime: z.string().max(128).optional(),
+        daysPerWeek: z.string().max(128).optional(),
+        sessionsPerWeek: z.string().max(32).optional(),
+        sessionDuration: z.string().max(64).optional(),
+        budget: z.string().max(64).optional(),
+        specialRequirements: z.string().max(2000).optional(),
+        latitude: z.number().optional(),
+        longitude: z.number().optional(),
+        fullAddress: z.string().max(1000).optional(),
+        area: z.string().max(128).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const profile = await upsertStudentProfile(ctx.user.id, {
+          ...input,
+          latitude: input.latitude?.toString(),
+          longitude: input.longitude?.toString(),
+          isActive: "yes",
+        });
+        await notifyOwner({
+          title: `🎓 New Student Requirement: ${input.name}`,
+          content: `**Name:** ${input.name}\n**Grade:** ${input.grade} (${input.board})\n**Subjects:** ${input.subjects}\n**Mode:** ${input.mode}\n**Location:** ${input.fullAddress ?? input.area ?? 'Not provided'}\n\nReview at https://edu-nest.manus.space/admin`,
+        }).catch(() => {});
+        return { success: true, profile };
+      }),
+
+    // Get nearby approved tutors (for students)
+    getNearbyTutors: protectedProcedure
+      .input(z.object({
+        latitude: z.number(),
+        longitude: z.number(),
+        radiusKm: z.number().default(10),
+      }))
+      .query(async ({ input }) => {
+        const tutorList = await getApprovedTutorProfiles();
+        const R = 6371;
+        return tutorList
+          .filter(t => t.latitude && t.longitude)
+          .map(t => {
+            const lat1 = input.latitude * Math.PI / 180;
+            const lat2 = parseFloat(t.latitude!) * Math.PI / 180;
+            const dLat = (parseFloat(t.latitude!) - input.latitude) * Math.PI / 180;
+            const dLon = (parseFloat(t.longitude!) - input.longitude) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+            const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return { ...t, distKm: Math.round(distKm * 10) / 10 };
+          })
+          .filter(t => t.distKm <= input.radiusKm)
+          .sort((a, b) => a.distKm - b.distKm);
+      }),
   }),
 
   // ─── Referrals ─────────────────────────────────────────────────────────────

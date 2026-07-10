@@ -249,3 +249,89 @@ export async function updateReferralStatus(
   if (discountApplied) updateData.discountApplied = discountApplied;
   await db.update(referrals).set(updateData as Partial<InsertReferral>).where(eq(referrals.id, id));
 }
+
+// ─── Tutor Profiles ───────────────────────────────────────────────────────────
+
+import { tutorProfiles, InsertTutorProfile, TutorProfile, studentProfiles, InsertStudentProfile, StudentProfile } from "../drizzle/schema";
+
+export async function upsertTutorProfile(
+  userId: number,
+  data: Omit<InsertTutorProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+): Promise<TutorProfile> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(tutorProfiles).where(eq(tutorProfiles.userId, userId)).limit(1);
+  if (existing.length > 0) {
+    await db.update(tutorProfiles).set({ ...data, updatedAt: new Date() }).where(eq(tutorProfiles.userId, userId));
+  } else {
+    await db.insert(tutorProfiles).values({ userId, ...data });
+  }
+  const result = await db.select().from(tutorProfiles).where(eq(tutorProfiles.userId, userId)).limit(1);
+  return result[0];
+}
+
+export async function getTutorProfileByUserId(userId: number): Promise<TutorProfile | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(tutorProfiles).where(eq(tutorProfiles.userId, userId)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getAllTutorProfiles(): Promise<TutorProfile[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tutorProfiles).orderBy(desc(tutorProfiles.createdAt));
+}
+
+export async function updateTutorProfileStatus(
+  id: number,
+  status: "pending" | "approved" | "rejected",
+  tutorTableId?: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const updateData: Partial<InsertTutorProfile> = { status };
+  if (tutorTableId !== undefined) updateData.tutorTableId = tutorTableId;
+  await db.update(tutorProfiles).set(updateData).where(eq(tutorProfiles.id, id));
+}
+
+// ─── Student Profiles ─────────────────────────────────────────────────────────
+
+export async function upsertStudentProfile(
+  userId: number,
+  data: Omit<InsertStudentProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+): Promise<StudentProfile> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, userId)).limit(1);
+  if (existing.length > 0) {
+    await db.update(studentProfiles).set({ ...data, updatedAt: new Date() }).where(eq(studentProfiles.userId, userId));
+  } else {
+    await db.insert(studentProfiles).values({ userId, ...data });
+  }
+  const result = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, userId)).limit(1);
+  return result[0];
+}
+
+export async function getStudentProfileByUserId(userId: number): Promise<StudentProfile | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, userId)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getActiveStudentProfiles(): Promise<StudentProfile[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(studentProfiles)
+    .where(eq(studentProfiles.isActive, "yes"))
+    .orderBy(desc(studentProfiles.createdAt));
+}
+
+export async function getApprovedTutorProfiles(): Promise<TutorProfile[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tutorProfiles)
+    .where(eq(tutorProfiles.status, "approved"))
+    .orderBy(desc(tutorProfiles.createdAt));
+}

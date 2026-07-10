@@ -45,6 +45,8 @@ export default function Navbar() {
     { href: "/faq", label: "❓ FAQ" },
     { href: "/subjects", label: "📚 All Subjects" },
     { href: "/refer", label: "🎁 Refer a Friend" },
+    { href: "/nearby-tutors", label: "📍 Tutors Near Me" },
+    { href: "/tutor-dashboard", label: "🏫 Tutor Dashboard" },
   ];
 
   const isActive = (href: string) =>
@@ -142,10 +144,13 @@ export default function Navbar() {
               <Link href="/portal" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
                 My Portal
               </Link>
+              <Link href="/tutor-dashboard" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
+                Tutor Dashboard
+              </Link>
               <Link href="/become-tutor" className="btn-outline text-sm py-2 px-5">
                 Become a Tutor
               </Link>
-              <Link href="/find-tutor" className="btn-primary text-sm py-2 px-5">
+              <Link href="/student-setup" className="btn-primary text-sm py-2 px-5">
                 Find a Tutor
               </Link>
             </div>

@@ -102,3 +102,33 @@
 - [x] Add Refer a Friend link to Navbar Resources dropdown and Footer Quick Links
 - [x] Add /refer to sitemap.xml
 - [x] All 14 tests passing, 0 TypeScript errors
+
+## Round 7 — Location-Based Signup & Matching
+
+### DB Schema
+- [x] Add tutor_profiles table (userId FK, all tutor details, lat/lng, full address, status)
+- [x] Add student_profiles table (userId FK, student details, lat/lng, full address, schedule fields)
+- [x] Run db:push
+
+### Backend (tRPC)
+- [x] tutor profile: createOrUpdate, getMyProfile, getNearbyStudents (Haversine)
+- [x] student profile: createOrUpdate, getMyProfile, getNearbyTutors (Haversine)
+- [x] Admin: list tutor_profiles, approve/reject tutor profile
+
+### Frontend — Tutor Flow
+- [x] TutorSetup.tsx: full 4-step profile form with GPS location, all Otoo-style fields
+- [x] TutorDashboard.tsx: shows nearby student requirements sorted by distance, Express Interest button
+- [x] Pending/rejected/approved states handled
+
+### Frontend — Student/Parent Flow
+- [x] StudentSetup.tsx: 4-step profile form with GPS location, Otoo-style fields
+- [x] NearbyTutors.tsx: shows nearby approved tutors sorted by distance, Book Demo button
+
+### Navigation & Admin
+- [x] Add /tutor-setup, /tutor-dashboard, /student-setup, /nearby-tutors routes to App.tsx
+- [x] Update Navbar: Tutor Dashboard link, Find a Tutor CTA → /student-setup
+- [x] notifyOwner called on tutor profile save and student requirement save
+
+### Tests & Deploy
+- [x] 14/14 tests passing, 0 TypeScript errors
+- [x] Checkpoint saved

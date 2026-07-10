@@ -21,6 +21,10 @@ import Admin from "./pages/Admin";
 import StudentPortal from "./pages/StudentPortal";
 import SEOGuide from "./pages/SEOGuide";
 import ReferFriend from "./pages/ReferFriend";
+import TutorSetup from "./pages/TutorSetup";
+import StudentSetup from "./pages/StudentSetup";
+import TutorDashboard from "./pages/TutorDashboard";
+import NearbyTutors from "./pages/NearbyTutors";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -41,6 +45,10 @@ function Router() {
       <Route path="/portal" component={StudentPortal} />
       <Route path="/seo-guide" component={SEOGuide} />
       <Route path="/refer" component={ReferFriend} />
+      <Route path="/tutor-setup" component={TutorSetup} />
+      <Route path="/student-setup" component={StudentSetup} />
+      <Route path="/tutor-dashboard" component={TutorDashboard} />
+      <Route path="/nearby-tutors" component={NearbyTutors} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
