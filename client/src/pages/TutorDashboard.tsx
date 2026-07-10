@@ -230,11 +230,11 @@ export default function TutorDashboard() {
               ✓ Approved
             </span>
             <button
-              onClick={() => navigate("/tutor-setup")}
-              className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
+              onClick={() => navigate("/tutor-setup?edit=true")}
+              className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:bg-gray-50"
               style={{ border: "1px solid oklch(0.88 0.005 80)", color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}
             >
-              Edit Profile
+              ✏️ Edit Profile
             </button>
             <Link href="/">
               <button

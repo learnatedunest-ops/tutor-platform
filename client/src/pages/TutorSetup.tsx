@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -145,12 +145,14 @@ function LocationPicker({ onLocation }: { onLocation: (lat: number, lng: number,
 
 export default function TutorSetup() {
   const [, navigate] = useLocation();
+  const search = useSearch();
   const { user, loading, isAuthenticated } = useAuth();
   const { userRole, loading: roleLoading } = useUserRole();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(INITIAL);
   const [submitted, setSubmitted] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  // Initialize editMode from ?edit=true query param so TutorDashboard can link directly to edit
+  const [editMode, setEditMode] = useState(() => new URLSearchParams(search).get("edit") === "true");
 
   // Pre-fill name and email from OAuth
   useEffect(() => {

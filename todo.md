@@ -175,8 +175,8 @@
 - [x] Save checkpoint and publish
 
 ## Round 12 — TutorDashboard Fixes
-- [ ] Fix Edit Profile button in TutorDashboard — open editable form pre-filled with saved tutor details
-- [ ] Remove My Profile button from Navbar for tutor accounts
-- [ ] Fix Express Interest persistence — show "Interest Expressed" state after page refresh (query existing interest on load)
-- [ ] Run pnpm test (14+ passing), 0 TypeScript errors
-- [ ] Save checkpoint
+- [x] Fix Edit Profile button in TutorDashboard — open editable form pre-filled with saved tutor details
+- [x] Remove My Profile button from Navbar for tutor accounts
+- [x] Fix Express Interest persistence — show "Interest Expressed" state after page refresh (query existing interest on load)
+- [x] Run pnpm test (14 passing), 0 TypeScript errors
+- [x] Save checkpoint
