@@ -13,10 +13,62 @@ import { startLogin } from "@/const";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
 import {
-  MapPin, BookOpen, GraduationCap, Clock, IndianRupee,
+  MapPin, BookOpen, Clock, GraduationCap,
   Loader2, Navigation, AlertCircle, RefreshCw, Users,
-  CheckCircle2, Star, Calendar, Home
+  CheckCircle2, Star, Calendar, Home, Send
 } from "lucide-react";
+
+/** Per-tutor Book Demo button with real status tracking */
+function BookDemoButton({ tutorProfileId }: { tutorProfileId: number }) {
+  const utils = trpc.useUtils();
+  const { data: existingInterest, isLoading: statusLoading } =
+    trpc.studentDemoInterest.getStatusForTutor.useQuery({ tutorProfileId });
+
+  const bookMutation = trpc.studentDemoInterest.bookDemo.useMutation({
+    onSuccess: () => {
+      utils.studentDemoInterest.getStatusForTutor.invalidate({ tutorProfileId });
+      toast.success("Demo class request sent! EduNest will contact you to confirm the time.");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to send request. Please try again.");
+    },
+  });
+
+  if (statusLoading) {
+    return (
+      <button disabled className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-white text-sm opacity-60" style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+        <Loader2 size={14} className="animate-spin" /> Checking...
+      </button>
+    );
+  }
+
+  if (existingInterest) {
+    const statusConfig = {
+      pending: { label: "Request Sent — Awaiting Confirmation", bg: "oklch(0.96 0.04 85)", color: "oklch(0.55 0.12 60)", icon: Send },
+      confirmed: { label: "Demo Class Confirmed!", bg: "oklch(0.96 0.04 145)", color: "oklch(0.45 0.14 145)", icon: CheckCircle2 },
+      cancelled: { label: "Request Cancelled", bg: "oklch(0.96 0.01 0)", color: "oklch(0.55 0.10 20)", icon: AlertCircle },
+    };
+    const cfg = statusConfig[existingInterest.status as keyof typeof statusConfig] ?? statusConfig.pending;
+    const Icon = cfg.icon;
+    return (
+      <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm" style={{ backgroundColor: cfg.bg, color: cfg.color, fontFamily: "'Poppins', sans-serif" }}>
+        <Icon size={14} /> {cfg.label}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => bookMutation.mutate({ tutorProfileId })}
+      disabled={bookMutation.isPending}
+      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
+      style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
+    >
+      {bookMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Star size={14} />}
+      {bookMutation.isPending ? "Sending Request..." : "Book Free Demo Class"}
+    </button>
+  );
+}
 
 function ModeLabel({ mode }: { mode: string }) {
   const map: Record<string, string> = {
@@ -404,15 +456,7 @@ export default function NearbyTutors() {
                   <p className="text-xs mb-4 line-clamp-2" style={{ color: "oklch(0.45 0.01 270)" }}>{tutor.bio}</p>
                 )}
 
-                <button
-                  onClick={() => {
-                    toast.success("Demo class request sent! EduNest will contact you to confirm the time.");
-                  }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 active:scale-95"
-                  style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
-                >
-                  <Star size={14} /> Book Free Demo Class
-                </button>
+                <BookDemoButton tutorProfileId={tutor.id} />
               </div>
             ))}
           </div>

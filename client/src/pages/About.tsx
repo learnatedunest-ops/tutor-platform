@@ -9,10 +9,10 @@ import Footer from "@/components/Footer";
 import { Target, Eye, Heart, ArrowRight } from "lucide-react";
 
 const team = [
-  { name: "Amogha", role: "Founder & CEO", initials: "AM", color: "#F47920" },
-  { name: "Meera Singh", role: "Head of Tutors", initials: "MS", color: "#6C63FF" },
-  { name: "Rohit Sharma", role: "CTO", initials: "RS", color: "#F47920" },
-  { name: "Kavita Joshi", role: "Head of Operations", initials: "KJ", color: "#6C63FF" },
+  { name: "Amogha Amange", role: "Founder & CEO", initials: "AA", color: "#F47920" },
+  { name: "Myra Raj", role: "Head of Tutors", initials: "MR", color: "#6C63FF" },
+  { name: "Kabir Panth", role: "CTO", initials: "KP", color: "#F47920" },
+  { name: "Sanjay Sangyal", role: "Head of Operations", initials: "SS", color: "#6C63FF" },
 ];
 
 const values = [

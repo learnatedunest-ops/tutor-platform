@@ -268,3 +268,20 @@ export const studentProfiles = mysqlTable("student_profiles", {
 
 export type StudentProfile = typeof studentProfiles.$inferSelect;
 export type InsertStudentProfile = typeof studentProfiles.$inferInsert;
+
+/**
+ * Student Demo Interests — when a student/parent requests a free demo class from a nearby tutor
+ * Created from the NearbyTutors page "Book Free Demo Class" button.
+ */
+export const studentDemoInterests = mysqlTable("student_demo_interests", {
+  id: int("id").autoincrement().primaryKey(),
+  studentProfileId: int("studentProfileId").notNull(),  // FK → student_profiles.id
+  tutorProfileId: int("tutorProfileId").notNull(),       // FK → tutor_profiles.id
+  message: text("message"),
+  status: mysqlEnum("status", ["pending", "confirmed", "cancelled"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StudentDemoInterest = typeof studentDemoInterests.$inferSelect;
+export type InsertStudentDemoInterest = typeof studentDemoInterests.$inferInsert;

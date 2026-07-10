@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile } from "../drizzle/schema";
+import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile, StudentDemoInterest, studentDemoInterests } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -397,4 +397,52 @@ export async function getAllStudentProfiles(): Promise<StudentProfile[]> {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(studentProfiles).orderBy(desc(studentProfiles.createdAt));
+}
+
+// ─── Student Demo Interests ────────────────────────────────────────────────
+export async function createStudentDemoInterest(
+  studentProfileId: number,
+  tutorProfileId: number,
+  message?: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(studentDemoInterests).values({ studentProfileId, tutorProfileId, message: message ?? null });
+}
+
+export async function getStudentDemoInterestsByStudent(studentProfileId: number): Promise<StudentDemoInterest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(studentDemoInterests)
+    .where(eq(studentDemoInterests.studentProfileId, studentProfileId))
+    .orderBy(desc(studentDemoInterests.createdAt));
+}
+
+export async function getStudentDemoInterestByPair(
+  studentProfileId: number,
+  tutorProfileId: number
+): Promise<StudentDemoInterest | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(studentDemoInterests)
+    .where(and(
+      eq(studentDemoInterests.studentProfileId, studentProfileId),
+      eq(studentDemoInterests.tutorProfileId, tutorProfileId)
+    ));
+  return rows[0] ?? null;
+}
+
+export async function getAllStudentDemoInterests(): Promise<StudentDemoInterest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(studentDemoInterests).orderBy(desc(studentDemoInterests.createdAt));
+}
+
+export async function updateStudentDemoInterestStatus(
+  id: number,
+  status: "pending" | "confirmed" | "cancelled"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(studentDemoInterests).set({ status }).where(eq(studentDemoInterests.id, id));
 }

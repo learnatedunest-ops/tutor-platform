@@ -62,6 +62,15 @@ vi.mock("./db", () => ({
   getAllTutorInterests: vi.fn().mockResolvedValue([]),
   getTutorInterestsByTutor: vi.fn().mockResolvedValue([]),
   updateTutorInterestStatus: vi.fn().mockResolvedValue(undefined),
+  getTutorInterestByPair: vi.fn().mockResolvedValue(null),
+  // Student demo interests
+  createStudentDemoInterest: vi.fn().mockResolvedValue({ id: 1, status: 'pending' }),
+  getAllStudentDemoInterests: vi.fn().mockResolvedValue([]),
+  getStudentDemoInterestsByStudent: vi.fn().mockResolvedValue([]),
+  getStudentDemoInterestByPair: vi.fn().mockResolvedValue(null),
+  updateStudentDemoInterestStatus: vi.fn().mockResolvedValue(undefined),
+  // Student profiles (admin list)
+  getAllStudentProfiles: vi.fn().mockResolvedValue([]),
 }));
 
 function createPublicContext(): TrpcContext {

@@ -57,8 +57,6 @@ export default function Navbar() {
     { href: "/faq", label: "❓ FAQ" },
     { href: "/subjects", label: "📚 All Subjects" },
     { href: "/refer", label: "🎁 Refer a Friend" },
-    { href: "/nearby-tutors", label: "📍 Tutors Near Me" },
-    { href: "/tutor-dashboard", label: "🏫 Tutor Dashboard" },
   ];
 
   const isActive = (href: string) =>

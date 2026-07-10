@@ -42,6 +42,11 @@ import {
   getAllTutorInterests,
   getTutorInterestsByTutor,
   updateTutorInterestStatus,
+  createStudentDemoInterest,
+  getStudentDemoInterestsByStudent,
+  getStudentDemoInterestByPair,
+  getAllStudentDemoInterests,
+  updateStudentDemoInterestStatus,
 } from "./db";
 import { z } from "zod";
 
@@ -525,7 +530,7 @@ export const appRouter = router({
 
     list: adminProcedure.query(async () => getAllReferrals()),
 
-    updateStatus: adminProcedure
+        updateStatus: adminProcedure
       .input(z.object({
         id: z.number(),
         status: z.enum(["pending", "joined", "rewarded"]),
@@ -536,6 +541,59 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
-});
 
+  // ─── Student Demo Interests ──────────────────────────────────────────────────
+  studentDemoInterest: router({
+    // Student books a free demo class with a nearby tutor
+    bookDemo: protectedProcedure
+      .input(z.object({
+        tutorProfileId: z.number(),
+        message: z.string().max(512).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const studentProfile = await getStudentProfileByUserId(ctx.user.id);
+        if (!studentProfile) throw new Error("Complete your student profile first");
+        // Prevent duplicate bookings
+        const existing = await getStudentDemoInterestByPair(studentProfile.id, input.tutorProfileId);
+        if (existing) return { success: true, status: existing.status, alreadyExists: true };
+        await createStudentDemoInterest(studentProfile.id, input.tutorProfileId, input.message);
+        await notifyOwner({
+          title: `📚 New Demo Class Request`,
+          content: `Student **${studentProfile.name}** (${studentProfile.email}) has requested a free demo class.\n\nTutor Profile ID: ${input.tutorProfileId}\n\nManage at https://edu-nest.manus.space/admin`,
+        }).catch(() => {/* non-blocking */});
+        return { success: true, status: "pending", alreadyExists: false };
+      }),
+
+    // Student checks their own demo interest status for a specific tutor
+    getStatusForTutor: protectedProcedure
+      .input(z.object({ tutorProfileId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const studentProfile = await getStudentProfileByUserId(ctx.user.id);
+        if (!studentProfile) return null;
+        const record = await getStudentDemoInterestByPair(studentProfile.id, input.tutorProfileId);
+        return record ?? null;
+      }),
+
+    // Student sees all their demo interests
+    myInterests: protectedProcedure.query(async ({ ctx }) => {
+      const studentProfile = await getStudentProfileByUserId(ctx.user.id);
+      if (!studentProfile) return [];
+      return getStudentDemoInterestsByStudent(studentProfile.id);
+    }),
+
+    // Admin: list all demo interests
+    listAll: adminProcedure.query(async () => getAllStudentDemoInterests()),
+
+    // Admin: update status
+    updateStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "confirmed", "cancelled"]),
+      }))
+      .mutation(async ({ input }) => {
+        await updateStudentDemoInterestStatus(input.id, input.status);
+        return { success: true };
+      }),
+  }),
+});
 export type AppRouter = typeof appRouter;

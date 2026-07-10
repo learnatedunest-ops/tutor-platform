@@ -162,3 +162,14 @@
 - [x] Add notifyOwner calls for: new tutor profile submitted, new student requirement submitted, new express interest
 - [x] Run pnpm test (14 passing), 0 TypeScript errors
 - [x] Save checkpoint
+
+## Round 11 — Session Timeout, Nav Cleanup, About Us, Demo Interest Flow
+- [ ] Add session timeout hook (30 min inactivity auto-logout) for logged-in tutors and students
+- [ ] Remove "Tutors Near Me" and "Tutor Dashboard" from Resources dropdown in Navbar
+- [ ] Update About Us page: Amogha Amange (Founder & CEO), Myra Raj (Head of Tutors), Kabir Panth (CTO), Sanjay Sangyal (Head of Operations)
+- [ ] Add student_demo_interests table to schema (studentProfileId, tutorProfileId, status, createdAt)
+- [ ] Add tRPC procedures: bookDemo, getMyDemoInterests (student), getAllDemoInterests (admin), updateDemoInterestStatus (admin)
+- [ ] Fix NearbyTutors Book Free Demo button — show real status (pending/confirmed/cancelled) after click
+- [ ] Add Student Demo Interests tab to Admin Dashboard
+- [ ] Run pnpm test (14+ passing), 0 TypeScript errors
+- [ ] Save checkpoint and publish

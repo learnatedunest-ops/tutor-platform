@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 // Pages that should NOT trigger the role-select redirect (public pages, admin, etc.)
 const EXEMPT_PATHS = [
@@ -48,6 +49,9 @@ export default function AuthGate({ children }: AuthGateProps) {
   const [location, navigate] = useLocation();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { userRole, loading: roleLoading } = useUserRole();
+
+  // Auto-logout after 30 minutes of inactivity for logged-in users with a role
+  useSessionTimeout(isAuthenticated, userRole);
 
   useEffect(() => {
     // Wait until both auth and role are resolved
