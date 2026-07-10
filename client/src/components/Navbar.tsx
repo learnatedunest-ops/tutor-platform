@@ -6,11 +6,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X, Phone, ChevronDown } from "lucide-react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
+import { startLogin } from "@/const";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [location] = useLocation();
+  const { isAuthenticated } = useAuth();
+  const { userRole } = useUserRole();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -139,20 +144,38 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Desktop CTAs */}
+            {/* Desktop CTAs — role-aware */}
             <div className="hidden lg:flex items-center gap-3">
-              <Link href="/portal" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
-                My Portal
-              </Link>
-              <Link href="/tutor-dashboard" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
-                Tutor Dashboard
-              </Link>
-              <Link href="/become-tutor" className="btn-outline text-sm py-2 px-5">
-                Become a Tutor
-              </Link>
-              <Link href="/student-setup" className="btn-primary text-sm py-2 px-5">
-                Find a Tutor
-              </Link>
+              {isAuthenticated && userRole === "tutor" && (
+                <Link href="/tutor-dashboard" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
+                  My Dashboard
+                </Link>
+              )}
+              {isAuthenticated && userRole === "student" && (
+                <Link href="/nearby-tutors" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
+                  Find Tutors
+                </Link>
+              )}
+              {isAuthenticated && userRole === "student" && (
+                <Link href="/portal" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
+                  My Bookings
+                </Link>
+              )}
+              {!isAuthenticated && (
+                <>
+                  <Link href="/become-tutor" className="btn-outline text-sm py-2 px-5">
+                    Become a Tutor
+                  </Link>
+                  <button onClick={() => startLogin()} className="btn-primary text-sm py-2 px-5">
+                    Sign Up / Log In
+                  </button>
+                </>
+              )}
+              {isAuthenticated && !userRole && (
+                <Link href="/role-select" className="btn-primary text-sm py-2 px-5">
+                  Complete Setup
+                </Link>
+              )}
             </div>
 
             {/* Mobile Hamburger */}
@@ -200,12 +223,36 @@ export default function Navbar() {
                 ))}
               </div>
               <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-[oklch(0.9_0.005_80)]">
-                <Link href="/become-tutor" className="btn-outline text-sm text-center" onClick={() => setMobileOpen(false)}>
-                  Become a Tutor
-                </Link>
-                <Link href="/find-tutor" className="btn-primary text-sm text-center" onClick={() => setMobileOpen(false)}>
-                  Find a Tutor
-                </Link>
+                {isAuthenticated && userRole === "tutor" && (
+                  <Link href="/tutor-dashboard" className="btn-primary text-sm text-center" onClick={() => setMobileOpen(false)}>
+                    My Dashboard
+                  </Link>
+                )}
+                {isAuthenticated && userRole === "student" && (
+                  <>
+                    <Link href="/nearby-tutors" className="btn-primary text-sm text-center" onClick={() => setMobileOpen(false)}>
+                      Find Tutors Near Me
+                    </Link>
+                    <Link href="/portal" className="btn-outline text-sm text-center" onClick={() => setMobileOpen(false)}>
+                      My Bookings
+                    </Link>
+                  </>
+                )}
+                {!isAuthenticated && (
+                  <>
+                    <Link href="/become-tutor" className="btn-outline text-sm text-center" onClick={() => setMobileOpen(false)}>
+                      Become a Tutor
+                    </Link>
+                    <button onClick={() => { startLogin(); setMobileOpen(false); }} className="btn-primary text-sm text-center">
+                      Sign Up / Log In
+                    </button>
+                  </>
+                )}
+                {isAuthenticated && !userRole && (
+                  <Link href="/role-select" className="btn-primary text-sm text-center" onClick={() => setMobileOpen(false)}>
+                    Complete Setup
+                  </Link>
+                )}
               </div>
             </div>
           </div>

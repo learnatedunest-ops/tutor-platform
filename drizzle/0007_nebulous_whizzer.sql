@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `userRole` enum('tutor','student');

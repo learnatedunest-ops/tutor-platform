@@ -132,3 +132,18 @@
 ### Tests & Deploy
 - [x] 14/14 tests passing, 0 TypeScript errors
 - [x] Checkpoint saved
+
+## Round 8 — Role-Aware Signup & Login Flow
+- [x] Add userRole field (tutor | student | null) to users table in schema.ts, run db:push
+- [x] Add setRole tRPC procedure (protectedProcedure, saves tutor/student to users.userRole)
+- [x] Add getUserRole tRPC procedure (returns current user's userRole)
+- [x] Build RoleSelect.tsx page at /role-select — shown after first OAuth login if no role set
+- [x] After OAuth callback, redirect to /role-select if userRole is null (via AuthGate)
+- [x] After role is saved, redirect to /tutor-setup (tutor) or /student-setup (student)
+- [x] Gate /tutor-setup and /tutor-dashboard to userRole === 'tutor' only
+- [x] Gate /student-setup and /nearby-tutors to userRole === 'student' only
+- [x] Update Navbar CTAs to be role-aware (tutor sees Tutor Dashboard, student sees Find Tutors)
+- [x] Update Become a Tutor CTA to trigger login + role-select flow (via Sign Up / Log In button)
+- [x] Update Find a Tutor CTA to trigger login + role-select flow (via Sign Up / Log In button)
+- [x] Run pnpm test (14 passing), 0 TypeScript errors
+- [x] Save checkpoint

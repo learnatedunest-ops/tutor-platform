@@ -35,6 +35,8 @@ import {
   getStudentProfileByUserId,
   getActiveStudentProfiles,
   getApprovedTutorProfiles,
+  setUserRole,
+  getUserById,
 } from "./db";
 import { z } from "zod";
 
@@ -103,6 +105,21 @@ export const appRouter = router({
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+
+    // Returns the current user's userRole (tutor | student | null)
+    getRole: protectedProcedure.query(async ({ ctx }) => {
+      const user = await getUserById(ctx.user.id);
+      return { userRole: user?.userRole ?? null };
+    }),
+
+    // Sets the user's role (can only be set once; subsequent calls are no-ops unless forced)
+    setRole: protectedProcedure
+      .input(z.object({ userRole: z.enum(["tutor", "student"]) }))
+      .mutation(async ({ ctx, input }) => {
+        await setUserRole(ctx.user.id, input.userRole);
+        return { success: true, userRole: input.userRole };
+      }),
+
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });

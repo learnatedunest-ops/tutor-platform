@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { startLogin } from "@/const";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
@@ -148,6 +149,7 @@ function LocationPicker({ onLocation }: { onLocation: (lat: number, lng: number,
 export default function StudentSetup() {
   const [, navigate] = useLocation();
   const { user, loading, isAuthenticated } = useAuth();
+  const { userRole, loading: roleLoading } = useUserRole();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(INITIAL);
   const [submitted, setSubmitted] = useState(false);
@@ -229,13 +231,20 @@ export default function StudentSetup() {
     });
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
         <Loader2 size={32} className="animate-spin" style={{ color: "oklch(0.68 0.18 50)" }} />
       </div>
     );
   }
+
+  // Role gate: if logged in but not a student, redirect to tutor setup
+  useEffect(() => {
+    if (!roleLoading && isAuthenticated && userRole === "tutor") {
+      navigate("/tutor-setup");
+    }
+  }, [roleLoading, isAuthenticated, userRole, navigate]);
 
   if (!isAuthenticated) {
     return (

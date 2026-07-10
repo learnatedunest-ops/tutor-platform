@@ -25,6 +25,8 @@ import TutorSetup from "./pages/TutorSetup";
 import StudentSetup from "./pages/StudentSetup";
 import TutorDashboard from "./pages/TutorDashboard";
 import NearbyTutors from "./pages/NearbyTutors";
+import RoleSelect from "./pages/RoleSelect";
+import AuthGate from "./components/AuthGate";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -49,6 +51,7 @@ function Router() {
       <Route path="/student-setup" component={StudentSetup} />
       <Route path="/tutor-dashboard" component={TutorDashboard} />
       <Route path="/nearby-tutors" component={NearbyTutors} />
+      <Route path="/role-select" component={RoleSelect} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -61,7 +64,9 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <AuthGate>
+            <Router />
+          </AuthGate>
           <WhatsAppButton />
         </TooltipProvider>
       </ThemeProvider>

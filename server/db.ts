@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, users } from "../drizzle/schema";
+import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -334,4 +334,17 @@ export async function getApprovedTutorProfiles(): Promise<TutorProfile[]> {
   return db.select().from(tutorProfiles)
     .where(eq(tutorProfiles.status, "approved"))
     .orderBy(desc(tutorProfiles.createdAt));
+}
+
+export async function setUserRole(userId: number, userRole: "tutor" | "student"): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ userRole }).where(eq(users.id, userId));
+}
+
+export async function getUserById(id: number): Promise<User | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return rows[0] ?? null;
 }

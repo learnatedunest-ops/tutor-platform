@@ -4,10 +4,11 @@
  * Uses browser geolocation. Requires student profile to be set up first.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { startLogin } from "@/const";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
@@ -29,6 +30,7 @@ function ModeLabel({ mode }: { mode: string }) {
 export default function NearbyTutors() {
   const [, navigate] = useLocation();
   const { loading, isAuthenticated } = useAuth();
+  const { userRole, loading: roleLoading } = useUserRole();
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locError, setLocError] = useState("");
   const [locLoading, setLocLoading] = useState(false);
@@ -71,13 +73,20 @@ export default function NearbyTutors() {
     );
   };
 
-  if (loading || profileLoading) {
+  if (loading || profileLoading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
         <Loader2 size={32} className="animate-spin" style={{ color: "oklch(0.68 0.18 50)" }} />
       </div>
     );
   }
+
+  // Role gate: only students can access this page
+  useEffect(() => {
+    if (!roleLoading && isAuthenticated && userRole === "tutor") {
+      navigate("/tutor-dashboard");
+    }
+  }, [roleLoading, isAuthenticated, userRole, navigate]);
 
   if (!isAuthenticated) {
     return (
