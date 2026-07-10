@@ -150,6 +150,7 @@ export default function TutorSetup() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(INITIAL);
   const [submitted, setSubmitted] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   // Pre-fill name and email from OAuth
   useEffect(() => {
@@ -250,7 +251,7 @@ export default function TutorSetup() {
     return <LoginWall role="tutor" />;
   }
 
-  if (submitted || existingProfile?.status === "pending" || existingProfile?.status === "approved") {
+  if (!editMode && (submitted || existingProfile?.status === "pending" || existingProfile?.status === "approved")) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
         <SEO title="Tutor Profile — EduNest" description="Complete your tutor profile on EduNest" url="https://edu-nest.manus.space/tutor-setup" />
@@ -263,15 +264,22 @@ export default function TutorSetup() {
               <h2 className="text-2xl font-extrabold mb-2" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
                 Profile Approved! 🎉
               </h2>
-              <p className="text-gray-500 mb-6" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                Your tutor profile is live. You can now view nearby student requirements from your dashboard.
+              <p className="text-gray-500 mb-4" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                Your tutor profile is live. You can view nearby student requirements from your dashboard.
               </p>
               <button
                 onClick={() => navigate("/tutor-dashboard")}
-                className="w-full py-3 rounded-xl font-bold text-white transition-all hover:opacity-90 active:scale-95"
+                className="w-full py-3 rounded-xl font-bold text-white transition-all hover:opacity-90 active:scale-95 mb-3"
                 style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
               >
                 Go to My Dashboard →
+              </button>
+              <button
+                onClick={() => { setEditMode(true); setSubmitted(false); }}
+                className="w-full py-2.5 rounded-xl font-semibold text-sm transition-all hover:opacity-80"
+                style={{ border: "1px solid oklch(0.88 0.005 80)", color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}
+              >
+                ✏️ Edit My Profile
               </button>
             </>
           ) : (
@@ -285,15 +293,15 @@ export default function TutorSetup() {
               <p className="text-gray-500 mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
                 Your profile has been submitted and is being reviewed by the EduNest team. You'll be notified once it's approved.
               </p>
-              <p className="text-sm mb-6" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Nunito', sans-serif" }}>
+              <p className="text-sm mb-4" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Nunito', sans-serif" }}>
                 Typical review time: within 24 hours.
               </p>
               <button
-                onClick={() => setSubmitted(false)}
-                className="text-sm underline"
-                style={{ color: "oklch(0.55 0.01 270)", fontFamily: "'Nunito', sans-serif" }}
+                onClick={() => { setEditMode(true); setSubmitted(false); }}
+                className="w-full py-2.5 rounded-xl font-semibold text-sm transition-all hover:opacity-80"
+                style={{ border: "1px solid oklch(0.88 0.005 80)", color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}
               >
-                Edit my profile
+                ✏️ Edit My Profile
               </button>
             </>
           )}

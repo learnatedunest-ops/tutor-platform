@@ -164,12 +164,19 @@
 - [x] Save checkpoint
 
 ## Round 11 — Session Timeout, Nav Cleanup, About Us, Demo Interest Flow
-- [ ] Add session timeout hook (30 min inactivity auto-logout) for logged-in tutors and students
-- [ ] Remove "Tutors Near Me" and "Tutor Dashboard" from Resources dropdown in Navbar
-- [ ] Update About Us page: Amogha Amange (Founder & CEO), Myra Raj (Head of Tutors), Kabir Panth (CTO), Sanjay Sangyal (Head of Operations)
-- [ ] Add student_demo_interests table to schema (studentProfileId, tutorProfileId, status, createdAt)
-- [ ] Add tRPC procedures: bookDemo, getMyDemoInterests (student), getAllDemoInterests (admin), updateDemoInterestStatus (admin)
-- [ ] Fix NearbyTutors Book Free Demo button — show real status (pending/confirmed/cancelled) after click
-- [ ] Add Student Demo Interests tab to Admin Dashboard
+- [x] Add session timeout hook (30 min inactivity auto-logout) for logged-in tutors and students
+- [x] Remove "Tutors Near Me" and "Tutor Dashboard" from Resources dropdown in Navbar
+- [x] Update About Us page: Amogha Amange (Founder & CEO), Myra Raj (Head of Tutors), Kabir Panth (CTO), Sanjay Sangyal (Head of Operations)
+- [x] Add student_demo_interests table to schema (studentProfileId, tutorProfileId, status, createdAt)
+- [x] Add tRPC procedures: bookDemo, getMyDemoInterests (student), getAllDemoInterests (admin), updateDemoInterestStatus (admin)
+- [x] Fix NearbyTutors Book Free Demo button — show real status (pending/confirmed/cancelled) after click
+- [x] Add Student Demo Interests tab to Admin Dashboard
+- [x] Run pnpm test (14 passing), 0 TypeScript errors
+- [x] Save checkpoint and publish
+
+## Round 12 — TutorDashboard Fixes
+- [ ] Fix Edit Profile button in TutorDashboard — open editable form pre-filled with saved tutor details
+- [ ] Remove My Profile button from Navbar for tutor accounts
+- [ ] Fix Express Interest persistence — show "Interest Expressed" state after page refresh (query existing interest on load)
 - [ ] Run pnpm test (14+ passing), 0 TypeScript errors
-- [ ] Save checkpoint and publish
+- [ ] Save checkpoint

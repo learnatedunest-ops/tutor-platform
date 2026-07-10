@@ -49,11 +49,23 @@ export default function TutorDashboard() {
       { enabled: !!location && myProfile?.status === "approved" }
     );
 
+  // Load existing interests from DB so state persists across refreshes
+  const { data: myInterests } = trpc.tutorInterest.getMyInterests.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+
+  // Build the expressed IDs set from DB data + local optimistic updates
+  const [localExpressedIds, setLocalExpressedIds] = useState<Set<number>>(new Set());
+  const expressedIds = new Set([
+    ...(myInterests?.map(i => i.studentProfileId) ?? []),
+    ...Array.from(localExpressedIds),
+  ]);
+
   // Express Interest mutation
-  const [expressedIds, setExpressedIds] = useState<Set<number>>(new Set());
   const expressInterest = trpc.tutorInterest.express.useMutation({
     onSuccess: (_, vars) => {
-      setExpressedIds(prev => new Set(prev).add(vars.studentProfileId));
+      setLocalExpressedIds(prev => new Set(prev).add(vars.studentProfileId));
       toast.success("Interest expressed! EduNest will contact you with this student's details.");
     },
     onError: (err) => {
