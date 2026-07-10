@@ -1,6 +1,6 @@
 /**
  * EduNest Student/Parent Portal
- * Requires Manus login — shows personal demo bookings and tutor matches
+ * Requires Manus login — shows demo bookings, tuition requirement (editable), and profile
  */
 
 import { useState } from "react";
@@ -10,9 +10,11 @@ import { startLogin } from "@/const";
 import { Link } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { toast } from "sonner";
 import {
   BookOpen, Clock, CheckCircle2, XCircle, Calendar,
   GraduationCap, MapPin, User, LogIn, RefreshCw, Phone, Mail,
+  Home, FileText, Edit2, Save, X,
 } from "lucide-react";
 
 function formatDate(date: Date | string) {
@@ -31,10 +33,69 @@ const BOOKING_STATUS_CONFIG = {
 
 export default function StudentPortal() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"bookings" | "profile">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "requirement" | "profile">("bookings");
+  const [editingReq, setEditingReq] = useState(false);
+  const [reqForm, setReqForm] = useState<Record<string, string>>({});
 
   const { data: myBookings, isLoading: loadingBookings, refetch } =
     trpc.myBookings.list.useQuery(undefined, { enabled: isAuthenticated });
+
+  const { data: myProfile } = trpc.studentProfile.getMyProfile.useQuery(
+    undefined, { enabled: isAuthenticated }
+  );
+
+  const updateProfileMutation = trpc.studentProfile.save.useMutation({
+    onSuccess: () => {
+      toast.success("Requirement updated successfully!");
+      setEditingReq(false);
+    },
+    onError: (err: { message?: string }) => toast.error(err.message || "Failed to update requirement"),
+  });
+
+  const startEdit = () => {
+    if (myProfile) {
+      setReqForm({
+        name: myProfile.name ?? "",
+        phone: myProfile.phone ?? "",
+        grade: myProfile.grade ?? "",
+        board: myProfile.board ?? "",
+        subjects: myProfile.subjects ?? "",
+        mode: myProfile.mode ?? "",
+        demoTime: myProfile.demoTime ?? "",
+        regularTime: myProfile.regularTime ?? "",
+        sessionsPerWeek: String(myProfile.sessionsPerWeek ?? ""),
+        sessionDuration: String(myProfile.sessionDuration ?? ""),
+        budget: String(myProfile.budget ?? ""),
+        specialRequirements: myProfile.specialRequirements ?? "",
+      });
+      setEditingReq(true);
+    }
+  };
+
+  const saveEdit = () => {
+    if (!myProfile) return;
+    updateProfileMutation.mutate({
+      name: reqForm.name,
+      email: myProfile.email,
+      phone: reqForm.phone,
+      role: myProfile.role as "student" | "parent",
+      studentName: myProfile.studentName ?? undefined,
+      grade: reqForm.grade,
+      board: reqForm.board as "CBSE" | "ICSE" | "State" | "IB" | "IGCSE" | "Other",
+      subjects: reqForm.subjects,
+      mode: reqForm.mode as "home_tuition" | "online" | "both",
+      demoTime: reqForm.demoTime || undefined,
+      regularTime: reqForm.regularTime || undefined,
+      sessionsPerWeek: reqForm.sessionsPerWeek || undefined,
+      sessionDuration: reqForm.sessionDuration || undefined,
+      budget: reqForm.budget || undefined,
+      specialRequirements: reqForm.specialRequirements || undefined,
+      latitude: myProfile.latitude ? Number(myProfile.latitude) : undefined,
+      longitude: myProfile.longitude ? Number(myProfile.longitude) : undefined,
+      fullAddress: myProfile.area ?? undefined,
+      area: myProfile.area ?? undefined,
+    });
+  };
 
   if (loading) {
     return (
@@ -53,7 +114,7 @@ export default function StudentPortal() {
         <Navbar />
         <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
           <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ backgroundColor: "oklch(0.68 0.18 50)18" }}>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ backgroundColor: "oklch(0.68 0.18 5018)" }}>
               <LogIn size={32} style={{ color: "oklch(0.68 0.18 50)" }} />
             </div>
             <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
@@ -69,9 +130,9 @@ export default function StudentPortal() {
             >
               Log In to Your Portal
             </button>
-            <Link href="/find-tutor">
+            <Link href="/">
               <a className="block text-sm text-gray-400 hover:text-gray-600 transition-colors">
-                Browse tutors without logging in →
+                ← Back to Home
               </a>
             </Link>
           </div>
@@ -95,12 +156,20 @@ export default function StudentPortal() {
 
           {/* Welcome Banner */}
           <div className="rounded-2xl p-6 mb-8 text-white relative overflow-hidden" style={{ background: "linear-gradient(135deg, oklch(0.68 0.18 50) 0%, oklch(0.58 0.20 40) 100%)" }}>
-            <div className="relative z-10">
-              <p className="text-orange-100 text-sm font-semibold mb-1">Welcome back,</p>
-              <h1 className="text-2xl font-extrabold mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                {user.name ?? "Student"}
-              </h1>
-              <p className="text-orange-100 text-sm">{user.email}</p>
+            <div className="relative z-10 flex items-start justify-between">
+              <div>
+                <p className="text-orange-100 text-sm font-semibold mb-1">Welcome back,</p>
+                <h1 className="text-2xl font-extrabold mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                  {user.name ?? "Student"}
+                </h1>
+                <p className="text-orange-100 text-sm">{user.email}</p>
+              </div>
+              {/* Home button */}
+              <Link href="/">
+                <a className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm font-semibold transition-all backdrop-blur-sm">
+                  <Home size={16} /> Home
+                </a>
+              </Link>
             </div>
             <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-10">
               <GraduationCap size={100} />
@@ -127,12 +196,12 @@ export default function StudentPortal() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-6">
-            {(["bookings", "profile"] as const).map(tab => (
+          <div className="flex gap-2 mb-6 flex-wrap">
+            {(["bookings", "requirement", "profile"] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all capitalize ${activeTab === tab ? "text-white shadow-sm" : "bg-white text-gray-500 hover:text-gray-700"}`}
+                className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === tab ? "text-white shadow-sm" : "bg-white text-gray-500 hover:text-gray-700"}`}
                 style={activeTab === tab ? { backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" } : { fontFamily: "'Poppins', sans-serif" }}
               >
                 {tab === "bookings" ? (
@@ -140,6 +209,8 @@ export default function StudentPortal() {
                     <BookOpen size={15} /> My Demo Bookings
                     {pendingCount > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingCount}</span>}
                   </span>
+                ) : tab === "requirement" ? (
+                  <span className="flex items-center gap-2"><FileText size={15} /> My Requirement</span>
                 ) : (
                   <span className="flex items-center gap-2"><User size={15} /> My Profile</span>
                 )}
@@ -165,10 +236,10 @@ export default function StudentPortal() {
                 <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                   <BookOpen size={48} className="mx-auto mb-4 opacity-20" style={{ color: "oklch(0.68 0.18 50)" }} />
                   <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No bookings yet</h3>
-                  <p className="text-gray-400 mb-6">You haven't booked any demo classes yet. Find a tutor and book your first free demo!</p>
-                  <Link href="/find-tutor">
+                  <p className="text-gray-400 mb-6">You haven't booked any demo classes yet. Once EduNest matches you with a tutor, your demo class will appear here.</p>
+                  <Link href="/nearby-tutors">
                     <a className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
-                      <GraduationCap size={18} /> Find a Tutor
+                      <MapPin size={18} /> Find Tutors Near Me
                     </a>
                   </Link>
                 </div>
@@ -178,12 +249,9 @@ export default function StudentPortal() {
                   const StatusIcon = cfg.icon;
                   return (
                     <div key={bk.id} className="bg-white rounded-2xl shadow-sm p-6 flex flex-col sm:flex-row gap-5 items-start">
-                      {/* Tutor Avatar */}
                       <div className="w-14 h-14 rounded-xl flex items-center justify-center text-white text-xl font-bold flex-shrink-0" style={{ backgroundColor: "oklch(0.68 0.18 50)" }}>
-                        {bk.tutorName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                        {bk.tutorName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
                       </div>
-
-                      {/* Details */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div>
@@ -198,7 +266,6 @@ export default function StudentPortal() {
                             <StatusIcon size={12} /> {cfg.label}
                           </span>
                         </div>
-
                         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <Calendar size={14} className="text-orange-400 flex-shrink-0" />
@@ -212,17 +279,14 @@ export default function StudentPortal() {
                             <div className="sm:col-span-2 text-sm text-gray-500 italic">"{bk.message}"</div>
                           )}
                         </div>
-
                         <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
                           <span className="text-xs text-gray-400">Booked on {formatDate(bk.createdAt)}</span>
                           {bk.status === "pending" && (
-                            <div className="flex items-center gap-2">
-                              <a href={`https://wa.me/918618635627?text=Hi%2C%20I%20booked%20a%20demo%20with%20${encodeURIComponent(bk.tutorName)}%20on%20${encodeURIComponent(bk.preferredDate)}.%20Booking%20ID%3A%20${bk.id}`}
-                                target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-1.5 text-xs font-semibold text-green-600 hover:text-green-700 transition-colors">
-                                <Phone size={12} /> Follow up on WhatsApp
-                              </a>
-                            </div>
+                            <a href={`https://wa.me/918618635627?text=Hi%2C%20I%20booked%20a%20demo%20with%20${encodeURIComponent(bk.tutorName)}%20on%20${encodeURIComponent(bk.preferredDate)}.%20Booking%20ID%3A%20${bk.id}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-xs font-semibold text-green-600 hover:text-green-700 transition-colors">
+                              <Phone size={12} /> Follow up on WhatsApp
+                            </a>
                           )}
                         </div>
                       </div>
@@ -230,15 +294,155 @@ export default function StudentPortal() {
                   );
                 })
               )}
+            </div>
+          )}
 
-              {/* CTA to book more */}
-              {myBookings && myBookings.length > 0 && (
-                <div className="text-center pt-4">
-                  <Link href="/find-tutor">
+          {/* My Requirement Tab */}
+          {activeTab === "requirement" && (
+            <div className="bg-white rounded-2xl shadow-sm p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-bold text-gray-800 text-xl" style={{ fontFamily: "'Poppins', sans-serif" }}>My Tuition Requirement</h2>
+                {myProfile && !editingReq && (
+                  <button
+                    onClick={startEdit}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+                    style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
+                  >
+                    <Edit2 size={14} /> Edit Requirement
+                  </button>
+                )}
+              </div>
+
+              {!myProfile ? (
+                <div className="text-center py-12">
+                  <FileText size={48} className="mx-auto mb-4 opacity-20" style={{ color: "oklch(0.68 0.18 50)" }} />
+                  <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No requirement submitted yet</h3>
+                  <p className="text-gray-400 mb-6">Complete your student profile to get matched with the right tutor near you.</p>
+                  <Link href="/student-setup">
                     <a className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
-                      <GraduationCap size={18} /> Book Another Demo Class
+                      <GraduationCap size={18} /> Complete My Profile
                     </a>
                   </Link>
+                </div>
+              ) : editingReq ? (
+                <div className="space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[
+                      { key: "name", label: "Your Name" },
+                      { key: "phone", label: "Phone Number" },
+                      { key: "grade", label: "Grade / Class" },
+                      { key: "subjects", label: "Subjects Needed" },
+                      { key: "demoTime", label: "Preferred Demo Time" },
+                      { key: "regularTime", label: "Regular Class Time" },
+                      { key: "sessionsPerWeek", label: "Sessions per Week", type: "number" },
+                      { key: "sessionDuration", label: "Session Duration (mins)", type: "number" },
+                      { key: "budget", label: "Monthly Budget (₹)", type: "number" },
+                    ].map(({ key, label, type }) => (
+                      <div key={key}>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>{label}</label>
+                        <input
+                          type={type ?? "text"}
+                          value={reqForm[key] ?? ""}
+                          onChange={e => setReqForm(f => ({ ...f, [key]: e.target.value }))}
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                          style={{ fontFamily: "'Nunito', sans-serif" }}
+                        />
+                      </div>
+                    ))}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>Board</label>
+                      <select
+                        value={reqForm.board ?? ""}
+                        onChange={e => setReqForm(f => ({ ...f, board: e.target.value }))}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                        style={{ fontFamily: "'Nunito', sans-serif" }}
+                      >
+                        {["CBSE", "ICSE", "State", "IB", "IGCSE", "Other"].map(b => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>Teaching Mode</label>
+                      <select
+                        value={reqForm.mode ?? ""}
+                        onChange={e => setReqForm(f => ({ ...f, mode: e.target.value }))}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                        style={{ fontFamily: "'Nunito', sans-serif" }}
+                      >
+                        <option value="home_tuition">Home Tuition</option>
+                        <option value="online">Online</option>
+                        <option value="both">Both</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>Special Requirements</label>
+                    <textarea
+                      value={reqForm.specialRequirements ?? ""}
+                      onChange={e => setReqForm(f => ({ ...f, specialRequirements: e.target.value }))}
+                      rows={3}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none"
+                      style={{ fontFamily: "'Nunito', sans-serif" }}
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={saveEdit}
+                      disabled={updateProfileMutation.isPending}
+                      className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
+                      style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
+                    >
+                      <Save size={16} /> {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+                    </button>
+                    <button
+                      onClick={() => setEditingReq(false)}
+                      className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all"
+                      style={{ fontFamily: "'Poppins', sans-serif" }}
+                    >
+                      <X size={16} /> Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Requirement details display */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[
+                      { label: "Name", value: myProfile.name },
+                      { label: "Phone", value: myProfile.phone },
+                      { label: "Grade", value: myProfile.grade },
+                      { label: "Board", value: myProfile.board },
+                      { label: "Subjects", value: myProfile.subjects },
+                      { label: "Mode", value: myProfile.mode?.replace("_", " ") },
+                      { label: "Demo Time", value: myProfile.demoTime },
+                      { label: "Regular Time", value: myProfile.regularTime },
+                      { label: "Sessions/Week", value: myProfile.sessionsPerWeek ? String(myProfile.sessionsPerWeek) : undefined },
+                      { label: "Session Duration", value: myProfile.sessionDuration ? `${myProfile.sessionDuration} mins` : undefined },
+                      { label: "Monthly Budget", value: myProfile.budget ? `₹${myProfile.budget}` : undefined },
+                      { label: "Area", value: myProfile.area },
+                    ].filter(item => item.value).map(({ label, value }) => (
+                      <div key={label} className="rounded-xl p-4" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
+                        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{label}</div>
+                        <div className="text-sm font-semibold text-gray-700 capitalize">{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {myProfile.specialRequirements && (
+                    <div className="rounded-xl p-4" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
+                      <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Special Requirements</div>
+                      <div className="text-sm text-gray-700">{myProfile.specialRequirements}</div>
+                    </div>
+                  )}
+                  <div className="rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#22c55e18" }}>
+                      <CheckCircle2 size={16} className="text-green-600" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</div>
+                      <div className="text-sm font-semibold" style={{ color: "#16a34a" }}>Active — Visible to tutors</div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -273,6 +477,11 @@ export default function StudentPortal() {
               </div>
 
               <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
+                <Link href="/">
+                  <a className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+                    <Home size={16} /> Go to Home
+                  </a>
+                </Link>
                 <Link href="/contact">
                   <a className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
                     <Mail size={16} /> Contact EduNest Support

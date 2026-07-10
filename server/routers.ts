@@ -33,6 +33,7 @@ import {
   updateTutorProfileStatus,
   upsertStudentProfile,
   getStudentProfileByUserId,
+  getAllStudentProfiles,
   getActiveStudentProfiles,
   getApprovedTutorProfiles,
   setUserRole,
@@ -389,6 +390,8 @@ export const appRouter = router({
     getMyProfile: protectedProcedure.query(async ({ ctx }) => {
       return getStudentProfileByUserId(ctx.user.id);
     }),
+    // Admin: list all student profiles
+    listAll: adminProcedure.query(async () => getAllStudentProfiles()),
 
     // Create or update the logged-in student/parent's profile
     save: protectedProcedure

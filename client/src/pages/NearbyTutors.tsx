@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -15,7 +15,7 @@ import SEO from "@/components/SEO";
 import {
   MapPin, BookOpen, GraduationCap, Clock, IndianRupee,
   Loader2, Navigation, AlertCircle, RefreshCw, Users,
-  CheckCircle2, Star, Calendar
+  CheckCircle2, Star, Calendar, Home
 } from "lucide-react";
 
 function ModeLabel({ mode }: { mode: string }) {
@@ -165,6 +165,14 @@ export default function NearbyTutors() {
             >
               My Bookings
             </button>
+            <Link href="/">
+              <button
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-80"
+                style={{ backgroundColor: "oklch(0.68 0.18 50)", color: "#fff", fontFamily: "'Poppins', sans-serif" }}
+              >
+                <Home size={13} /> Home
+              </button>
+            </Link>
           </div>
         </div>
       </header>

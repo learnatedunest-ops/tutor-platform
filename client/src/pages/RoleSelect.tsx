@@ -67,19 +67,28 @@ export default function RoleSelect() {
       className="min-h-screen flex flex-col items-center justify-center px-4 py-16"
       style={{ background: "oklch(0.98 0.01 80)" }}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-2 mb-10">
-        <img
-          src="/manus-storage/edunest-logo-v3_f012b9fe.png"
-          alt="EduNest"
-          className="w-10 h-10 object-contain"
-        />
-        <span
-          className="text-3xl font-extrabold"
-          style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.68 0.18 50)", letterSpacing: "-0.02em" }}
+      {/* Logo + Home */}
+      <div className="flex items-center justify-between w-full max-w-lg mb-10">
+        <div className="flex items-center gap-2">
+          <img
+            src="/manus-storage/edunest-logo-v3_f012b9fe.png"
+            alt="EduNest"
+            className="w-10 h-10 object-contain"
+          />
+          <span
+            className="text-3xl font-extrabold"
+            style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.68 0.18 50)", letterSpacing: "-0.02em" }}
+          >
+            Edu<span style={{ color: "oklch(0.14 0.02 270)" }}>Nest</span>
+          </span>
+        </div>
+        <a
+          href="/"
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-80"
+          style={{ backgroundColor: "oklch(0.68 0.18 50)", color: "#fff", fontFamily: "'Poppins', sans-serif" }}
         >
-          Edu<span style={{ color: "oklch(0.14 0.02 270)" }}>Nest</span>
-        </span>
+          ⌂ Home
+        </a>
       </div>
 
       <div className="w-full max-w-lg">

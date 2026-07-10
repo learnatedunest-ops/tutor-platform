@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests } from "../drizzle/schema";
+import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -252,7 +252,7 @@ export async function updateReferralStatus(
 
 // ─── Tutor Profiles ───────────────────────────────────────────────────────────
 
-import { tutorProfiles, InsertTutorProfile, TutorProfile, studentProfiles, InsertStudentProfile, StudentProfile } from "../drizzle/schema";
+// (imports consolidated at top of file)
 
 export async function upsertTutorProfile(
   userId: number,
@@ -391,4 +391,10 @@ export async function updateTutorInterestStatus(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(tutorInterests).set({ status }).where(eq(tutorInterests.id, id));
+}
+
+export async function getAllStudentProfiles(): Promise<StudentProfile[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(studentProfiles).orderBy(desc(studentProfiles.createdAt));
 }

@@ -36,13 +36,20 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // Build role-aware nav links
   const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/find-tutor", label: "Find Tutor" },
-    { href: "/subjects", label: "Subjects" },
-    { href: "/become-tutor", label: "Become a Tutor" },
-    { href: "/about", label: "About Us" },
-    { href: "/contact", label: "Contact" },
+    { href: "/", label: "Home", show: "always" },
+    // Logged-out or student: show Find Tutor
+    ...(!isAuthenticated || userRole === "student" || !userRole
+      ? [{ href: "/find-tutor", label: "Find Tutor", show: "always" }]
+      : []),
+    // Logged-out or tutor: show Become a Tutor (right next to Find Tutor)
+    ...(!isAuthenticated || userRole === "tutor" || !userRole
+      ? [{ href: "/become-tutor", label: "Become a Tutor", show: "always" }]
+      : []),
+    { href: "/subjects", label: "Subjects", show: "always" },
+    { href: "/about", label: "About Us", show: "always" },
+    { href: "/contact", label: "Contact", show: "always" },
   ];
 
   const resourceLinks = [
@@ -147,29 +154,29 @@ export default function Navbar() {
             {/* Desktop CTAs — role-aware */}
             <div className="hidden lg:flex items-center gap-3">
               {isAuthenticated && userRole === "tutor" && (
-                <Link href="/tutor-dashboard" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
-                  My Dashboard
-                </Link>
+                <>
+                  <Link href="/tutor-dashboard" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
+                    My Dashboard
+                  </Link>
+                  <Link href="/tutor-setup" className="btn-outline text-sm py-2 px-5">
+                    My Profile
+                  </Link>
+                </>
               )}
               {isAuthenticated && userRole === "student" && (
-                <Link href="/nearby-tutors" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
-                  Find Tutors
-                </Link>
-              )}
-              {isAuthenticated && userRole === "student" && (
-                <Link href="/portal" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
-                  My Bookings
-                </Link>
+                <>
+                  <Link href="/nearby-tutors" className="text-sm font-semibold py-2 px-4 rounded-xl transition-all hover:bg-[oklch(0.96_0.01_80)]" style={{ color: 'oklch(0.14 0.02 270)', fontFamily: "'Poppins', sans-serif" }}>
+                    Find Tutors
+                  </Link>
+                  <Link href="/portal" className="btn-outline text-sm py-2 px-5">
+                    My Bookings
+                  </Link>
+                </>
               )}
               {!isAuthenticated && (
-                <>
-                  <Link href="/become-tutor" className="btn-outline text-sm py-2 px-5">
-                    Become a Tutor
-                  </Link>
-                  <button onClick={() => startLogin()} className="btn-primary text-sm py-2 px-5">
-                    Sign Up / Log In
-                  </button>
-                </>
+                <button onClick={() => startLogin()} className="btn-primary text-sm py-2 px-5">
+                  Sign Up / Log In
+                </button>
               )}
               {isAuthenticated && !userRole && (
                 <Link href="/role-select" className="btn-primary text-sm py-2 px-5">
@@ -224,9 +231,14 @@ export default function Navbar() {
               </div>
               <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-[oklch(0.9_0.005_80)]">
                 {isAuthenticated && userRole === "tutor" && (
-                  <Link href="/tutor-dashboard" className="btn-primary text-sm text-center" onClick={() => setMobileOpen(false)}>
-                    My Dashboard
-                  </Link>
+                  <>
+                    <Link href="/tutor-dashboard" className="btn-primary text-sm text-center" onClick={() => setMobileOpen(false)}>
+                      My Dashboard
+                    </Link>
+                    <Link href="/tutor-setup" className="btn-outline text-sm text-center" onClick={() => setMobileOpen(false)}>
+                      My Profile
+                    </Link>
+                  </>
                 )}
                 {isAuthenticated && userRole === "student" && (
                   <>
@@ -239,14 +251,9 @@ export default function Navbar() {
                   </>
                 )}
                 {!isAuthenticated && (
-                  <>
-                    <Link href="/become-tutor" className="btn-outline text-sm text-center" onClick={() => setMobileOpen(false)}>
-                      Become a Tutor
-                    </Link>
-                    <button onClick={() => { startLogin(); setMobileOpen(false); }} className="btn-primary text-sm text-center">
-                      Sign Up / Log In
-                    </button>
-                  </>
+                  <button onClick={() => { startLogin(); setMobileOpen(false); }} className="btn-primary text-sm text-center">
+                    Sign Up / Log In
+                  </button>
                 )}
                 {isAuthenticated && !userRole && (
                   <Link href="/role-select" className="btn-primary text-sm text-center" onClick={() => setMobileOpen(false)}>

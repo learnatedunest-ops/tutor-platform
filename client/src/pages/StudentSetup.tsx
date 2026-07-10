@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -16,7 +16,7 @@ import SEO from "@/components/SEO";
 import {
   MapPin, User, Phone, BookOpen, GraduationCap,
   Clock, IndianRupee, CheckCircle2, Loader2, Navigation,
-  ChevronRight, ChevronLeft, AlertCircle, Users
+  ChevronRight, ChevronLeft, AlertCircle, Users, Home
 } from "lucide-react";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
@@ -311,14 +311,26 @@ export default function StudentSetup() {
 
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <img src="/manus-storage/edunest-logo-v3_f012b9fe.png" alt="EduNest" className="w-10 h-10 mx-auto mb-3 object-contain" />
-          <h1 className="text-2xl font-extrabold mb-1" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
-            Register Your Tuition Requirement
-          </h1>
-          <p className="text-sm" style={{ color: "oklch(0.55 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
-            Tell us what you need — we'll match you with the best tutor nearby
-          </p>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <img src="/manus-storage/edunest-logo-v3_f012b9fe.png" alt="EduNest" className="w-10 h-10 object-contain" />
+            <Link href="/">
+              <button
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-80"
+                style={{ backgroundColor: "oklch(0.68 0.18 50)", color: "#fff", fontFamily: "'Poppins', sans-serif" }}
+              >
+                <Home size={13} /> Home
+              </button>
+            </Link>
+          </div>
+          <div className="text-center">
+            <h1 className="text-2xl font-extrabold mb-1" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
+              Register Your Tuition Requirement
+            </h1>
+            <p className="text-sm" style={{ color: "oklch(0.55 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>
+              Tell us what you need — we'll match you with the best tutor nearby
+            </p>
+          </div>
         </div>
 
         {/* Step Indicator */}
