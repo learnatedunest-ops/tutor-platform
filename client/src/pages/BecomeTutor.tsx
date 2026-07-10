@@ -3,11 +3,12 @@
  * Design: Warm Academic Energy — Registration form + benefits
  */
 
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import LoginWall from "@/components/LoginWall";
 import {
   CheckCircle2,
@@ -67,6 +68,30 @@ const steps = [
 
 export default function BecomeTutor() {
   const { isAuthenticated, loading } = useAuth();
+  const { userRole, loading: roleLoading } = useUserRole();
+  const [, navigate] = useLocation();
+  const { data: tutorProfile } = trpc.tutorProfile.getMyProfile.useQuery(
+    undefined,
+    { enabled: isAuthenticated && userRole === "tutor" }
+  );
+
+  // Redirect logged-in tutors to their dashboard or setup
+  useEffect(() => {
+    if (!loading && !roleLoading && isAuthenticated) {
+      if (userRole === "tutor") {
+        if (tutorProfile) {
+          navigate("/tutor-dashboard");
+        } else {
+          navigate("/tutor-setup");
+        }
+      } else if (userRole === "student") {
+        navigate("/student-setup");
+      } else if (userRole === null) {
+        navigate("/role-select");
+      }
+    }
+  }, [loading, roleLoading, isAuthenticated, userRole, tutorProfile, navigate]);
+
   const [form, setForm] = useState({
     name: "",
     email: "",

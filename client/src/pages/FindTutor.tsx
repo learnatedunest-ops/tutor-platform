@@ -4,7 +4,7 @@
  * EduNest admin then matches them with a verified registered tutor.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,6 +14,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useLocation } from "wouter";
 import LoginWall from "@/components/LoginWall";
 import {
   BookOpen,
@@ -114,6 +116,30 @@ const TRUST_POINTS = [
 
 export default function FindTutor() {
   const { isAuthenticated, loading } = useAuth();
+  const { userRole, loading: roleLoading } = useUserRole();
+  const [, navigate] = useLocation();
+  const { data: studentProfile } = trpc.studentProfile.getMyProfile.useQuery(
+    undefined,
+    { enabled: isAuthenticated && userRole === "student" }
+  );
+
+  // Redirect logged-in users to the right page
+  useEffect(() => {
+    if (!loading && !roleLoading && isAuthenticated) {
+      if (userRole === "student") {
+        if (studentProfile) {
+          navigate("/nearby-tutors");
+        } else {
+          navigate("/student-setup");
+        }
+      } else if (userRole === "tutor") {
+        navigate("/tutor-dashboard");
+      } else if (userRole === null) {
+        navigate("/role-select");
+      }
+    }
+  }, [loading, roleLoading, isAuthenticated, userRole, studentProfile, navigate]);
+
   const [submitted, setSubmitted] = useState(false);
 
   const submitMutation = trpc.studentRequirement.submit.useMutation({
