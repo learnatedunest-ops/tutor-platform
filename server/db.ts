@@ -1,6 +1,6 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users } from "../drizzle/schema";
+import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -347,4 +347,48 @@ export async function getUserById(id: number): Promise<User | null> {
   if (!db) return null;
   const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return rows[0] ?? null;
+}
+
+// ─── Tutor Interests ─────────────────────────────────────────────────────────────────────────────────
+
+export async function createTutorInterest(
+  tutorProfileId: number,
+  studentProfileId: number,
+  message?: string
+): Promise<TutorInterest> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Prevent duplicate interests
+  const existing = await db.select().from(tutorInterests)
+    .where(and(eq(tutorInterests.tutorProfileId, tutorProfileId), eq(tutorInterests.studentProfileId, studentProfileId)))
+    .limit(1);
+  if (existing.length > 0) return existing[0];
+  await db.insert(tutorInterests).values({ tutorProfileId, studentProfileId, message });
+  const result = await db.select().from(tutorInterests)
+    .where(and(eq(tutorInterests.tutorProfileId, tutorProfileId), eq(tutorInterests.studentProfileId, studentProfileId)))
+    .limit(1);
+  return result[0];
+}
+
+export async function getTutorInterestsByTutor(tutorProfileId: number): Promise<TutorInterest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tutorInterests)
+    .where(eq(tutorInterests.tutorProfileId, tutorProfileId))
+    .orderBy(desc(tutorInterests.createdAt));
+}
+
+export async function getAllTutorInterests(): Promise<TutorInterest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tutorInterests).orderBy(desc(tutorInterests.createdAt));
+}
+
+export async function updateTutorInterestStatus(
+  id: number,
+  status: "pending" | "accepted" | "declined"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(tutorInterests).set({ status }).where(eq(tutorInterests.id, id));
 }

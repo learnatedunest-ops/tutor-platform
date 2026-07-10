@@ -37,6 +37,10 @@ import {
   getApprovedTutorProfiles,
   setUserRole,
   getUserById,
+  createTutorInterest,
+  getAllTutorInterests,
+  getTutorInterestsByTutor,
+  updateTutorInterestStatus,
 } from "./db";
 import { z } from "zod";
 
@@ -449,6 +453,50 @@ export const appRouter = router({
           .sort((a, b) => a.distKm - b.distKm);
       }),
   }),
+
+  // --- Tutor Interests ---
+  tutorInterest: router({
+    // Tutor expresses interest in a student requirement
+    express: protectedProcedure
+      .input(z.object({
+        studentProfileId: z.number(),
+        message: z.string().max(500).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const myProfile = await getTutorProfileByUserId(ctx.user.id);
+        if (!myProfile || myProfile.status !== "approved") {
+          throw new Error("Only approved tutors can express interest.");
+        }
+        const interest = await createTutorInterest(myProfile.id, input.studentProfileId, input.message);
+        await notifyOwner({
+          title: `New Tutor Interest: ${myProfile.name}`,
+          content: `**Tutor:** ${myProfile.name} (${myProfile.phone})\n**Student Profile ID:** ${input.studentProfileId}\n**Message:** ${input.message ?? 'No message'}\n\nReview at https://edu-nest.manus.space/admin`,
+        }).catch(() => {});
+        return { success: true, interest };
+      }),
+
+    // Get all interests expressed by the logged-in tutor
+    getMyInterests: protectedProcedure.query(async ({ ctx }) => {
+      const myProfile = await getTutorProfileByUserId(ctx.user.id);
+      if (!myProfile) return [];
+      return getTutorInterestsByTutor(myProfile.id);
+    }),
+
+    // Admin: list all tutor interests
+    list: adminProcedure.query(async () => getAllTutorInterests()),
+
+    // Admin: update interest status
+    updateStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "accepted", "declined"]),
+      }))
+      .mutation(async ({ input }) => {
+        await updateTutorInterestStatus(input.id, input.status);
+        return { success: true };
+      }),
+  }),
+
 
   // ─── Referrals ─────────────────────────────────────────────────────────────
   referral: router({

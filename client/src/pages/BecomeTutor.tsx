@@ -7,6 +7,8 @@ import { useState } from "react";
 import { Link } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/_core/hooks/useAuth";
+import LoginWall from "@/components/LoginWall";
 import {
   CheckCircle2,
   ArrowRight,
@@ -64,6 +66,7 @@ const steps = [
 ];
 
 export default function BecomeTutor() {
+  const { isAuthenticated, loading } = useAuth();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -105,6 +108,11 @@ export default function BecomeTutor() {
       about: form.about || undefined,
     });
   };
+
+  // Show login wall for unauthenticated users
+  if (!loading && !isAuthenticated) {
+    return <LoginWall role="tutor" title="Join EduNest as a Tutor" subtitle="Create your free account to complete your tutor profile and start receiving student leads near you." />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

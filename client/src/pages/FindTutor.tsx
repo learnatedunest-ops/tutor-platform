@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import { useAuth } from "@/_core/hooks/useAuth";
+import LoginWall from "@/components/LoginWall";
 import {
   BookOpen,
   MapPin,
@@ -111,6 +113,7 @@ const TRUST_POINTS = [
 ];
 
 export default function FindTutor() {
+  const { isAuthenticated, loading } = useAuth();
   const [submitted, setSubmitted] = useState(false);
 
   const submitMutation = trpc.studentRequirement.submit.useMutation({
@@ -136,6 +139,11 @@ export default function FindTutor() {
   const onSubmit = (data: RequirementForm) => {
     submitMutation.mutate(data);
   };
+
+  // Show login wall for unauthenticated users
+  if (!loading && !isAuthenticated) {
+    return <LoginWall role="student" title="Find the Perfect Tutor Near You" subtitle="Create your free account to submit your tuition requirement and get matched with a verified tutor near your home." />;
+  }
 
   return (
     <>

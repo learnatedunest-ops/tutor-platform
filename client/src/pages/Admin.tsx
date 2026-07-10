@@ -46,7 +46,7 @@ function formatDate(date: Date | string) {
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "applications" | "bookings" | "tutors" | "requirements" | "referrals">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "applications" | "bookings" | "tutors" | "requirements" | "referrals" | "tutorProfiles" | "interests">("inquiries");
   const [tutorForm, setTutorForm] = useState<typeof EMPTY_TUTOR>(EMPTY_TUTOR);
   const [editingTutorId, setEditingTutorId] = useState<number | null>(null);
   const [showTutorForm, setShowTutorForm] = useState(false);
@@ -103,6 +103,22 @@ export default function Admin() {
   const updateReferralStatus = trpc.referral.updateStatus.useMutation({
     onSuccess: () => { refetchReferrals(); toast.success("Referral status updated"); },
     onError: () => toast.error("Failed to update referral status"),
+  });
+
+  // Tutor Profiles (self-registered) — must be declared before any early returns
+  const { data: tutorProfiles, isLoading: loadingTutorProfiles, refetch: refetchTutorProfiles } =
+    trpc.tutorProfile.listAll.useQuery(undefined, { enabled: isAdmin });
+  const updateTutorProfileStatus = trpc.tutorProfile.updateStatus.useMutation({
+    onSuccess: () => { refetchTutorProfiles(); toast.success("Tutor profile status updated"); },
+    onError: () => toast.error("Failed to update tutor profile status"),
+  });
+
+  // Tutor Interests (Express Interest records) — must be before early returns
+  const { data: tutorInterestsList, isLoading: loadingInterests, refetch: refetchInterests } =
+    trpc.tutorInterest.list.useQuery(undefined, { enabled: isAdmin });
+  const updateInterestStatus = trpc.tutorInterest.updateStatus.useMutation({
+    onSuccess: () => { refetchInterests(); toast.success("Interest status updated"); },
+    onError: () => toast.error("Failed to update interest status"),
   });
 
   if (loading) {
@@ -164,6 +180,8 @@ export default function Admin() {
   const activeTutors = adminTutors?.filter(t => t.isActive === "yes").length ?? 0;
   const newRequirements = requirements?.filter((r: { status: string }) => r.status === "new").length ?? 0;
   const pendingReferrals = referrals?.filter((r: { status: string }) => r.status === "pending").length ?? 0;
+  const pendingTutorProfiles = tutorProfiles?.filter((p: { status: string }) => p.status === "pending").length ?? 0;
+  const pendingInterests = tutorInterestsList?.filter((i: { status: string }) => i.status === "pending").length ?? 0;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "oklch(0.97 0.005 80)", fontFamily: "'Nunito', sans-serif" }}>
@@ -213,7 +231,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["inquiries", "applications", "bookings", "requirements", "tutors", "referrals"] as const).map(tab => (
+          {(["inquiries", "applications", "bookings", "requirements", "tutors", "referrals", "tutorProfiles", "interests"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -230,13 +248,17 @@ export default function Admin() {
                 <span className="flex items-center gap-2"><Users size={15} /> Student Requirements {newRequirements > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{newRequirements}</span>}</span>
               ) : tab === "referrals" ? (
                 <span className="flex items-center gap-2"><Gift size={15} /> Referrals {pendingReferrals > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingReferrals}</span>}</span>
+              ) : tab === "tutorProfiles" ? (
+                <span className="flex items-center gap-2"><GraduationCap size={15} /> Tutor Profiles {pendingTutorProfiles > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingTutorProfiles}</span>}</span>
+              ) : tab === "interests" ? (
+                <span className="flex items-center gap-2"><CheckCircle2 size={15} /> Tutor Interests {pendingInterests > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingInterests}</span>}</span>
               ) : (
                 <span className="flex items-center gap-2"><UserCheck size={15} /> Manage Tutors <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
               )}
             </button>
           ))}
           <button
-            onClick={() => { refetchInquiries(); refetchApps(); refetchBookings(); refetchTutors(); refetchRequirements(); refetchReferrals(); }}
+            onClick={() => { refetchInquiries(); refetchApps(); refetchBookings(); refetchTutors(); refetchRequirements(); refetchReferrals(); refetchTutorProfiles(); refetchInterests(); }}
             className="ml-auto flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             <RefreshCw size={15} /> Refresh
@@ -818,6 +840,160 @@ export default function Admin() {
                             <option value="pending">Pending</option>
                             <option value="joined">Joined</option>
                             <option value="rewarded">Rewarded</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Tutor Profiles (Self-Registered) ── */}
+        {activeTab === "tutorProfiles" && (
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>Tutor Profiles — Self Registered ({tutorProfiles?.length ?? 0})</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Tutors who signed up and completed their profile. Approve to make them visible to students.</p>
+            </div>
+            {loadingTutorProfiles ? (
+              <div className="p-12 text-center text-gray-400">
+                <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                Loading tutor profiles...
+              </div>
+            ) : !tutorProfiles?.length ? (
+              <div className="p-12 text-center text-gray-400">
+                <GraduationCap size={40} className="mx-auto mb-3 opacity-30" />
+                <p>No tutor profiles submitted yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-left">
+                      {["#", "Name", "Contact", "Qualification", "Subjects", "Experience", "Mode", "Location", "Fee", "Status", "Submitted", "Actions"].map(h => (
+                        <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {tutorProfiles.map((p: {
+                      id: number; name: string; phone: string; email?: string | null;
+                      qualification: string; subjects: string; experience: string;
+                      mode: string; fullAddress?: string | null; latitude?: string | null; longitude?: string | null;
+                      firstMonthFee?: string | null; nextMonthFee?: string | null;
+                      status: string; createdAt: Date | string;
+                    }) => (
+                      <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-4 text-gray-400 font-mono text-xs">{p.id}</td>
+                        <td className="px-4 py-4 font-semibold text-gray-800 whitespace-nowrap">{p.name}</td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col gap-0.5">
+                            {p.email && <a href={`mailto:${p.email}`} className="flex items-center gap-1 text-blue-600 hover:underline text-xs"><Mail size={11} /> {p.email}</a>}
+                            <a href={`tel:${p.phone}`} className="flex items-center gap-1 text-green-600 hover:underline text-xs"><Phone size={11} /> {p.phone}</a>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-600 max-w-[120px]"><p className="line-clamp-2">{p.qualification}</p></td>
+                        <td className="px-4 py-4 text-xs text-gray-600 max-w-[140px]"><p className="line-clamp-2">{p.subjects}</p></td>
+                        <td className="px-4 py-4 text-xs text-gray-600 whitespace-nowrap">{p.experience}</td>
+                        <td className="px-4 py-4 text-xs text-gray-600 whitespace-nowrap capitalize">{p.mode.replace("_", " ")}</td>
+                        <td className="px-4 py-4 text-xs text-gray-600 max-w-[140px]">
+                          {p.fullAddress ? <p className="line-clamp-2">{p.fullAddress}</p> : (
+                            p.latitude ? <span className="text-gray-400">{parseFloat(p.latitude).toFixed(4)}, {parseFloat(p.longitude ?? "0").toFixed(4)}</span> : <span className="text-gray-300">Not set</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-600 whitespace-nowrap">
+                          {p.firstMonthFee && <div>1st: ₹{p.firstMonthFee}</div>}
+                          {p.nextMonthFee && <div>Next: ₹{p.nextMonthFee}</div>}
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${STATUS_COLORS[p.status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>{p.status}</span>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">{formatDate(p.createdAt)}</td>
+                        <td className="px-4 py-4">
+                          <select
+                            value={p.status}
+                            onChange={e => updateTutorProfileStatus.mutate({ id: p.id, status: e.target.value as "pending" | "approved" | "rejected" })}
+                            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 cursor-pointer hover:border-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-300"
+                            disabled={updateTutorProfileStatus.isPending}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Tutor Interests ── */}
+        {activeTab === "interests" && (
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>Tutor Interests ({tutorInterestsList?.length ?? 0})</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Approved tutors who expressed interest in student requirements. Accept to connect them.</p>
+            </div>
+            {loadingInterests ? (
+              <div className="p-12 text-center text-gray-400">
+                <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                Loading interests...
+              </div>
+            ) : !tutorInterestsList?.length ? (
+              <div className="p-12 text-center text-gray-400">
+                <CheckCircle2 size={40} className="mx-auto mb-3 opacity-30" />
+                <p>No tutor interests yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-left">
+                      {["#", "Tutor Profile ID", "Student Profile ID", "Message", "Status", "Submitted", "Actions"].map(h => (
+                        <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {tutorInterestsList.map((interest: {
+                      id: number; tutorProfileId: number; studentProfileId: number;
+                      message?: string | null; status: string; createdAt: Date | string;
+                    }) => (
+                      <tr key={interest.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-4 text-gray-400 font-mono text-xs">{interest.id}</td>
+                        <td className="px-4 py-4 font-semibold text-gray-800">
+                          <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-lg font-mono">Tutor #{interest.tutorProfileId}</span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-lg font-mono">Student #{interest.studentProfileId}</span>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-600 max-w-[200px]">
+                          {interest.message ? <p className="line-clamp-2">{interest.message}</p> : <span className="text-gray-300">No message</span>}
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${
+                            interest.status === "accepted" ? "bg-green-50 text-green-700 border-green-200" :
+                            interest.status === "declined" ? "bg-red-50 text-red-700 border-red-200" :
+                            "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          }`}>{interest.status}</span>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">{new Date(interest.createdAt).toLocaleDateString()}</td>
+                        <td className="px-4 py-4">
+                          <select
+                            value={interest.status}
+                            onChange={e => updateInterestStatus.mutate({ id: interest.id, status: e.target.value as "pending" | "accepted" | "declined" })}
+                            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 cursor-pointer hover:border-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-300"
+                            disabled={updateInterestStatus.isPending}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="accepted">Accepted</option>
+                            <option value="declined">Declined</option>
                           </select>
                         </td>
                       </tr>

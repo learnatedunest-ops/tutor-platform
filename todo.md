@@ -147,3 +147,18 @@
 - [x] Update Find a Tutor CTA to trigger login + role-select flow (via Sign Up / Log In button)
 - [x] Run pnpm test (14 passing), 0 TypeScript errors
 - [x] Save checkpoint
+
+## Round 9 — Signup Gate, Admin Tutor Profiles, Express Interest, Notifications
+- [ ] Fix signup gate: show proper login/signup wall on /become-tutor and /find-tutor CTAs before any form
+- [ ] BecomeTutor page: if not logged in, show login prompt with role pre-set to tutor
+- [ ] FindTutor page: if not logged in, show login prompt with role pre-set to student
+- [ ] TutorSetup: if not logged in, show full-page login/signup wall (not just a small prompt)
+- [ ] StudentSetup: if not logged in, show full-page login/signup wall (not just a small prompt)
+- [ ] Add Tutor Profiles tab to Admin Dashboard (list all tutor_profiles, approve/reject)
+- [ ] Add tutor_interests table to schema (tutorId, studentProfileId, status, message, createdAt)
+- [ ] Add tRPC procedures: expressInterest, getMyInterests, getAllInterests (admin)
+- [ ] Wire Express Interest button in TutorDashboard to real DB mutation
+- [ ] Add Interests tab to Admin Dashboard
+- [ ] Add notifyOwner calls for: new tutor profile submitted, new student requirement submitted, new express interest
+- [ ] Run pnpm test (14+ passing), 0 TypeScript errors
+- [ ] Save checkpoint and publish

@@ -11,6 +11,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { startLogin } from "@/const";
+import LoginWall from "@/components/LoginWall";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
 import {
@@ -246,26 +247,7 @@ export default function TutorSetup() {
   }, [roleLoading, isAuthenticated, userRole, navigate]);
 
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
-        <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center">
-          <GraduationCap size={48} className="mx-auto mb-4" style={{ color: "oklch(0.68 0.18 50)" }} />
-          <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
-            Login to Continue
-          </h1>
-          <p className="text-gray-500 mb-6" style={{ fontFamily: "'Nunito', sans-serif" }}>
-            Please log in to complete your tutor profile and start receiving student leads.
-          </p>
-          <button
-            onClick={() => startLogin()}
-            className="w-full py-3 rounded-xl font-bold text-white transition-all hover:opacity-90 active:scale-95"
-            style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
-          >
-            Log In / Sign Up
-          </button>
-        </div>
-      </div>
-    );
+    return <LoginWall role="tutor" />;
   }
 
   if (submitted || existingProfile?.status === "pending" || existingProfile?.status === "approved") {

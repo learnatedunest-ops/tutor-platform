@@ -213,6 +213,21 @@ export type TutorProfile = typeof tutorProfiles.$inferSelect;
 export type InsertTutorProfile = typeof tutorProfiles.$inferInsert;
 
 /**
+ * Tutor Interests — when an approved tutor expresses interest in a student requirement
+ */
+export const tutorInterests = mysqlTable("tutor_interests", {
+  id: int("id").autoincrement().primaryKey(),
+  tutorProfileId: int("tutorProfileId").notNull(),    // FK → tutor_profiles.id
+  studentProfileId: int("studentProfileId").notNull(), // FK → student_profiles.id
+  message: text("message"),
+  status: mysqlEnum("status", ["pending", "accepted", "declined"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TutorInterest = typeof tutorInterests.$inferSelect;
+export type InsertTutorInterest = typeof tutorInterests.$inferInsert;
+
+/**
  * Student / parent self-registration profiles (linked to users table via userId)
  * Created when a student/parent completes their profile after login.
  * Their requirement is immediately visible to nearby approved tutors.

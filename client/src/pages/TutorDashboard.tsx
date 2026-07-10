@@ -49,6 +49,18 @@ export default function TutorDashboard() {
       { enabled: !!location && myProfile?.status === "approved" }
     );
 
+  // Express Interest mutation
+  const [expressedIds, setExpressedIds] = useState<Set<number>>(new Set());
+  const expressInterest = trpc.tutorInterest.express.useMutation({
+    onSuccess: (_, vars) => {
+      setExpressedIds(prev => new Set(prev).add(vars.studentProfileId));
+      toast.success("Interest expressed! EduNest will contact you with this student's details.");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to express interest. Please try again.");
+    },
+  });
+
   const getLocation = () => {
     if (!navigator.geolocation) {
       setLocError("Geolocation is not supported by your browser.");
@@ -422,15 +434,21 @@ export default function TutorDashboard() {
                 )}
 
                 {/* Express Interest */}
-                <button
-                  onClick={() => {
-                    toast.success("Interest expressed! EduNest will contact you with this student's details.");
-                  }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 active:scale-95"
-                  style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
-                >
-                  Express Interest <ChevronRight size={14} />
-                </button>
+                {expressedIds.has(student.id) ? (
+                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm" style={{ backgroundColor: "oklch(0.95 0.05 145)", color: "oklch(0.35 0.12 145)", fontFamily: "'Poppins', sans-serif" }}>
+                    <CheckCircle2 size={14} /> Interest Expressed
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => expressInterest.mutate({ studentProfileId: student.id })}
+                    disabled={expressInterest.isPending}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
+                  >
+                    {expressInterest.isPending ? <Loader2 size={14} className="animate-spin" /> : <ChevronRight size={14} />}
+                    Express Interest
+                  </button>
+                )}
               </div>
             ))}
           </div>

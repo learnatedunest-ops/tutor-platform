@@ -57,6 +57,13 @@
       "when": 1783683079993,
       "tag": "0007_nebulous_whizzer",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1783686382698,
+      "tag": "0008_parched_captain_britain",
+      "breakpoints": true
     }
   ]
 }
