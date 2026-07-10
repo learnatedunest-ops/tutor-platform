@@ -15,7 +15,7 @@ import SEO from "@/components/SEO";
 import {
   MapPin, BookOpen, GraduationCap, Clock, IndianRupee,
   Loader2, Navigation, AlertCircle, RefreshCw, User,
-  ChevronRight, CheckCircle2, Calendar, Home
+  ChevronRight, CheckCircle2, Calendar, Home, ShieldCheck
 } from "lucide-react";
 
 function ModeLabel({ mode }: { mode: string }) {
@@ -40,6 +40,12 @@ export default function TutorDashboard() {
   const { data: myProfile, isLoading: profileLoading } = trpc.tutorProfile.getMyProfile.useQuery(
     undefined,
     { enabled: isAuthenticated }
+  );
+
+  // Get demo slots for this tutor
+  const { data: demoSlots, isLoading: slotsLoading } = trpc.demoSlot.tutorSlots.useQuery(
+    undefined,
+    { enabled: isAuthenticated && myProfile?.status === "approved" }
   );
 
   // Get nearby students (only runs once location is available)
@@ -233,6 +239,11 @@ export default function TutorDashboard() {
             <span className="px-2.5 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: "#DCFCE7", color: "#15803D", fontFamily: "'Poppins', sans-serif" }}>
               ✓ Approved
             </span>
+            {myProfile.phoneVerified === "yes" && (
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8", fontFamily: "'Poppins', sans-serif" }}>
+                <ShieldCheck size={12} /> Phone Verified
+              </span>
+            )}
             <button
               onClick={() => navigate("/tutor-setup?edit=true")}
               className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:bg-gray-50"
@@ -276,6 +287,68 @@ export default function TutorDashboard() {
             )}
           </div>
         </div>
+
+        {/* Demo Schedule Panel */}
+        {(slotsLoading || (demoSlots && demoSlots.length > 0)) && (
+          <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar size={18} style={{ color: "oklch(0.68 0.18 50)" }} />
+              <h2 className="font-bold text-base" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>My Demo Classes</h2>
+              {demoSlots && (
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)" }}>
+                  {demoSlots.length} slot{demoSlots.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+            {slotsLoading && (
+              <div className="flex items-center gap-2 py-4">
+                <Loader2 size={16} className="animate-spin" style={{ color: "oklch(0.68 0.18 50)" }} />
+                <span className="text-sm" style={{ color: "oklch(0.65 0.01 270)" }}>Loading schedule...</span>
+              </div>
+            )}
+            {demoSlots && demoSlots.length > 0 && (
+              <div className="space-y-3">
+                {demoSlots.map(slot => (
+                  <div key={slot.id} className="rounded-xl p-4 border" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.98 0.005 80)" }}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                            slot.status === "scheduled" ? "bg-blue-100 text-blue-700" :
+                            slot.status === "completed" ? "bg-green-100 text-green-700" :
+                            slot.status === "cancelled" ? "bg-red-100 text-red-700" :
+                            "bg-orange-100 text-orange-700"
+                          }`}>
+                            {slot.status === "pending_schedule" ? "Awaiting Schedule" :
+                             slot.status === "scheduled" ? "Scheduled" :
+                             slot.status === "completed" ? "Completed" : "Cancelled"}
+                          </span>
+                          <span className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>
+                            Student Profile #{slot.studentProfileId}
+                          </span>
+                        </div>
+                        {slot.scheduledDate && slot.scheduledTime ? (
+                          <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+                            <Calendar size={14} style={{ color: "oklch(0.68 0.18 50)" }} />
+                            {slot.scheduledDate} at {slot.scheduledTime}
+                          </div>
+                        ) : (
+                          <p className="text-sm" style={{ color: "oklch(0.65 0.01 270)" }}>Waiting for student to schedule a time</p>
+                        )}
+                        {slot.notes && (
+                          <p className="text-xs mt-1" style={{ color: "oklch(0.45 0.01 270)" }}>Note: {slot.notes}</p>
+                        )}
+                        <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)" }}>
+                          Mode: {slot.mode === "online" ? "Online" : slot.mode === "home_tuition" ? "Home Tuition" : "Both"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Location & Radius Controls */}
         <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6" style={{ borderColor: "oklch(0.92 0.005 80)" }}>

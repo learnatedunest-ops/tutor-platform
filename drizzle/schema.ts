@@ -199,6 +199,8 @@ export const tutorProfiles = mysqlTable("tutor_profiles", {
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
   fullAddress: text("fullAddress"),
   area: varchar("area", { length: 128 }),
+  // Phone verification
+  phoneVerified: mysqlEnum("phoneVerified", ["yes", "no"]).default("no").notNull(),
   // Status
   status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -256,6 +258,8 @@ export const studentProfiles = mysqlTable("student_profiles", {
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
   fullAddress: text("fullAddress"),
   area: varchar("area", { length: 128 }),
+  // Phone verification
+  phoneVerified: mysqlEnum("phoneVerified", ["yes", "no"]).default("no").notNull(),
   // Status
   isActive: mysqlEnum("isActive", ["yes", "no"]).default("yes").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -281,3 +285,41 @@ export const studentDemoInterests = mysqlTable("student_demo_interests", {
 
 export type StudentDemoInterest = typeof studentDemoInterests.$inferSelect;
 export type InsertStudentDemoInterest = typeof studentDemoInterests.$inferInsert;
+
+/**
+ * OTP Verifications — stores one-time passcodes for phone number verification.
+ * A new row is created each time an OTP is requested; old rows are invalidated
+ * by checking expiresAt. The phone field stores the E.164 number being verified.
+ */
+export const otpVerifications = mysqlTable("otp_verifications", {
+  id: int("id").autoincrement().primaryKey(),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  code: varchar("code", { length: 6 }).notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  verified: mysqlEnum("verified", ["yes", "no"]).default("no").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type OtpVerification = typeof otpVerifications.$inferSelect;
+export type InsertOtpVerification = typeof otpVerifications.$inferInsert;
+
+/**
+ * Demo Slots — when admin confirms a student demo interest, a slot is created
+ * so the student can pick a date/time and the tutor can see their schedule.
+ */
+export const demoSlots = mysqlTable("demo_slots", {
+  id: int("id").autoincrement().primaryKey(),
+  studentDemoInterestId: int("studentDemoInterestId").notNull().unique(), // FK → student_demo_interests.id
+  studentProfileId: int("studentProfileId").notNull(),   // FK → student_profiles.id
+  tutorProfileId: int("tutorProfileId").notNull(),        // FK → tutor_profiles.id
+  scheduledDate: varchar("scheduledDate", { length: 32 }),  // e.g. "2024-08-15"
+  scheduledTime: varchar("scheduledTime", { length: 32 }),  // e.g. "10:00 AM"
+  mode: mysqlEnum("mode", ["home_tuition", "online"]).default("online").notNull(),
+  notes: text("notes"),
+  status: mysqlEnum("status", ["pending_schedule", "scheduled", "completed", "cancelled"]).default("pending_schedule").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DemoSlot = typeof demoSlots.$inferSelect;
+export type InsertDemoSlot = typeof demoSlots.$inferInsert;

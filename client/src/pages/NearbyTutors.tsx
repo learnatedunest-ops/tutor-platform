@@ -43,6 +43,7 @@ type TutorRow = {
   area: string | null;
   education: string | null;
   workExperience: string | null;
+  phoneVerified?: string | null;
   distKm: number | string;
 };
 
@@ -399,7 +400,7 @@ export default function NearbyTutors() {
               My Requirement
             </button>
             <button
-              onClick={() => navigate("/my-portal")}
+              onClick={() => navigate("/portal")}
               className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
               style={{ border: "1px solid oklch(0.88 0.005 80)", color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}
             >
@@ -575,9 +576,17 @@ export default function NearbyTutors() {
                         {tutor.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="text-base font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
-                          {tutor.name}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
+                            {tutor.name}
+                          </h3>
+                          {tutor.phoneVerified === "yes" && (
+                            <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "#DCFCE7", color: "#15803D" }}>
+                              <CheckCircle2 size={10} />
+                              Verified
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>{tutor.qualification}</p>
                       </div>
                     </div>

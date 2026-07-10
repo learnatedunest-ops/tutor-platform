@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile, StudentDemoInterest, studentDemoInterests } from "../drizzle/schema";
+import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile, StudentDemoInterest, studentDemoInterests, OtpVerification, otpVerifications, DemoSlot, demoSlots } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -445,4 +445,117 @@ export async function updateStudentDemoInterestStatus(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(studentDemoInterests).set({ status }).where(eq(studentDemoInterests.id, id));
+}
+
+// ─── OTP Verifications ─────────────────────────────────────────────────────────
+export async function createOtp(phone: string, code: string, expiresAt: Date): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(otpVerifications).values({ phone, code, expiresAt, verified: "no" });
+}
+
+export async function getLatestOtp(phone: string): Promise<OtpVerification | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(otpVerifications)
+    .where(eq(otpVerifications.phone, phone))
+    .orderBy(desc(otpVerifications.createdAt))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function markOtpVerified(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(otpVerifications).set({ verified: "yes" }).where(eq(otpVerifications.id, id));
+}
+
+export async function markTutorPhoneVerified(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(tutorProfiles).set({ phoneVerified: "yes" }).where(eq(tutorProfiles.userId, userId));
+}
+
+export async function markStudentPhoneVerified(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(studentProfiles).set({ phoneVerified: "yes" }).where(eq(studentProfiles.userId, userId));
+}
+
+// ─── Demo Slots ────────────────────────────────────────────────────────────────
+export async function createDemoSlot(
+  studentDemoInterestId: number,
+  studentProfileId: number,
+  tutorProfileId: number,
+  mode: "home_tuition" | "online"
+): Promise<DemoSlot> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(demoSlots).values({
+    studentDemoInterestId,
+    studentProfileId,
+    tutorProfileId,
+    mode,
+    status: "pending_schedule",
+  });
+  const rows = await db.select().from(demoSlots)
+    .where(eq(demoSlots.studentDemoInterestId, studentDemoInterestId))
+    .limit(1);
+  return rows[0]!;
+}
+
+export async function getDemoSlotByInterestId(studentDemoInterestId: number): Promise<DemoSlot | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(demoSlots)
+    .where(eq(demoSlots.studentDemoInterestId, studentDemoInterestId))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<DemoSlot[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(demoSlots)
+    .where(eq(demoSlots.tutorProfileId, tutorProfileId))
+    .orderBy(desc(demoSlots.createdAt));
+}
+
+export async function getDemoSlotsByStudent(studentProfileId: number): Promise<DemoSlot[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(demoSlots)
+    .where(eq(demoSlots.studentProfileId, studentProfileId))
+    .orderBy(desc(demoSlots.createdAt));
+}
+
+export async function updateDemoSlotSchedule(
+  id: number,
+  scheduledDate: string,
+  scheduledTime: string,
+  notes?: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(demoSlots).set({
+    scheduledDate,
+    scheduledTime,
+    notes: notes ?? null,
+    status: "scheduled",
+  }).where(eq(demoSlots.id, id));
+}
+
+export async function updateDemoSlotStatus(
+  id: number,
+  status: "pending_schedule" | "scheduled" | "completed" | "cancelled"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(demoSlots).set({ status }).where(eq(demoSlots.id, id));
+}
+
+export async function getAllDemoSlots(): Promise<DemoSlot[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(demoSlots).orderBy(desc(demoSlots.createdAt));
 }

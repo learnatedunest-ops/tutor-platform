@@ -47,6 +47,20 @@ import {
   getStudentDemoInterestByPair,
   getAllStudentDemoInterests,
   updateStudentDemoInterestStatus,
+  // OTP
+  createOtp,
+  getLatestOtp,
+  markOtpVerified,
+  markTutorPhoneVerified,
+  markStudentPhoneVerified,
+  // Demo slots
+  createDemoSlot,
+  getDemoSlotByInterestId,
+  getDemoSlotsByTutor,
+  getDemoSlotsByStudent,
+  updateDemoSlotSchedule,
+  updateDemoSlotStatus,
+  getAllDemoSlots,
 } from "./db";
 import { z } from "zod";
 
@@ -580,7 +594,7 @@ export const appRouter = router({
     // Admin: list all demo interests
     listAll: adminProcedure.query(async () => getAllStudentDemoInterests()),
 
-    // Admin: update status
+    // Admin: update status — also creates a demo slot when confirming
     updateStatus: adminProcedure
       .input(z.object({
         id: z.number(),
@@ -588,6 +602,139 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await updateStudentDemoInterestStatus(input.id, input.status);
+        if (input.status === "confirmed") {
+          // Fetch the interest to get profile IDs
+          const all = await getAllStudentDemoInterests();
+          const interest = all.find(i => i.id === input.id);
+          if (interest) {
+            // Create a demo slot if one doesn't already exist
+            const existing = await getDemoSlotByInterestId(input.id);
+            if (!existing) {
+              await createDemoSlot(
+                input.id,
+                interest.studentProfileId,
+                interest.tutorProfileId,
+                "online"
+              );
+            }
+            // Notify the tutor via owner notification (best-effort)
+            await notifyOwner({
+              title: `🎉 Demo Class Confirmed — Tutor Profile #${interest.tutorProfileId}`,
+              content: `A student has confirmed a free demo class with you!\n\nStudent Profile ID: ${interest.studentProfileId}\nTutor Profile ID: ${interest.tutorProfileId}\n\nLog in to EduNest to view the schedule: https://edu-nest.manus.space/tutor-dashboard`,
+            }).catch(() => {});
+          }
+        }
+        return { success: true };
+      }),
+  }),
+
+  // ─── OTP Phone Verification ─────────────────────────────────────────────────
+  otp: router({
+    // Send OTP to a phone number (generates a 6-digit code, stores in DB, sends via email fallback)
+    send: protectedProcedure
+      .input(z.object({
+        phone: z.string().min(10).max(20).trim(),
+      }))
+      .mutation(async ({ input }) => {
+        // Rate limit: check if a recent OTP was sent in the last 60 seconds
+        const recent = await getLatestOtp(input.phone);
+        if (recent) {
+          const age = Date.now() - new Date(recent.createdAt).getTime();
+          if (age < 60_000) {
+            throw new Error("Please wait 60 seconds before requesting a new OTP.");
+          }
+        }
+        // Generate 6-digit code
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        await createOtp(input.phone, code, expiresAt);
+        // Notify owner with the OTP (since we don't have an SMS provider,
+        // the owner can relay it, or in production wire Twilio/MSG91 here)
+        await notifyOwner({
+          title: `📱 OTP for ${input.phone}`,
+          content: `OTP Code: **${code}**\nPhone: ${input.phone}\nExpires: ${expiresAt.toISOString()}\n\n_This is for EduNest phone verification._`,
+        }).catch(() => {});
+        // In development, log the OTP for easy testing
+        console.log(`[OTP] Phone: ${input.phone} | Code: ${code}`);
+        return { success: true, expiresAt };
+      }),
+
+    // Verify OTP code entered by user
+    verify: protectedProcedure
+      .input(z.object({
+        phone: z.string().min(10).max(20).trim(),
+        code: z.string().length(6).trim(),
+        profileType: z.enum(["tutor", "student"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const otp = await getLatestOtp(input.phone);
+        if (!otp) throw new Error("No OTP found. Please request a new one.");
+        if (otp.verified === "yes") throw new Error("This OTP has already been used.");
+        if (new Date(otp.expiresAt) < new Date()) throw new Error("OTP has expired. Please request a new one.");
+        if (otp.code !== input.code) throw new Error("Incorrect OTP. Please try again.");
+        // Mark OTP as used
+        await markOtpVerified(otp.id);
+        // Mark the profile's phone as verified
+        if (input.profileType === "tutor") {
+          await markTutorPhoneVerified(ctx.user.id);
+        } else {
+          await markStudentPhoneVerified(ctx.user.id);
+        }
+        return { success: true, verified: true };
+      }),
+  }),
+
+  // ─── Demo Slots ─────────────────────────────────────────────────────────────
+  demoSlot: router({
+    // Student: get their demo slots
+    mySlots: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await getStudentProfileByUserId(ctx.user.id);
+      if (!profile) return [];
+      return getDemoSlotsByStudent(profile.id);
+    }),
+
+    // Tutor: get their demo slots (schedule)
+    tutorSlots: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await getTutorProfileByUserId(ctx.user.id);
+      if (!profile) return [];
+      return getDemoSlotsByTutor(profile.id);
+    }),
+
+    // Student: schedule a confirmed demo slot
+    schedule: protectedProcedure
+      .input(z.object({
+        slotId: z.number(),
+        scheduledDate: z.string().min(1).max(32).trim(),
+        scheduledTime: z.string().min(1).max(32).trim(),
+        notes: z.string().max(500).trim().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verify the student owns this slot
+        const profile = await getStudentProfileByUserId(ctx.user.id);
+        if (!profile) throw new Error("Student profile not found.");
+        const slots = await getDemoSlotsByStudent(profile.id);
+        const slot = slots.find(s => s.id === input.slotId);
+        if (!slot) throw new Error("Demo slot not found or access denied.");
+        await updateDemoSlotSchedule(input.slotId, input.scheduledDate, input.scheduledTime, input.notes);
+        // Notify owner
+        await notifyOwner({
+          title: `📅 Demo Slot Scheduled`,
+          content: `Student Profile #${profile.id} scheduled a demo on **${input.scheduledDate}** at **${input.scheduledTime}**.\nTutor Profile ID: ${slot.tutorProfileId}\nNotes: ${input.notes ?? 'None'}`,
+        }).catch(() => {});
+        return { success: true };
+      }),
+
+    // Admin: list all demo slots
+    listAll: adminProcedure.query(async () => getAllDemoSlots()),
+
+    // Admin: update slot status
+    updateStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending_schedule", "scheduled", "completed", "cancelled"]),
+      }))
+      .mutation(async ({ input }) => {
+        await updateDemoSlotStatus(input.id, input.status);
         return { success: true };
       }),
   }),

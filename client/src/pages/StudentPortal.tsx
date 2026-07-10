@@ -3,7 +3,7 @@
  * Requires Manus login — shows demo bookings, tuition requirement (editable), and profile
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import {
   BookOpen, Clock, CheckCircle2, XCircle, Calendar,
   GraduationCap, MapPin, User, LogIn, RefreshCw, Phone, Mail,
-  Home, FileText, Edit2, Save, X,
+  Home, FileText, Edit2, Save, X, CalendarCheck, Loader2,
 } from "lucide-react";
 
 function formatDate(date: Date | string) {
@@ -33,9 +33,14 @@ const BOOKING_STATUS_CONFIG = {
 
 export default function StudentPortal() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"bookings" | "requirement" | "profile">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "demos" | "requirement" | "profile">("bookings");
   const [editingReq, setEditingReq] = useState(false);
   const [reqForm, setReqForm] = useState<Record<string, string>>({});
+  // Demo slot scheduling state
+  const [schedulingSlotId, setSchedulingSlotId] = useState<number | null>(null);
+  const [schedDate, setSchedDate] = useState("");
+  const [schedTime, setSchedTime] = useState("");
+  const [schedNotes, setSchedNotes] = useState("");
 
   const { data: myBookings, isLoading: loadingBookings, refetch } =
     trpc.myBookings.list.useQuery(undefined, { enabled: isAuthenticated });
@@ -43,6 +48,25 @@ export default function StudentPortal() {
   const { data: myProfile } = trpc.studentProfile.getMyProfile.useQuery(
     undefined, { enabled: isAuthenticated }
   );
+
+  // Demo slots for scheduling
+  const utils = trpc.useUtils();
+  const { data: myDemoSlots, isLoading: slotsLoading } = trpc.demoSlot.mySlots.useQuery(
+    undefined, { enabled: isAuthenticated }
+  );
+  const pendingSlots = useMemo(() => myDemoSlots?.filter(s => s.status === "pending_schedule") ?? [], [myDemoSlots]);
+
+  const scheduleMutation = trpc.demoSlot.schedule.useMutation({
+    onSuccess: () => {
+      utils.demoSlot.mySlots.invalidate();
+      setSchedulingSlotId(null);
+      setSchedDate("");
+      setSchedTime("");
+      setSchedNotes("");
+      toast.success("Demo class scheduled! EduNest will confirm with your tutor.");
+    },
+    onError: (err: { message?: string }) => toast.error(err.message || "Failed to schedule. Please try again."),
+  });
 
   const updateProfileMutation = trpc.studentProfile.save.useMutation({
     onSuccess: () => {
@@ -145,6 +169,7 @@ export default function StudentPortal() {
   if (!user) return null;
 
   const pendingCount   = myBookings?.filter(b => b.status === "pending").length ?? 0;
+  const pendingDemoCount = pendingSlots.length;
   const confirmedCount = myBookings?.filter(b => b.status === "confirmed").length ?? 0;
   const completedCount = myBookings?.filter(b => b.status === "completed").length ?? 0;
 
@@ -197,7 +222,7 @@ export default function StudentPortal() {
 
           {/* Tabs */}
           <div className="flex gap-2 mb-6 flex-wrap">
-            {(["bookings", "requirement", "profile"] as const).map(tab => (
+            {(["bookings", "demos", "requirement", "profile"] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -208,6 +233,11 @@ export default function StudentPortal() {
                   <span className="flex items-center gap-2">
                     <BookOpen size={15} /> My Demo Bookings
                     {pendingCount > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingCount}</span>}
+                  </span>
+                ) : tab === "demos" ? (
+                  <span className="flex items-center gap-2">
+                    <CalendarCheck size={15} /> Schedule Demo
+                    {pendingDemoCount > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingDemoCount}</span>}
                   </span>
                 ) : tab === "requirement" ? (
                   <span className="flex items-center gap-2"><FileText size={15} /> My Requirement</span>
@@ -293,6 +323,120 @@ export default function StudentPortal() {
                     </div>
                   );
                 })
+              )}
+            </div>
+          )}
+
+          {/* Demo Scheduling Tab */}
+          {activeTab === "demos" && (
+            <div className="space-y-4">
+              {slotsLoading ? (
+                <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                  <Loader2 size={32} className="animate-spin mx-auto mb-3" style={{ color: "oklch(0.68 0.18 50)" }} />
+                  <p className="text-gray-400">Loading demo slots...</p>
+                </div>
+              ) : !myDemoSlots?.length ? (
+                <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                  <CalendarCheck size={48} className="mx-auto mb-4 opacity-20" style={{ color: "oklch(0.68 0.18 50)" }} />
+                  <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No demo classes yet</h3>
+                  <p className="text-gray-400 mb-6">Once EduNest confirms a demo class with a tutor, you can schedule the date and time here.</p>
+                </div>
+              ) : (
+                myDemoSlots.map(slot => (
+                  <div key={slot.id} className="bg-white rounded-2xl shadow-sm border p-6" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${
+                            slot.status === "scheduled" ? "bg-blue-100 text-blue-700" :
+                            slot.status === "completed" ? "bg-green-100 text-green-700" :
+                            slot.status === "cancelled" ? "bg-red-100 text-red-700" :
+                            "bg-orange-100 text-orange-700"
+                          }`}>
+                            {slot.status === "pending_schedule" ? "⏳ Awaiting Your Schedule" :
+                             slot.status === "scheduled" ? "✅ Scheduled" :
+                             slot.status === "completed" ? "🎓 Completed" : "❌ Cancelled"}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">Tutor Profile #{slot.tutorProfileId} · {slot.mode === "online" ? "Online" : "Home Tuition"}</p>
+                      </div>
+                      {slot.scheduledDate && slot.scheduledTime && (
+                        <div className="text-right">
+                          <p className="text-sm font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>{slot.scheduledDate}</p>
+                          <p className="text-xs text-gray-500">{slot.scheduledTime}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {slot.status === "pending_schedule" && (
+                      schedulingSlotId === slot.id ? (
+                        <div className="space-y-3 p-4 rounded-xl" style={{ backgroundColor: "oklch(0.97 0.005 80)", border: "1px solid oklch(0.92 0.005 80)" }}>
+                          <p className="text-sm font-semibold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>Pick a date and time for your demo class:</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Date *</label>
+                              <input
+                                type="date"
+                                value={schedDate}
+                                min={new Date().toISOString().split("T")[0]}
+                                onChange={e => setSchedDate(e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Time *</label>
+                              <input
+                                type="time"
+                                value={schedTime}
+                                onChange={e => setSchedTime(e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Notes (optional)</label>
+                            <input
+                              type="text"
+                              value={schedNotes}
+                              onChange={e => setSchedNotes(e.target.value)}
+                              placeholder="Any special requests or topics to cover..."
+                              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => scheduleMutation.mutate({ slotId: slot.id, scheduledDate: schedDate, scheduledTime: schedTime, notes: schedNotes || undefined })}
+                              disabled={!schedDate || !schedTime || scheduleMutation.isPending}
+                              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                              style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
+                            >
+                              {scheduleMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <CalendarCheck size={14} />}
+                              Confirm Schedule
+                            </button>
+                            <button
+                              onClick={() => setSchedulingSlotId(null)}
+                              className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setSchedulingSlotId(slot.id)}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+                          style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
+                        >
+                          <Calendar size={14} /> Pick Date & Time
+                        </button>
+                      )
+                    )}
+
+                    {slot.notes && slot.status !== "pending_schedule" && (
+                      <p className="text-xs text-gray-500 mt-2">Note: {slot.notes}</p>
+                    )}
+                  </div>
+                ))
               )}
             </div>
           )}

@@ -11,6 +11,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { startLogin } from "@/const";
 import LoginWall from "@/components/LoginWall";
+import PhoneOtpVerifier from "@/components/PhoneOtpVerifier";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
 import {
@@ -154,6 +155,7 @@ export default function StudentSetup() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(INITIAL);
   const [submitted, setSubmitted] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -171,6 +173,7 @@ export default function StudentSetup() {
 
   useEffect(() => {
     if (existingProfile) {
+      if (existingProfile.phoneVerified === "yes") setPhoneVerified(true);
       setForm(prev => ({
         ...prev,
         name: existingProfile.name,
@@ -405,6 +408,12 @@ export default function StudentSetup() {
                 <div>
                   <label className={labelCls} style={labelStyle}>Phone *</label>
                   <input className={inputCls} style={inputStyle} type="tel" value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="+91 9876543210" />
+                  <PhoneOtpVerifier
+                    phone={form.phone}
+                    profileType="student"
+                    onVerified={() => setPhoneVerified(true)}
+                    alreadyVerified={phoneVerified}
+                  />
                 </div>
                 <div>
                   <label className={labelCls} style={labelStyle}>Email *</label>
@@ -581,6 +590,10 @@ export default function StudentSetup() {
                 onClick={() => {
                   if (step === 1 && (!form.name || !form.phone || !form.email)) {
                     toast.error("Please fill in Name, Phone, and Email.");
+                    return;
+                  }
+                  if (step === 1 && !phoneVerified) {
+                    toast.error("Please verify your phone number with OTP before proceeding.");
                     return;
                   }
                   if (step === 2 && (!form.subjects || !form.grade)) {

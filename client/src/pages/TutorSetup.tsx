@@ -12,6 +12,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { startLogin } from "@/const";
 import LoginWall from "@/components/LoginWall";
+import PhoneOtpVerifier from "@/components/PhoneOtpVerifier";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
 import {
@@ -145,6 +146,7 @@ export default function TutorSetup() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(INITIAL);
   const [submitted, setSubmitted] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
   // Initialize editMode from ?edit=true query param so TutorDashboard can link directly to edit
   const [editMode, setEditMode] = useState(() => new URLSearchParams(search).get("edit") === "true");
 
@@ -166,6 +168,8 @@ export default function TutorSetup() {
 
   useEffect(() => {
     if (existingProfile) {
+      // If already verified, mark as verified
+      if (existingProfile.phoneVerified === "yes") setPhoneVerified(true);
       // Pre-fill form with existing data
       setForm(prev => ({
         ...prev,
@@ -374,6 +378,12 @@ export default function TutorSetup() {
                 <div>
                   <label className={labelCls} style={labelStyle}>Phone *</label>
                   <input className={inputCls} style={inputStyle} type="tel" value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="+91 9876543210" />
+                  <PhoneOtpVerifier
+                    phone={form.phone}
+                    profileType="tutor"
+                    onVerified={() => setPhoneVerified(true)}
+                    alreadyVerified={phoneVerified}
+                  />
                 </div>
               </div>
               <div>
@@ -516,6 +526,10 @@ export default function TutorSetup() {
                 onClick={() => {
                   if (step === 1 && (!form.name || !form.phone || !form.qualification)) {
                     toast.error("Please fill in Name, Phone, and Qualification.");
+                    return;
+                  }
+                  if (step === 1 && !phoneVerified) {
+                    toast.error("Please verify your phone number with OTP before proceeding.");
                     return;
                   }
                   if (step === 2 && (!form.subjects || !form.experience)) {
