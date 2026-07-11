@@ -572,13 +572,21 @@ export const appRouter = router({
           const mode = (myProfile.mode as "home_tuition" | "online" | "both") ?? "online";
           const existing = await getDemoSlotByInterestId(input.interestId);
           if (!existing) {
-            await createDemoSlot(
+            const newSlot = await createDemoSlot(
               input.interestId,
               myProfile.id,
               interest.tutorProfileId,
               mode,
               "tutor_to_student"
             );
+            // Parent accepted the interest, so immediately mark parentAccepted=yes
+            // so the schedule procedure allows them to set the demo timing
+            if (newSlot?.id) {
+              await updateDemoSlotParentAccepted(newSlot.id, "yes");
+            }
+          } else {
+            // Slot already exists (e.g. from a previous attempt) — ensure parentAccepted=yes
+            await updateDemoSlotParentAccepted(existing.id, "yes");
           }
           await notifyOwner({
             title: `✅ Student Accepted Tutor Interest`,
