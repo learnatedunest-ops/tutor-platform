@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile, StudentDemoInterest, studentDemoInterests, OtpVerification, otpVerifications, DemoSlot, demoSlots, ConfirmedMatch, confirmedMatches } from "../drizzle/schema";
+import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile, StudentDemoInterest, studentDemoInterests, OtpVerification, otpVerifications, DemoSlot, demoSlots, ConfirmedMatch, confirmedMatches, SessionLog, sessionLogs } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -513,20 +513,58 @@ export async function getDemoSlotByInterestId(studentDemoInterestId: number): Pr
   return rows[0] ?? null;
 }
 
-export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<DemoSlot[]> {
+export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(DemoSlot & { confirmedMatchId: number | null })[]> {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(demoSlots)
+  const rows = await db
+    .select({
+      id: demoSlots.id,
+      studentDemoInterestId: demoSlots.studentDemoInterestId,
+      tutorProfileId: demoSlots.tutorProfileId,
+      studentProfileId: demoSlots.studentProfileId,
+      scheduledDate: demoSlots.scheduledDate,
+      scheduledTime: demoSlots.scheduledTime,
+      notes: demoSlots.notes,
+      status: demoSlots.status,
+      mode: demoSlots.mode,
+      tutorProceedIntent: demoSlots.tutorProceedIntent,
+      studentProceedIntent: demoSlots.studentProceedIntent,
+      createdAt: demoSlots.createdAt,
+      updatedAt: demoSlots.updatedAt,
+      confirmedMatchId: confirmedMatches.id,
+    })
+    .from(demoSlots)
+    .leftJoin(confirmedMatches, eq(confirmedMatches.demoSlotId, demoSlots.id))
     .where(eq(demoSlots.tutorProfileId, tutorProfileId))
     .orderBy(desc(demoSlots.createdAt));
+  return rows.map(r => ({ ...r, confirmedMatchId: r.confirmedMatchId ?? null }));
 }
 
-export async function getDemoSlotsByStudent(studentProfileId: number): Promise<DemoSlot[]> {
+export async function getDemoSlotsByStudent(studentProfileId: number): Promise<(DemoSlot & { confirmedMatchId: number | null })[]> {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(demoSlots)
+  const rows = await db
+    .select({
+      id: demoSlots.id,
+      studentDemoInterestId: demoSlots.studentDemoInterestId,
+      tutorProfileId: demoSlots.tutorProfileId,
+      studentProfileId: demoSlots.studentProfileId,
+      scheduledDate: demoSlots.scheduledDate,
+      scheduledTime: demoSlots.scheduledTime,
+      notes: demoSlots.notes,
+      status: demoSlots.status,
+      mode: demoSlots.mode,
+      tutorProceedIntent: demoSlots.tutorProceedIntent,
+      studentProceedIntent: demoSlots.studentProceedIntent,
+      createdAt: demoSlots.createdAt,
+      updatedAt: demoSlots.updatedAt,
+      confirmedMatchId: confirmedMatches.id,
+    })
+    .from(demoSlots)
+    .leftJoin(confirmedMatches, eq(confirmedMatches.demoSlotId, demoSlots.id))
     .where(eq(demoSlots.studentProfileId, studentProfileId))
     .orderBy(desc(demoSlots.createdAt));
+  return rows.map(r => ({ ...r, confirmedMatchId: r.confirmedMatchId ?? null }));
 }
 
 export async function updateDemoSlotSchedule(
@@ -620,4 +658,84 @@ export async function getAllConfirmedMatches(): Promise<ConfirmedMatch[]> {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(confirmedMatches).orderBy(desc(confirmedMatches.matchedAt));
+}
+
+// ─── Session Logs ────────────────────────────────────────────────────────────
+
+/** Get or create a session log for a confirmed match */
+export async function getOrCreateSessionLog(matchId: number, data: {
+  tutorProfileId: number;
+  studentProfileId: number;
+  tutorName?: string | null;
+  studentName?: string | null;
+}): Promise<SessionLog> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(sessionLogs).where(eq(sessionLogs.matchId, matchId)).limit(1);
+  if (existing.length > 0) return existing[0];
+  await db.insert(sessionLogs).values({
+    matchId,
+    tutorProfileId: data.tutorProfileId,
+    studentProfileId: data.studentProfileId,
+    tutorName: data.tutorName ?? null,
+    studentName: data.studentName ?? null,
+    paymentStatus: "pending",
+  });
+  const created = await db.select().from(sessionLogs).where(eq(sessionLogs.matchId, matchId)).limit(1);
+  return created[0];
+}
+
+/** Get session log by matchId */
+export async function getSessionLogByMatchId(matchId: number): Promise<SessionLog | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(sessionLogs).where(eq(sessionLogs.matchId, matchId)).limit(1);
+  return rows[0] ?? null;
+}
+
+/** Get session log by id */
+export async function getSessionLogById(id: number): Promise<SessionLog | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(sessionLogs).where(eq(sessionLogs.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+/** Update session log with uploaded sheet URL */
+export async function updateSessionLogSheet(id: number, uploadedSheetUrl: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(sessionLogs)
+    .set({ uploadedSheetUrl, uploadedAt: new Date(), paymentStatus: "sheet_uploaded" })
+    .where(eq(sessionLogs.id, id));
+}
+
+/** Admin: update payment status */
+export async function updateSessionLogPaymentStatus(id: number, status: "pending" | "sheet_uploaded" | "payment_processed"): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const updates: Partial<SessionLog> = { paymentStatus: status };
+  if (status === "payment_processed") updates.adminApprovedAt = new Date();
+  await db.update(sessionLogs).set(updates).where(eq(sessionLogs.id, id));
+}
+
+/** List all session logs (admin) */
+export async function getAllSessionLogs(): Promise<SessionLog[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sessionLogs).orderBy(desc(sessionLogs.createdAt));
+}
+
+/** Get session logs for a tutor */
+export async function getSessionLogsByTutor(tutorProfileId: number): Promise<SessionLog[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sessionLogs).where(eq(sessionLogs.tutorProfileId, tutorProfileId)).orderBy(desc(sessionLogs.createdAt));
+}
+
+/** Get session logs for a student */
+export async function getSessionLogsByStudent(studentProfileId: number): Promise<SessionLog[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sessionLogs).where(eq(sessionLogs.studentProfileId, studentProfileId)).orderBy(desc(sessionLogs.createdAt));
 }

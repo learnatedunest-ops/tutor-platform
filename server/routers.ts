@@ -67,6 +67,15 @@ import {
   getConfirmedMatchBySlotId,
   createConfirmedMatch,
   getAllConfirmedMatches,
+  // Session logs
+  getOrCreateSessionLog,
+  getSessionLogByMatchId,
+  getSessionLogById,
+  updateSessionLogSheet,
+  updateSessionLogPaymentStatus,
+  getAllSessionLogs,
+  getSessionLogsByTutor,
+  getSessionLogsByStudent,
 } from "./db";
 import { z } from "zod";
 
@@ -888,6 +897,80 @@ export const appRouter = router({
   // ─── Confirmed Matches (Admin) ───────────────────────────────────────────────
   confirmedMatch: router({
     listAll: adminProcedure.query(async () => getAllConfirmedMatches()),
+  }),
+
+  // ─── Session Logs ─────────────────────────────────────────────────────────────
+  sessionLog: router({
+    /** Tutor: get or create session log for a confirmed match */
+    getOrCreate: protectedProcedure
+      .input(z.object({ matchId: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        // Verify the match exists and belongs to this tutor
+        const match = await getAllConfirmedMatches().then(all => all.find(m => m.id === input.matchId));
+        if (!match) throw new Error("Match not found");
+        return getOrCreateSessionLog(input.matchId, {
+          tutorProfileId: match.tutorProfileId,
+          studentProfileId: match.studentProfileId,
+          tutorName: match.tutorName,
+          studentName: match.studentName,
+        });
+      }),
+
+    /** Get session log by matchId (tutor or student) */
+    getByMatchId: protectedProcedure
+      .input(z.object({ matchId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        return getSessionLogByMatchId(input.matchId);
+      }),
+
+    /** Tutor: get all session logs for their profile */
+    myLogs: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await import("./db").then(m => m.getTutorProfileByUserId(ctx.user.id));
+      if (!profile) return [];
+      return getSessionLogsByTutor(profile.id);
+    }),
+
+    /** Student: get all session logs for their profile */
+    myStudentLogs: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await import("./db").then(m => m.getStudentProfileByUserId(ctx.user.id));
+      if (!profile) return [];
+      return getSessionLogsByStudent(profile.id);
+    }),
+
+    /** Tutor: upload completed sheet (S3 URL) */
+    uploadSheet: protectedProcedure
+      .input(z.object({
+        logId: z.number().int().positive(),
+        uploadedSheetUrl: z.string().url().max(2048),
+      }))
+      .mutation(async ({ input }) => {
+        await updateSessionLogSheet(input.logId, input.uploadedSheetUrl);
+        // Notify owner
+        await notifyOwner({
+          title: "📋 Session Sheet Uploaded",
+          content: `A tutor has uploaded their completed session log sheet (Log #${input.logId}). Please review and approve payment.`,
+        }).catch(() => {});
+        return { success: true };
+      }),
+
+    /** Admin: list all session logs */
+    listAll: adminProcedure.query(async () => getAllSessionLogs()),
+
+    /** Admin: approve payment */
+    approvePayment: adminProcedure
+      .input(z.object({ logId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        await updateSessionLogPaymentStatus(input.logId, "payment_processed");
+        return { success: true };
+      }),
+
+    /** Admin: reset to sheet_uploaded (undo) */
+    resetPayment: adminProcedure
+      .input(z.object({ logId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        await updateSessionLogPaymentStatus(input.logId, "sheet_uploaded");
+        return { success: true };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;

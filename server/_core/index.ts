@@ -205,6 +205,45 @@ async function startServer() {
     res.send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${SITE_URL}/sitemap.xml\n`);
   });
 
+  // ── Session Sheet Upload Endpoint ──────────────────────────────────────────
+  // Accepts multipart/form-data with a 'file' field, uploads to S3, returns { url }
+  app.post("/api/upload-session-sheet", express.raw({ type: '*/*', limit: '20mb' }), async (req, res) => {
+    try {
+      // Parse multipart manually using busboy
+      const Busboy = (await import('busboy')).default;
+      const bb = Busboy({ headers: req.headers as any, limits: { fileSize: 20 * 1024 * 1024 } });
+      let fileBuffer: Buffer | null = null;
+      let mimeType = 'application/octet-stream';
+      let fileName = 'session-sheet';
+
+      await new Promise<void>((resolve, reject) => {
+        bb.on('file', (_field: string, file: any, info: any) => {
+          mimeType = info.mimeType ?? 'application/octet-stream';
+          fileName = info.filename ?? 'session-sheet';
+          const chunks: Buffer[] = [];
+          file.on('data', (chunk: Buffer) => chunks.push(chunk));
+          file.on('end', () => { fileBuffer = Buffer.concat(chunks); });
+        });
+        bb.on('finish', resolve);
+        bb.on('error', reject);
+        req.pipe(bb);
+      });
+
+      if (!fileBuffer) {
+        res.status(400).json({ error: 'No file provided' });
+        return;
+      }
+
+      const ext = fileName.includes('.') ? fileName.split('.').pop() : 'jpg';
+      const { storagePut } = await import('../storage');
+      const { url } = await storagePut(`session-sheets/sheet_${Date.now()}.${ext}`, fileBuffer, mimeType);
+      res.json({ url });
+    } catch (err: any) {
+      console.error('[Upload] Session sheet upload error:', err);
+      res.status(500).json({ error: 'Upload failed' });
+    }
+  });
+
   // ── tRPC API ────────────────────────────────────────────────────────────────
   app.use(
     "/api/trpc",

@@ -15,6 +15,7 @@ import {
   BookOpen, Clock, CheckCircle2, XCircle, Calendar,
   GraduationCap, MapPin, User, LogIn, RefreshCw, Phone, Mail,
   Home, FileText, Edit2, Save, X, CalendarCheck, Loader2,
+  CreditCard, ExternalLink,
 } from "lucide-react";
 
 function formatDate(date: Date | string) {
@@ -67,6 +68,11 @@ export default function StudentPortal() {
     },
     onError: (err: { message?: string }) => toast.error(err.message || "Failed to schedule. Please try again."),
   });
+
+  // Session logs for this student
+  const { data: mySessionLogs } = trpc.sessionLog.myStudentLogs.useQuery(
+    undefined, { enabled: isAuthenticated }
+  );
 
   // Post-demo proceed intent
   const setProceedIntent = trpc.demoSlot.setProceedIntent.useMutation({
@@ -486,6 +492,44 @@ export default function StudentPortal() {
                     {slot.status === "completed" && (slot as any).studentProceedIntent === "yes" && (slot as any).tutorProceedIntent === "yes" && (
                       <div className="mt-4 p-3 rounded-xl bg-green-50 border border-green-200">
                         <p className="text-xs font-semibold text-green-700">🎉 Matched! Tutor's contact details have been sent to your email. Check your inbox!</p>
+                        {/* Payment Status Icon */}
+                        {(() => {
+                          const log = mySessionLogs?.find((l: any) => l.studentProfileId === (slot as any).studentProfileId);
+                          if (!log) return null;
+                          return (
+                            <div className="mt-3 border-t border-green-200 pt-3">
+                              <p className="text-xs font-bold text-green-800 mb-2">💳 Payment Status</p>
+                              <div className="flex flex-wrap gap-2 items-center">
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                                  log.paymentStatus === 'payment_processed'
+                                    ? 'bg-green-100 text-green-700'
+                                    : log.paymentStatus === 'sheet_uploaded'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : 'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  <CreditCard size={13} />
+                                  {log.paymentStatus === 'payment_processed' ? '✅ Payment Processed' :
+                                   log.paymentStatus === 'sheet_uploaded' ? '⏳ Session Sheet Submitted — Payment Pending' :
+                                   '⏳ Awaiting Session Sheet from Tutor'}
+                                </span>
+                                {/* View uploaded sheet */}
+                                {log.uploadedSheetUrl && (
+                                  <a
+                                    href={log.uploadedSheetUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                                  >
+                                    <ExternalLink size={13} /> View Session Sheet
+                                  </a>
+                                )}
+                              </div>
+                              {log.paymentStatus === 'payment_processed' && (
+                                <p className="text-xs text-green-600 mt-1">✔️ EduNest has confirmed payment to your tutor. Thank you!</p>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                     {slot.status === "completed" && (slot as any).studentProceedIntent === "no" && (

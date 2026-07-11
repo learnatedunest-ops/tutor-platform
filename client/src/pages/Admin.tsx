@@ -13,6 +13,7 @@ import {
   Users, BookOpen, Mail, Phone, MapPin, Clock,
   CheckCircle2, XCircle, MessageSquare, GraduationCap,
   RefreshCw, LogOut, ShieldAlert, Plus, Pencil, Trash2, UserCheck, Gift,
+  CreditCard, ExternalLink, Upload,
 } from "lucide-react";
 
 type InquiryStatus = "new" | "contacted" | "resolved";
@@ -46,7 +47,7 @@ function formatDate(date: Date | string) {
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "bookings" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "bookings" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs">("inquiries");
   const [tutorForm, setTutorForm] = useState<typeof EMPTY_TUTOR>(EMPTY_TUTOR);
   const [editingTutorId, setEditingTutorId] = useState<number | null>(null);
   const [showTutorForm, setShowTutorForm] = useState(false);
@@ -133,6 +134,19 @@ export default function Admin() {
   const { data: confirmedMatchesList, isLoading: loadingMatches, refetch: refetchMatches } =
     trpc.confirmedMatch.listAll.useQuery(undefined, { enabled: isAdmin });
 
+  const { data: sessionLogsList, isLoading: loadingSessionLogs, refetch: refetchSessionLogs } =
+    trpc.sessionLog.listAll.useQuery(undefined, { enabled: isAdmin });
+
+  const approvePaymentMutation = trpc.sessionLog.approvePayment.useMutation({
+    onSuccess: () => { refetchSessionLogs(); toast.success('✅ Payment approved and status updated!'); },
+    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to approve payment'),
+  });
+
+  const resetPaymentMutation = trpc.sessionLog.resetPayment.useMutation({
+    onSuccess: () => { refetchSessionLogs(); toast.success('Status reset to Sheet Uploaded.'); },
+    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to reset status'),
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
@@ -194,6 +208,7 @@ export default function Admin() {
   const pendingInterests = tutorInterestsList?.filter((i: { status: string }) => i.status === "pending").length ?? 0;
   const pendingDemoInterests = studentDemoInterestsList?.filter((d: { status: string }) => d.status === "pending").length ?? 0;
   const pendingDemoSlots = demoSlotsList?.filter((s: { status: string }) => s.status === "pending_schedule").length ?? 0;
+  const pendingPayments = sessionLogsList?.filter((l: { paymentStatus: string }) => l.paymentStatus === 'sheet_uploaded').length ?? 0;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "oklch(0.97 0.005 80)", fontFamily: "'Nunito', sans-serif" }}>
@@ -243,7 +258,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["inquiries", "bookings", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches"] as const).map(tab => (
+          {(["inquiries", "bookings", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -268,6 +283,8 @@ export default function Admin() {
                 <span className="flex items-center gap-2"><Clock size={15} /> Demo Slots {pendingDemoSlots > 0 && <span className="bg-white text-blue-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingDemoSlots}</span>}</span>
               ) : tab === "confirmedMatches" ? (
                 <span className="flex items-center gap-2"><CheckCircle2 size={15} /> Confirmed Matches <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "confirmedMatches" ? "bg-white/30" : "bg-gray-100 text-gray-600"}`}>{confirmedMatchesList?.length ?? 0}</span></span>
+              ) : tab === "sessionLogs" ? (
+                <span className="flex items-center gap-2"><CreditCard size={15} /> Session Payments {pendingPayments > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "sessionLogs" ? "bg-white/30" : "bg-orange-100 text-orange-700"}`}>{pendingPayments} pending</span>}</span>
               ) : (
                 <span className="flex items-center gap-2"><UserCheck size={15} /> Manage Tutors <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
               )}
@@ -1175,6 +1192,99 @@ export default function Admin() {
             )}
           </div>
         )}
+        {/* ── Session Logs / Payment Approval ── */}
+        {activeTab === "sessionLogs" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
+                Session Logs & Payment Approval ({sessionLogsList?.length ?? 0})
+              </h2>
+              <button onClick={() => refetchSessionLogs()} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-white border hover:bg-gray-50 transition-colors">
+                <RefreshCw size={15} /> Refresh
+              </button>
+            </div>
+            {loadingSessionLogs ? (
+              <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin" /></div>
+            ) : !sessionLogsList || sessionLogsList.length === 0 ? (
+              <div className="text-center py-16 text-gray-400">
+                <CreditCard size={40} className="mx-auto mb-3 opacity-30" />
+                <p className="font-semibold">No session logs yet</p>
+                <p className="text-sm mt-1">Session logs appear after tutors upload their completed attendance sheets.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {(sessionLogsList as Array<any>).map((log) => (
+                  <div key={log.id} className="bg-white rounded-2xl shadow-sm border p-6" style={{ borderColor: log.paymentStatus === 'payment_processed' ? 'oklch(0.88 0.12 145)' : log.paymentStatus === 'sheet_uploaded' ? 'oklch(0.88 0.12 50)' : 'oklch(0.92 0.005 80)' }}>
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Log #{log.id}</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        log.paymentStatus === 'payment_processed' ? 'bg-green-100 text-green-700' :
+                        log.paymentStatus === 'sheet_uploaded' ? 'bg-orange-100 text-orange-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {log.paymentStatus === 'payment_processed' ? '✅ Payment Processed' :
+                         log.paymentStatus === 'sheet_uploaded' ? '📋 Sheet Uploaded — Awaiting Payment' :
+                         '⏳ Pending Sheet Upload'}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-auto">Created {new Date(log.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="p-3 rounded-xl bg-orange-50 border border-orange-100">
+                        <p className="text-xs font-bold text-orange-700 mb-1">👨‍🏫 Tutor</p>
+                        <p className="text-sm font-semibold">{log.tutorName || `Profile #${log.tutorProfileId}`}</p>
+                        <p className="text-xs text-gray-500">Profile ID: #{log.tutorProfileId}</p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-blue-50 border border-blue-100">
+                        <p className="text-xs font-bold text-blue-700 mb-1">👨‍👧 Student / Parent</p>
+                        <p className="text-sm font-semibold">{log.studentName || `Profile #${log.studentProfileId}`}</p>
+                        <p className="text-xs text-gray-500">Profile ID: #{log.studentProfileId}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 items-center">
+                      {/* View uploaded sheet */}
+                      {log.uploadedSheetUrl ? (
+                        <a
+                          href={log.uploadedSheetUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                        >
+                          <ExternalLink size={13} /> View Uploaded Sheet
+                        </a>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-400">
+                          <Upload size={13} /> No sheet uploaded yet
+                        </span>
+                      )}
+                      {/* Approve payment button */}
+                      {log.paymentStatus === 'sheet_uploaded' && (
+                        <button
+                          onClick={() => approvePaymentMutation.mutate({ logId: log.id })}
+                          disabled={approvePaymentMutation.isPending}
+                          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-green-500 text-white hover:bg-green-600 transition-colors disabled:opacity-50"
+                        >
+                          {approvePaymentMutation.isPending ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={13} />}
+                          Approve Payment to Tutor
+                        </button>
+                      )}
+                      {/* Undo payment (reset to sheet_uploaded) */}
+                      {log.paymentStatus === 'payment_processed' && (
+                        <button
+                          onClick={() => resetPaymentMutation.mutate({ logId: log.id })}
+                          disabled={resetPaymentMutation.isPending}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                        >
+                          <XCircle size={13} /> Undo Approval
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </main>
     </div>
   );

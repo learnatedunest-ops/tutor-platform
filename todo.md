@@ -194,13 +194,24 @@
 
 ## Round 17 — Post-Demo Proceed Flow & Confirmed Matches
 
-- [ ] Add tutorProceedIntent and studentProceedIntent fields to demo_slots table
-- [ ] Add confirmed_matches table (demoSlotId, tutorProfileId, studentProfileId, matchedAt)
-- [ ] Run db:push for schema changes
-- [ ] Backend: demoSlot.setProceedIntent tRPC procedure (tutor/student sets yes/no)
-- [ ] Backend: auto-create confirmed_match when both parties say yes, send contact reveal emails
-- [ ] Backend: confirmedMatch.listAll admin procedure
-- [ ] Email: sendContactRevealEmail (tutor gets student details, student gets tutor details)
-- [ ] TutorDashboard: show "Demo Scheduled ✓" status label, "Proceed?" buttons after demo completes
-- [ ] StudentPortal: show "Demo Confirmed ✓" status label, "Proceed?" buttons after demo completes
-- [ ] Admin: Confirmed Matches tab with full student + tutor details
+- [x] Add tutorProceedIntent and studentProceedIntent fields to demo_slots table
+- [x] Add confirmed_matches table (demoSlotId, tutorProfileId, studentProfileId, matchedAt)
+- [x] Run db:push for schema changes
+- [x] Backend: demoSlot.setProceedIntent tRPC procedure (tutor/student sets yes/no)
+- [x] Backend: auto-create confirmed_match when both parties say yes, send contact reveal emails
+- [x] Backend: confirmedMatch.listAll admin procedure
+- [x] Email: sendContactRevealEmail (tutor gets student details, student gets tutor details)
+- [x] TutorDashboard: show "Demo Scheduled ✓" status label, "Proceed?" buttons after demo completes
+- [x] StudentPortal: show "Demo Confirmed ✓" status label, "Proceed?" buttons after demo completes
+- [x] Admin: Confirmed Matches tab with full student + tutor details
+
+## Round 18 — Session Log Sheet & Payment Tracking
+
+- [ ] DB: add session_logs table (matchId FK, tutorName, studentName, uploadedSheetUrl, paymentStatus, adminApprovedAt)
+- [ ] DB: run db:push
+- [ ] Backend: sessionLog.getOrCreate (by matchId), sessionLog.uploadSheet, sessionLog.getByMatch, sessionLog.updatePaymentStatus (admin)
+- [ ] Frontend: printable /session-log/:matchId page — Daily Tuition Time Duration sheet (20-row table, tutor name, student name, date/in-time/out-time/duration/parent signature columns)
+- [ ] TutorDashboard: "Download Session Sheet" link + "Upload Completed Sheet" button + Pending/Payment Processed badge per confirmed match
+- [ ] StudentPortal: payment icon (Pending/Payment Processed) shown once tutor uploads the sheet
+- [ ] Admin: Session Logs tab — view uploaded sheet, approve payment button, update status
+- [ ] 14+ tests passing, 0 TypeScript errors

@@ -351,3 +351,28 @@ export const confirmedMatches = mysqlTable("confirmed_matches", {
 
 export type ConfirmedMatch = typeof confirmedMatches.$inferSelect;
 export type InsertConfirmedMatch = typeof confirmedMatches.$inferInsert;
+
+/**
+ * Session Log Sheets — one per confirmed match.
+ * Tutor prints the blank sheet, fills it with parent, then uploads the completed scan.
+ * Admin approves payment after verifying the uploaded sheet.
+ */
+export const sessionLogs = mysqlTable("session_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  matchId: int("matchId").notNull().unique(),           // FK → confirmed_matches.id
+  tutorProfileId: int("tutorProfileId").notNull(),
+  studentProfileId: int("studentProfileId").notNull(),
+  tutorName: varchar("tutorName", { length: 128 }),
+  studentName: varchar("studentName", { length: 128 }),
+  // Uploaded completed sheet (S3 key / URL)
+  uploadedSheetUrl: text("uploadedSheetUrl"),
+  uploadedAt: timestamp("uploadedAt"),
+  // Payment status: pending (not uploaded yet) → sheet_uploaded → payment_processed
+  paymentStatus: mysqlEnum("paymentStatus", ["pending", "sheet_uploaded", "payment_processed"]).default("pending").notNull(),
+  adminApprovedAt: timestamp("adminApprovedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SessionLog = typeof sessionLogs.$inferSelect;
+export type InsertSessionLog = typeof sessionLogs.$inferInsert;

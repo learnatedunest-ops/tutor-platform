@@ -15,7 +15,8 @@ import SEO from "@/components/SEO";
 import {
   MapPin, BookOpen, GraduationCap, Clock, IndianRupee,
   Loader2, Navigation, AlertCircle, RefreshCw, User,
-  ChevronRight, CheckCircle2, Calendar, Home, ShieldCheck
+  ChevronRight, CheckCircle2, Calendar, Home, ShieldCheck,
+  Upload, FileText, CreditCard, ExternalLink
 } from "lucide-react";
 
 function ModeLabel({ mode }: { mode: string }) {
@@ -47,6 +48,27 @@ export default function TutorDashboard() {
     undefined,
     { enabled: isAuthenticated && myProfile?.status === "approved" }
   );
+
+  // Session logs for this tutor
+  const { data: mySessionLogs, refetch: refetchSessionLogs } = trpc.sessionLog.myLogs.useQuery(
+    undefined,
+    { enabled: isAuthenticated && myProfile?.status === "approved" }
+  );
+
+  // Get or create session log mutation
+  const getOrCreateLog = trpc.sessionLog.getOrCreate.useMutation({
+    onSuccess: () => refetchSessionLogs(),
+    onError: (err) => toast.error(err.message ?? "Failed to create session log"),
+  });
+
+  // Upload sheet mutation
+  const uploadSheet = trpc.sessionLog.uploadSheet.useMutation({
+    onSuccess: () => {
+      refetchSessionLogs();
+      toast.success("✅ Sheet uploaded! EduNest will review and process your payment.");
+    },
+    onError: (err) => toast.error(err.message ?? "Upload failed"),
+  });
 
   // Proceed intent mutation
   const setProceedIntent = trpc.demoSlot.setProceedIntent.useMutation({
@@ -392,6 +414,98 @@ export default function TutorDashboard() {
                         {slot.status === "completed" && (slot as any).tutorProceedIntent === "yes" && (slot as any).studentProceedIntent === "yes" && (
                           <div className="mt-3 p-3 rounded-xl bg-green-50 border border-green-200">
                             <p className="text-xs font-semibold text-green-700">🎉 Matched! Contact details have been shared with the student/parent via email.</p>
+                            {/* Session Log Sheet & Payment Section */}
+                            {(() => {
+                              // Find confirmed match for this slot
+                              const log = mySessionLogs?.find((l: any) => l.tutorProfileId === myProfile?.id);
+                              return (
+                                <div className="mt-3 border-t border-green-200 pt-3 space-y-2">
+                                  <p className="text-xs font-bold text-green-800">📋 Session Log Sheet</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    <a
+                                      href={`/session-log/${(slot as any).confirmedMatchId ?? ''}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors"
+                                    >
+                                      <FileText size={13} /> Download / Print Sheet
+                                    </a>
+                                    {log ? (
+                                      <>
+                                        {/* Payment status badge */}
+                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                                          log.paymentStatus === 'payment_processed'
+                                            ? 'bg-green-100 text-green-700'
+                                            : log.paymentStatus === 'sheet_uploaded'
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'bg-yellow-100 text-yellow-700'
+                                        }`}>
+                                          <CreditCard size={13} />
+                                          {log.paymentStatus === 'payment_processed' ? '✅ Payment Processed' :
+                                           log.paymentStatus === 'sheet_uploaded' ? '⏳ Sheet Uploaded — Pending Payment' :
+                                           '⏳ Payment Pending'}
+                                        </span>
+                                        {/* Upload new sheet if not yet processed */}
+                                        {log.paymentStatus !== 'payment_processed' && (
+                                          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors cursor-pointer">
+                                            <Upload size={13} />
+                                            {log.paymentStatus === 'sheet_uploaded' ? 'Re-upload Sheet' : 'Upload Completed Sheet'}
+                                            <input
+                                              type="file"
+                                              accept="image/*,application/pdf"
+                                              className="hidden"
+                                              onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                // Upload to S3 via storage API
+                                                const formData = new FormData();
+                                                formData.append('file', file);
+                                                try {
+                                                  const res = await fetch('/api/upload-session-sheet', {
+                                                    method: 'POST',
+                                                    body: formData,
+                                                    credentials: 'include',
+                                                  });
+                                                  if (!res.ok) throw new Error('Upload failed');
+                                                  const { url } = await res.json();
+                                                  uploadSheet.mutate({ logId: log.id, uploadedSheetUrl: url });
+                                                } catch (err) {
+                                                  toast.error('Upload failed. Please try again.');
+                                                }
+                                              }}
+                                            />
+                                          </label>
+                                        )}
+                                        {/* View uploaded sheet */}
+                                        {log.uploadedSheetUrl && (
+                                          <a
+                                            href={log.uploadedSheetUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                                          >
+                                            <ExternalLink size={13} /> View Uploaded Sheet
+                                          </a>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <button
+                                        onClick={() => {
+                                          const matchId = (slot as any).confirmedMatchId;
+                                          if (matchId) getOrCreateLog.mutate({ matchId });
+                                          else toast.error('Match ID not found. Please refresh.');
+                                        }}
+                                        disabled={getOrCreateLog.isPending}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+                                      >
+                                        {getOrCreateLog.isPending ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                                        Upload Completed Sheet
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         )}
                         {slot.status === "completed" && (slot as any).tutorProceedIntent === "no" && (
