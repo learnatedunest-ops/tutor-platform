@@ -1,21 +1,54 @@
 /**
- * EduNest Email Notifications via Resend
- * Sends formatted email alerts to learn.at.edunest@gmail.com
- * when new inquiries, tutor applications, or demo bookings are submitted.
+ * EduNest Email Notifications
+ *
+ * - OTP / user-facing emails: Gmail SMTP via Nodemailer
+ *   (learn.at.edunest@gmail.com, app password from GMAIL_APP_PASSWORD env)
+ * - Owner notification emails: Resend (onboarding@resend.dev → owner only)
  */
 import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 const OWNER_EMAIL = "learn.at.edunest@gmail.com";
-const FROM_EMAIL = "EduNest Notifications <onboarding@resend.dev>";
+const GMAIL_USER = "learn.at.edunest@gmail.com";
+const FROM_EMAIL_RESEND = "EduNest <onboarding@resend.dev>";
+const FROM_EMAIL_GMAIL = `"EduNest" <${GMAIL_USER}>`;
+
+// ─── Resend (owner notifications only) ───────────────────────────────────────
 
 function getResend(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.warn("[Email] RESEND_API_KEY not set — email notifications disabled");
+    console.warn("[Email] RESEND_API_KEY not set — owner notification emails disabled");
     return null;
   }
   return new Resend(apiKey);
 }
+
+// ─── Gmail SMTP (user-facing OTP + contact reveal) ───────────────────────────
+
+let _gmailTransport: nodemailer.Transporter | null = null;
+
+function getGmailTransport(): nodemailer.Transporter | null {
+  if (_gmailTransport) return _gmailTransport;
+
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!pass) {
+    console.warn("[Email] GMAIL_APP_PASSWORD not set — Gmail SMTP disabled");
+    return null;
+  }
+
+  _gmailTransport = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: GMAIL_USER,
+      pass: pass.replace(/\s+/g, ""), // strip spaces from app password
+    },
+  });
+
+  return _gmailTransport;
+}
+
+// ─── Owner notification emails (via Resend) ──────────────────────────────────
 
 export async function sendInquiryEmail(data: {
   name: string;
@@ -31,7 +64,7 @@ export async function sendInquiryEmail(data: {
 
   try {
     await resend.emails.send({
-      from: FROM_EMAIL,
+      from: FROM_EMAIL_RESEND,
       to: OWNER_EMAIL,
       subject: `📩 New Inquiry from ${data.name} — EduNest`,
       html: `
@@ -83,7 +116,7 @@ export async function sendTutorApplicationEmail(data: {
 
   try {
     await resend.emails.send({
-      from: FROM_EMAIL,
+      from: FROM_EMAIL_RESEND,
       to: OWNER_EMAIL,
       subject: `🎓 New Tutor Application from ${data.name} — EduNest`,
       html: `
@@ -140,7 +173,7 @@ export async function sendDemoBookingEmail(data: {
 
   try {
     await resend.emails.send({
-      from: FROM_EMAIL,
+      from: FROM_EMAIL_RESEND,
       to: OWNER_EMAIL,
       subject: `📚 Demo Class Booked with ${data.tutorName} — EduNest`,
       html: `
@@ -184,9 +217,11 @@ export async function sendDemoBookingEmail(data: {
   }
 }
 
+// ─── User-facing emails (via Gmail SMTP) ─────────────────────────────────────
+
 /**
  * Send OTP verification code to user's email address.
- * Used for phone number verification during tutor/student registration.
+ * Uses Gmail SMTP so it can reach ANY email address (not just owner).
  */
 export async function sendOtpEmail(data: {
   toEmail: string;
@@ -195,22 +230,22 @@ export async function sendOtpEmail(data: {
   code: string;
   expiresMinutes: number;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) {
-    console.warn("[Email] RESEND_API_KEY not set — OTP email not sent. Code:", data.code);
+  const transport = getGmailTransport();
+  if (!transport) {
+    console.warn("[Email] Gmail SMTP not configured — OTP email not sent. Code:", data.code);
     return;
   }
 
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    await transport.sendMail({
+      from: FROM_EMAIL_GMAIL,
       to: data.toEmail,
       subject: `${data.code} — Your EduNest Phone Verification Code`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 20px; background: #fff;">
           <div style="background: linear-gradient(135deg, #F47920, #e06510); padding: 24px 20px; border-radius: 8px 8px 0 0; text-align: center;">
-            <img src="https://edu-nest.manus.space/manus-storage/edunest-logo-v3_f012b9fe.png" alt="EduNest" style="height: 40px; margin-bottom: 10px;" />
             <h1 style="color: white; margin: 0; font-size: 22px; font-weight: bold;">Phone Verification</h1>
+            <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">EduNest — Best Home Tuition &amp; Tutors</p>
           </div>
           <div style="background: #f9f9f9; padding: 28px 24px; border-radius: 0 0 8px 8px; border: 1px solid #eee; text-align: center;">
             <p style="color: #555; font-size: 15px; margin: 0 0 20px;">Hi <strong>${data.toName}</strong>,</p>
@@ -234,15 +269,17 @@ export async function sendOtpEmail(data: {
         </div>
       `,
     });
-    console.log(`[OTP Email] Sent to ${data.toEmail} for phone ${data.phone}`);
+    console.log(`[OTP Email] Sent via Gmail SMTP to ${data.toEmail} for phone ${data.phone}`);
   } catch (err) {
-    console.warn("[Email] Failed to send OTP email:", err);
+    console.warn("[Email] Failed to send OTP email via Gmail SMTP:", err);
+    throw err; // re-throw so caller can handle gracefully
   }
 }
 
 /**
  * Send contact reveal email to tutor — contains full student/parent details.
  * Sent when both parties confirm they want to proceed after the demo class.
+ * Uses Gmail SMTP so it reaches any email address.
  */
 export async function sendContactRevealToTutor(data: {
   tutorEmail: string;
@@ -255,14 +292,14 @@ export async function sendContactRevealToTutor(data: {
   studentSubjects: string;
   studentParentName?: string;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) {
-    console.warn("[Email] RESEND_API_KEY not set — contact reveal email to tutor not sent");
+  const transport = getGmailTransport();
+  if (!transport) {
+    console.warn("[Email] Gmail SMTP not configured — contact reveal email to tutor not sent");
     return;
   }
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    await transport.sendMail({
+      from: FROM_EMAIL_GMAIL,
       to: data.tutorEmail,
       subject: `🎉 New Student Match — ${data.studentName} wants to proceed! — EduNest`,
       html: `
@@ -299,7 +336,7 @@ export async function sendContactRevealToTutor(data: {
         </div>
       `,
     });
-    console.log(`[Email] Contact reveal sent to tutor: ${data.tutorEmail}`);
+    console.log(`[Email] Contact reveal sent via Gmail SMTP to tutor: ${data.tutorEmail}`);
   } catch (err) {
     console.warn("[Email] Failed to send contact reveal to tutor:", err);
   }
@@ -308,6 +345,7 @@ export async function sendContactRevealToTutor(data: {
 /**
  * Send contact reveal email to student/parent — contains full tutor details.
  * Sent when both parties confirm they want to proceed after the demo class.
+ * Uses Gmail SMTP so it reaches any email address.
  */
 export async function sendContactRevealToStudent(data: {
   studentEmail: string;
@@ -321,14 +359,14 @@ export async function sendContactRevealToStudent(data: {
   tutorMode: string;
   tutorBio?: string;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) {
-    console.warn("[Email] RESEND_API_KEY not set — contact reveal email to student not sent");
+  const transport = getGmailTransport();
+  if (!transport) {
+    console.warn("[Email] Gmail SMTP not configured — contact reveal email to student not sent");
     return;
   }
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    await transport.sendMail({
+      from: FROM_EMAIL_GMAIL,
       to: data.studentEmail,
       subject: `🎉 Your Tutor Match — ${data.tutorName} is ready to teach! — EduNest`,
       html: `
@@ -370,7 +408,7 @@ export async function sendContactRevealToStudent(data: {
         </div>
       `,
     });
-    console.log(`[Email] Contact reveal sent to student: ${data.studentEmail}`);
+    console.log(`[Email] Contact reveal sent via Gmail SMTP to student: ${data.studentEmail}`);
   } catch (err) {
     console.warn("[Email] Failed to send contact reveal to student:", err);
   }

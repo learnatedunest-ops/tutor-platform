@@ -224,3 +224,12 @@
 - [x] Show payment pending badge only after successful sheet upload (not before)
 - [x] TutorDashboard: Ongoing Classes section — dedicated /ongoing-classes page with upload + payment
 - [x] StudentPortal: My Classes section — dedicated /my-classes page with payment info + tutor contact
+## Round 21 — Gmail SMTP & Budget Fix
+- [x] Install nodemailer + @types/nodemailer
+- [x] Store GMAIL_APP_PASSWORD as project secret
+- [x] Rewrite server/email.ts: OTP + contact reveal emails use Gmail SMTP (Nodemailer), owner notifications keep Resend
+- [x] Remove OTP fallback code display from PhoneOtpVerifier.tsx — Gmail SMTP delivers to any email
+- [x] Remove fallbackCode from routers.ts OTP send response
+- [x] Fix Budget (per month) input in StudentSetup to number-only (type=number, min=0, strip non-digits)
+- [x] Update email.test.ts to validate GMAIL_APP_PASSWORD env and all email functions
+- [x] 15/15 tests passing, 0 TypeScript errors

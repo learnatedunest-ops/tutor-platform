@@ -13,11 +13,21 @@ describe("email helper", () => {
     expect(key!.length).toBeGreaterThan(0);
   });
 
+  it("GMAIL_APP_PASSWORD is set in the environment (for OTP delivery)", () => {
+    const pass = process.env.GMAIL_APP_PASSWORD;
+    expect(pass).toBeDefined();
+    expect(typeof pass).toBe("string");
+    expect(pass!.length).toBeGreaterThan(0);
+  });
+
   it("email module imports without error", async () => {
     // Dynamic import so the module is evaluated after env is set
     const mod = await import("./email");
     expect(typeof mod.sendInquiryEmail).toBe("function");
     expect(typeof mod.sendTutorApplicationEmail).toBe("function");
     expect(typeof mod.sendDemoBookingEmail).toBe("function");
+    expect(typeof mod.sendOtpEmail).toBe("function");
+    expect(typeof mod.sendContactRevealToTutor).toBe("function");
+    expect(typeof mod.sendContactRevealToStudent).toBe("function");
   });
 });

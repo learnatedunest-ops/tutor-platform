@@ -717,12 +717,7 @@ export const appRouter = router({
         }
         // Return the masked email so the frontend can show a hint
         const maskedEmail = userEmail.replace(/(.{2}).+(@.+)/, '$1***$2');
-        // If using Resend's test sender (onboarding@resend.dev), emails only reach the
-        // Resend account owner. Return the code in the response as a fallback so users
-        // can still complete verification. Remove this once a custom domain is verified.
-        const usingTestSender = (process.env.FROM_EMAIL ?? 'onboarding@resend.dev').includes('onboarding@resend.dev');
-        const fallbackCode = (usingTestSender || !emailSent) ? code : undefined;
-        return { success: true, expiresAt, maskedEmail, fallbackCode };
+        return { success: true, expiresAt, maskedEmail };
       }),
 
     // Verify OTP code entered by user

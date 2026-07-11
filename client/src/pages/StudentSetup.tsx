@@ -475,7 +475,7 @@ export default function StudentSetup() {
                 <label className={labelCls} style={labelStyle}>Budget (per month)</label>
                 <div className="relative">
                   <IndianRupee size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "oklch(0.65 0.01 270)" }} />
-                  <input className={inputCls} style={{ ...inputStyle, paddingLeft: "2rem" }} value={form.budget} onChange={e => set("budget", e.target.value)} placeholder="e.g. 3000" />
+                  <input className={inputCls} style={{ ...inputStyle, paddingLeft: "2rem" }} type="number" min="0" value={form.budget} onChange={e => set("budget", e.target.value.replace(/[^0-9]/g, ""))} placeholder="e.g. 3000" />
                 </div>
               </div>
               <div>
