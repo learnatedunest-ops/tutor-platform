@@ -1,38 +1,41 @@
 /**
- * WhatsApp Alert Helper
- * Sends email notifications to the admin (learn.at.edunest@gmail.com)
- * Each alert includes clickable wa.me deep links so admin can directly message the parent/tutor.
+ * Admin Email Alerts
+ * Sends email notifications to the admin Gmail (learn.at.edunest@gmail.com)
+ * for two key events: demo class scheduled and session sheet uploaded.
+ * Each email includes clickable wa.me deep links to directly message the parent/tutor on WhatsApp.
  *
- * Format: https://wa.me/<countrycode><number>?text=<urlencoded message>
+ * WhatsApp link format: https://wa.me/<countrycode><number>?text=<urlencoded message>
  * Indian numbers: +91XXXXXXXXXX → 91XXXXXXXXXX
  */
 
-import { Resend } from "resend";
-import { notifyOwner } from "./_core/notification";
+import nodemailer from "nodemailer";
 
 const OWNER_EMAIL = "learn.at.edunest@gmail.com";
 
-function getResend(): Resend | null {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.warn("[WhatsApp Alert] RESEND_API_KEY not set — admin WhatsApp alerts disabled");
+function getTransporter(): nodemailer.Transporter | null {
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!pass) {
+    console.warn("[Admin Alert] GMAIL_APP_PASSWORD not set — admin email alerts disabled");
     return null;
   }
-  return new Resend(apiKey);
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: OWNER_EMAIL, pass },
+  });
 }
 
-async function sendAdminAlert(subject: string, html: string): Promise<void> {
-  const resend = getResend();
-  if (!resend) return;
+async function sendAdminEmail(subject: string, html: string): Promise<void> {
+  const transporter = getTransporter();
+  if (!transporter) return;
   try {
-    await resend.emails.send({
-      from: "EduNest <onboarding@resend.dev>",
+    await transporter.sendMail({
+      from: `"EduNest Alerts" <${OWNER_EMAIL}>`,
       to: OWNER_EMAIL,
       subject,
       html,
     });
   } catch (err) {
-    console.error("[WhatsApp Alert] Failed to send admin alert email:", err);
+    console.error("[Admin Alert] Failed to send admin alert email:", err);
   }
 }
 
@@ -51,7 +54,7 @@ function waLink(phone: string, message: string): string {
   return `https://wa.me/${number}?text=${encoded}`;
 }
 
-// ─── Alert: Demo class scheduled ────────────────────────────────────────────
+// ─── Alert 1: Demo class scheduled ──────────────────────────────────────────
 
 export async function notifyAdminDemoScheduled(params: {
   parentName: string;
@@ -68,35 +71,35 @@ export async function notifyAdminDemoScheduled(params: {
   const tutorWaMsg = `Hi ${tutorName}! 👋 This is EduNest. A demo class has been booked for you with ${parentName}'s child ${studentName} (${subject}) on ${demoDate}. Please be punctual and dressed professionally. For any queries, reply here.`;
 
   const html = `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px">
-      <h2 style="color:#ea580c">📅 New Demo Class Scheduled — EduNest Alert</h2>
-      <table style="width:100%;border-collapse:collapse;margin:16px 0">
-        <tr><td style="padding:8px;font-weight:bold;color:#555">Student</td><td style="padding:8px">${studentName}</td></tr>
-        <tr style="background:#fef3c7"><td style="padding:8px;font-weight:bold;color:#555">Subject</td><td style="padding:8px">${subject}</td></tr>
-        <tr><td style="padding:8px;font-weight:bold;color:#555">Demo Date</td><td style="padding:8px">${demoDate}</td></tr>
-        <tr style="background:#fef3c7"><td style="padding:8px;font-weight:bold;color:#555">Parent</td><td style="padding:8px">${parentName} — ${parentPhone}</td></tr>
-        <tr><td style="padding:8px;font-weight:bold;color:#555">Tutor</td><td style="padding:8px">${tutorName} — ${tutorPhone}</td></tr>
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#fff;border:1px solid #e5e7eb;border-radius:10px">
+      <div style="border-bottom:3px solid #ea580c;padding-bottom:12px;margin-bottom:20px">
+        <h2 style="color:#ea580c;margin:0;font-size:20px">📅 New Demo Class Scheduled</h2>
+        <p style="color:#6b7280;margin:4px 0 0;font-size:13px">EduNest Admin Alert</p>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin:0 0 20px">
+        <tr><td style="padding:10px 8px;font-weight:bold;color:#374151;width:120px;border-bottom:1px solid #f3f4f6">Student</td><td style="padding:10px 8px;border-bottom:1px solid #f3f4f6">${studentName}</td></tr>
+        <tr style="background:#fef9f0"><td style="padding:10px 8px;font-weight:bold;color:#374151;border-bottom:1px solid #f3f4f6">Subject</td><td style="padding:10px 8px;border-bottom:1px solid #f3f4f6">${subject}</td></tr>
+        <tr><td style="padding:10px 8px;font-weight:bold;color:#374151;border-bottom:1px solid #f3f4f6">Demo Date</td><td style="padding:10px 8px;border-bottom:1px solid #f3f4f6;font-weight:bold;color:#ea580c">${demoDate}</td></tr>
+        <tr style="background:#fef9f0"><td style="padding:10px 8px;font-weight:bold;color:#374151;border-bottom:1px solid #f3f4f6">Parent</td><td style="padding:10px 8px;border-bottom:1px solid #f3f4f6">${parentName} &mdash; ${parentPhone}</td></tr>
+        <tr><td style="padding:10px 8px;font-weight:bold;color:#374151">Tutor</td><td style="padding:10px 8px">${tutorName} &mdash; ${tutorPhone}</td></tr>
       </table>
-      <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
-        <a href="${waLink(parentPhone, parentWaMsg)}" style="background:#25D366;color:white;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block">
-          💬 WhatsApp Parent (${parentPhone})
+      <p style="font-weight:bold;color:#374151;margin:0 0 12px">Contact them directly on WhatsApp:</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <a href="${waLink(parentPhone, parentWaMsg)}" style="background:#25D366;color:white;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;display:inline-block">
+          💬 Message Parent on WhatsApp<br><span style="font-weight:normal;font-size:12px">${parentPhone}</span>
         </a>
-        <a href="${waLink(tutorPhone, tutorWaMsg)}" style="background:#128C7E;color:white;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block">
-          💬 WhatsApp Tutor (${tutorPhone})
+        <a href="${waLink(tutorPhone, tutorWaMsg)}" style="background:#128C7E;color:white;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;display:inline-block">
+          💬 Message Tutor on WhatsApp<br><span style="font-weight:normal;font-size:12px">${tutorPhone}</span>
         </a>
       </div>
+      <p style="color:#9ca3af;font-size:12px;margin-top:24px;border-top:1px solid #f3f4f6;padding-top:12px">EduNest — learn.at.edunest@gmail.com | +91-8618635627</p>
     </div>
   `;
 
-  await sendAdminAlert(`📅 Demo Scheduled: ${studentName} ↔ ${tutorName} on ${demoDate}`, html);
-  // Also send push notification to owner with wa.me links
-  await notifyOwner({
-    title: `📅 Demo Scheduled: ${studentName} ↔ ${tutorName}`,
-    content: `**Date:** ${demoDate}\n**Parent:** ${parentName} — [WhatsApp](${waLink(parentPhone, parentWaMsg)})\n**Tutor:** ${tutorName} — [WhatsApp](${waLink(tutorPhone, tutorWaMsg)})`,
-  }).catch(() => {});
+  await sendAdminEmail(`📅 Demo Scheduled: ${studentName} ↔ ${tutorName} on ${demoDate}`, html);
 }
 
-// ─── Alert: Tutor uploaded session sheet ────────────────────────────────────
+// ─── Alert 2: Tutor uploaded session sheet ───────────────────────────────────
 
 export async function notifyAdminSheetUploaded(params: {
   tutorName: string;
@@ -112,119 +115,39 @@ export async function notifyAdminSheetUploaded(params: {
   const tutorWaMsg = `Hi ${tutorName}! 👋 EduNest here. We've received your session sheet for ${studentName}. We'll notify the parent to process the payment shortly. Thank you!`;
 
   const html = `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px">
-      <h2 style="color:#ea580c">📋 Session Sheet Uploaded — EduNest Alert</h2>
-      <table style="width:100%;border-collapse:collapse;margin:16px 0">
-        <tr><td style="padding:8px;font-weight:bold;color:#555">Student</td><td style="padding:8px">${studentName}</td></tr>
-        <tr style="background:#fef3c7"><td style="padding:8px;font-weight:bold;color:#555">Tutor</td><td style="padding:8px">${tutorName} — ${tutorPhone}</td></tr>
-        <tr><td style="padding:8px;font-weight:bold;color:#555">Parent</td><td style="padding:8px">${parentName} — ${parentPhone}</td></tr>
-        ${sheetUrl ? `<tr style="background:#fef3c7"><td style="padding:8px;font-weight:bold;color:#555">Sheet</td><td style="padding:8px"><a href="${sheetUrl}" style="color:#ea580c">View Sheet</a></td></tr>` : ""}
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#fff;border:1px solid #e5e7eb;border-radius:10px">
+      <div style="border-bottom:3px solid #ea580c;padding-bottom:12px;margin-bottom:20px">
+        <h2 style="color:#ea580c;margin:0;font-size:20px">📋 Session Sheet Uploaded</h2>
+        <p style="color:#6b7280;margin:4px 0 0;font-size:13px">EduNest Admin Alert — Payment Action Required</p>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin:0 0 20px">
+        <tr><td style="padding:10px 8px;font-weight:bold;color:#374151;width:120px;border-bottom:1px solid #f3f4f6">Student</td><td style="padding:10px 8px;border-bottom:1px solid #f3f4f6">${studentName}</td></tr>
+        <tr style="background:#fef9f0"><td style="padding:10px 8px;font-weight:bold;color:#374151;border-bottom:1px solid #f3f4f6">Tutor</td><td style="padding:10px 8px;border-bottom:1px solid #f3f4f6">${tutorName} &mdash; ${tutorPhone}</td></tr>
+        <tr><td style="padding:10px 8px;font-weight:bold;color:#374151;border-bottom:1px solid #f3f4f6">Parent</td><td style="padding:10px 8px;border-bottom:1px solid #f3f4f6">${parentName} &mdash; ${parentPhone}</td></tr>
+        ${sheetUrl ? `<tr style="background:#fef9f0"><td style="padding:10px 8px;font-weight:bold;color:#374151">Sheet</td><td style="padding:10px 8px"><a href="${sheetUrl}" style="color:#ea580c;font-weight:bold">📄 View Uploaded Sheet</a></td></tr>` : ""}
       </table>
-      <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
-        <a href="${waLink(parentPhone, parentWaMsg)}" style="background:#25D366;color:white;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block">
-          💬 WhatsApp Parent (${parentPhone})
+      <p style="font-weight:bold;color:#374151;margin:0 0 12px">Contact them directly on WhatsApp:</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <a href="${waLink(parentPhone, parentWaMsg)}" style="background:#25D366;color:white;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;display:inline-block">
+          💬 Message Parent on WhatsApp<br><span style="font-weight:normal;font-size:12px">${parentPhone}</span>
         </a>
-        <a href="${waLink(tutorPhone, tutorWaMsg)}" style="background:#128C7E;color:white;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block">
-          💬 WhatsApp Tutor (${tutorPhone})
+        <a href="${waLink(tutorPhone, tutorWaMsg)}" style="background:#128C7E;color:white;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;display:inline-block">
+          💬 Message Tutor on WhatsApp<br><span style="font-weight:normal;font-size:12px">${tutorPhone}</span>
         </a>
       </div>
+      <p style="color:#9ca3af;font-size:12px;margin-top:24px;border-top:1px solid #f3f4f6;padding-top:12px">EduNest — learn.at.edunest@gmail.com | +91-8618635627</p>
     </div>
   `;
 
-  await sendAdminAlert(`📋 Sheet Uploaded: ${tutorName} for ${studentName} — Payment Pending`, html);
-  await notifyOwner({
-    title: `📋 Sheet Uploaded: ${tutorName} for ${studentName}`,
-    content: `**Tutor:** ${tutorName} — [WhatsApp](${waLink(tutorPhone, tutorWaMsg)})\n**Parent:** ${parentName} — [WhatsApp](${waLink(parentPhone, parentWaMsg)})${sheetUrl ? `\n[View Sheet](${sheetUrl})` : ""}`,
-  }).catch(() => {});
+  await sendAdminEmail(`📋 Sheet Uploaded: ${tutorName} for ${studentName} — Payment Pending`, html);
 }
 
-// ─── Alert: Parent marked payment ───────────────────────────────────────────
+// ─── Stub exports for backward compatibility (no-ops) ────────────────────────
 
-export async function notifyAdminParentPaid(params: {
-  parentName: string;
-  parentPhone: string;
-  tutorName: string;
-  tutorPhone: string;
-  studentName: string;
-  amount?: string;
-}): Promise<void> {
-  const { parentName, parentPhone, tutorName, tutorPhone, studentName, amount } = params;
-
-  const parentWaMsg = `Hi ${parentName}! 👋 EduNest here. We've received your payment notification for ${studentName}'s tuition. Our team is reviewing it and will confirm shortly. Thank you!`;
-  const tutorWaMsg = `Hi ${tutorName}! 👋 EduNest here. The parent has submitted payment for ${studentName}'s tuition. We're reviewing it and will process your fee soon. Thank you for your patience!`;
-
-  const html = `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px">
-      <h2 style="color:#ea580c">💰 Parent Payment Received — EduNest Alert</h2>
-      <p style="background:#fef9c3;padding:12px;border-radius:8px;border-left:4px solid #eab308">
-        ⚠️ <strong>Action Required:</strong> Please verify the payment on your UPI app (8618635627@yescred) and approve it in the Admin Panel → Session Payments.
-      </p>
-      <table style="width:100%;border-collapse:collapse;margin:16px 0">
-        <tr><td style="padding:8px;font-weight:bold;color:#555">Student</td><td style="padding:8px">${studentName}</td></tr>
-        <tr style="background:#fef3c7"><td style="padding:8px;font-weight:bold;color:#555">Parent</td><td style="padding:8px">${parentName} — ${parentPhone}</td></tr>
-        <tr><td style="padding:8px;font-weight:bold;color:#555">Tutor</td><td style="padding:8px">${tutorName} — ${tutorPhone}</td></tr>
-        ${amount ? `<tr style="background:#fef3c7"><td style="padding:8px;font-weight:bold;color:#555">Amount</td><td style="padding:8px;font-weight:bold;color:#16a34a">₹${amount}</td></tr>` : ""}
-      </table>
-      <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
-        <a href="${waLink(parentPhone, parentWaMsg)}" style="background:#25D366;color:white;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block">
-          💬 WhatsApp Parent (${parentPhone})
-        </a>
-        <a href="${waLink(tutorPhone, tutorWaMsg)}" style="background:#128C7E;color:white;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block">
-          💬 WhatsApp Tutor (${tutorPhone})
-        </a>
-      </div>
-    </div>
-  `;
-
-  await sendAdminAlert(`💰 Payment Received: ${parentName} for ${studentName} — Awaiting Your Approval`, html);
-  await notifyOwner({
-    title: `💰 Payment Received: ${parentName} for ${studentName}`,
-    content: `**Action Required:** Verify UPI payment on 8618635627@yescred then approve in Admin → Session Payments.\n**Parent:** ${parentName} — [WhatsApp](${waLink(parentPhone, parentWaMsg)})\n**Tutor:** ${tutorName} — [WhatsApp](${waLink(tutorPhone, tutorWaMsg)})`,
-  }).catch(() => {});
+export async function notifyAdminParentPaid(_params: unknown): Promise<void> {
+  // Removed per admin preference — only demo scheduled and sheet uploaded alerts are sent
 }
 
-// ─── Alert: Cancellation requested ──────────────────────────────────────────
-
-export async function notifyAdminCancellationRequested(params: {
-  requestedBy: "tutor" | "parent";
-  requesterName: string;
-  requesterPhone: string;
-  otherPartyName: string;
-  otherPartyPhone: string;
-  studentName: string;
-  reason?: string;
-}): Promise<void> {
-  const { requestedBy, requesterName, requesterPhone, otherPartyName, otherPartyPhone, studentName, reason } = params;
-
-  const requesterWaMsg = `Hi ${requesterName}! 👋 EduNest here. We've received your cancellation request for ${studentName}'s class. Our team is reviewing it and will get back to you within 24 hours. Thank you.`;
-  const otherWaMsg = `Hi ${otherPartyName}! 👋 EduNest here. A cancellation request has been submitted for ${studentName}'s class. Our team is reviewing it. We'll keep you informed. Thank you.`;
-
-  const html = `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px">
-      <h2 style="color:#dc2626">🚫 Class Cancellation Requested — EduNest Alert</h2>
-      <p style="background:#fef2f2;padding:12px;border-radius:8px;border-left:4px solid #dc2626">
-        ⚠️ <strong>Action Required:</strong> Please review and approve/reject this cancellation in the Admin Panel → Cancellation Requests.
-      </p>
-      <table style="width:100%;border-collapse:collapse;margin:16px 0">
-        <tr><td style="padding:8px;font-weight:bold;color:#555">Student</td><td style="padding:8px">${studentName}</td></tr>
-        <tr style="background:#fef3c7"><td style="padding:8px;font-weight:bold;color:#555">Requested By</td><td style="padding:8px;text-transform:capitalize">${requestedBy}: ${requesterName} — ${requesterPhone}</td></tr>
-        <tr><td style="padding:8px;font-weight:bold;color:#555">Other Party</td><td style="padding:8px">${otherPartyName} — ${otherPartyPhone}</td></tr>
-        ${reason ? `<tr style="background:#fef3c7"><td style="padding:8px;font-weight:bold;color:#555">Reason</td><td style="padding:8px">${reason}</td></tr>` : ""}
-      </table>
-      <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
-        <a href="${waLink(requesterPhone, requesterWaMsg)}" style="background:#25D366;color:white;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block">
-          💬 WhatsApp ${requestedBy === "parent" ? "Parent" : "Tutor"} (${requesterPhone})
-        </a>
-        <a href="${waLink(otherPartyPhone, otherWaMsg)}" style="background:#128C7E;color:white;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block">
-          💬 WhatsApp ${requestedBy === "parent" ? "Tutor" : "Parent"} (${otherPartyPhone})
-        </a>
-      </div>
-    </div>
-  `;
-
-  await sendAdminAlert(`🚫 Cancellation Request: ${requesterName} (${requestedBy}) for ${studentName}'s class`, html);
-  await notifyOwner({
-    title: `🚫 Cancellation Request: ${studentName}'s class`,
-    content: `**Requested by ${requestedBy}:** ${requesterName} — [WhatsApp](${waLink(requesterPhone, requesterWaMsg)})\n**Other party:** ${otherPartyName} — [WhatsApp](${waLink(otherPartyPhone, otherWaMsg)})${reason ? `\n**Reason:** ${reason}` : ""}`,
-  }).catch(() => {});
+export async function notifyAdminCancellationRequested(_params: unknown): Promise<void> {
+  // Removed per admin preference — only demo scheduled and sheet uploaded alerts are sent
 }

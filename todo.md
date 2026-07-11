@@ -367,13 +367,15 @@
 - [x] 15/15 tests passing, 0 TypeScript errors
 
 ## Round 32 — T&C Split, Fields, IDs, Privacy, WhatsApp Fix
-- [ ] Split T&C: TutorSetup shows only tutor-specific T&C (conduct, UPI, 40% deduction); StudentSetup shows only parent-specific T&C (demo cancellation ₹350, payment terms)
-- [ ] Parent T&C: demo cancellation = ₹350 charge regardless of when they cancel (before or after class)
-- [ ] DB: add gender (male/female/other) to tutor_profiles; add tutorGenderPreference (male/female/no_preference) to student_profiles; run db:push
-- [ ] TutorSetup: make UPI ID mandatory (required field with validation); add gender dropdown
-- [ ] StudentSetup: add tutor gender preference dropdown (Male / Female / No Preference)
-- [ ] Session log sheet: replace "EduNest" text header with EduNest logo image; fix to single A4 page (reduce rows or font size)
-- [ ] ID display prefixes: show student IDs as S001, S002; tutor IDs as T001, T002; class/match IDs as C001, C002 in admin panel
-- [ ] Active class privacy: in NearbyStudents (tutor find-students), hide student profiles that have an active class with ANY tutor (not just this tutor)
-- [ ] Fix WhatsApp alerts: send real WhatsApp message to admin number 8618635627 — use wa.me link in email body prominently + also trigger owner notification with direct wa.me link
-- [ ] 15/15 tests passing, 0 TypeScript errors
+- [x] Split T&C: TutorSetup shows only tutor-specific T&C (conduct, UPI, 40% deduction); StudentSetup shows only parent-specific T&C (demo cancellation ₹350, payment terms)
+- [x] Parent T&C: demo cancellation = ₹350 charge regardless of when they cancel (before or after class)
+- [x] DB: add gender (male/female/other) to tutor_profiles; add tutorGenderPreference (male/female/no_preference) to student_profiles; run db:push
+- [x] TutorSetup: make UPI ID mandatory (required field with validation); add gender dropdown
+- [x] StudentSetup: add tutor gender preference dropdown (Male / Female / No Preference)
+- [x] Session log sheet: replace "EduNest" text header with EduNest logo image; fix to single A4 page (reduce rows or font size)
+- [x] ID display prefixes: show student IDs as S001, S002; tutor IDs as T001, T002; class/match IDs as C001, C002 in admin panel
+- [x] Active class privacy: in NearbyStudents (tutor find-students), hide student profiles that have an active class with ANY tutor (not just this tutor)
+- [x] Fix WhatsApp alerts: send real WhatsApp message to admin number 8618635627 — use wa.me link in email body prominently + also trigger owner notification with direct wa.me link
+- [x] 15/15 tests passing, 0 TypeScript errors
+
+
