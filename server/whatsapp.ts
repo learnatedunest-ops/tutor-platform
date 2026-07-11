@@ -8,6 +8,7 @@
  */
 
 import { Resend } from "resend";
+import { notifyOwner } from "./_core/notification";
 
 const OWNER_EMAIL = "learn.at.edunest@gmail.com";
 
@@ -88,6 +89,11 @@ export async function notifyAdminDemoScheduled(params: {
   `;
 
   await sendAdminAlert(`📅 Demo Scheduled: ${studentName} ↔ ${tutorName} on ${demoDate}`, html);
+  // Also send push notification to owner with wa.me links
+  await notifyOwner({
+    title: `📅 Demo Scheduled: ${studentName} ↔ ${tutorName}`,
+    content: `**Date:** ${demoDate}\n**Parent:** ${parentName} — [WhatsApp](${waLink(parentPhone, parentWaMsg)})\n**Tutor:** ${tutorName} — [WhatsApp](${waLink(tutorPhone, tutorWaMsg)})`,
+  }).catch(() => {});
 }
 
 // ─── Alert: Tutor uploaded session sheet ────────────────────────────────────
@@ -126,6 +132,10 @@ export async function notifyAdminSheetUploaded(params: {
   `;
 
   await sendAdminAlert(`📋 Sheet Uploaded: ${tutorName} for ${studentName} — Payment Pending`, html);
+  await notifyOwner({
+    title: `📋 Sheet Uploaded: ${tutorName} for ${studentName}`,
+    content: `**Tutor:** ${tutorName} — [WhatsApp](${waLink(tutorPhone, tutorWaMsg)})\n**Parent:** ${parentName} — [WhatsApp](${waLink(parentPhone, parentWaMsg)})${sheetUrl ? `\n[View Sheet](${sheetUrl})` : ""}`,
+  }).catch(() => {});
 }
 
 // ─── Alert: Parent marked payment ───────────────────────────────────────────
@@ -167,6 +177,10 @@ export async function notifyAdminParentPaid(params: {
   `;
 
   await sendAdminAlert(`💰 Payment Received: ${parentName} for ${studentName} — Awaiting Your Approval`, html);
+  await notifyOwner({
+    title: `💰 Payment Received: ${parentName} for ${studentName}`,
+    content: `**Action Required:** Verify UPI payment on 8618635627@yescred then approve in Admin → Session Payments.\n**Parent:** ${parentName} — [WhatsApp](${waLink(parentPhone, parentWaMsg)})\n**Tutor:** ${tutorName} — [WhatsApp](${waLink(tutorPhone, tutorWaMsg)})`,
+  }).catch(() => {});
 }
 
 // ─── Alert: Cancellation requested ──────────────────────────────────────────
@@ -209,4 +223,8 @@ export async function notifyAdminCancellationRequested(params: {
   `;
 
   await sendAdminAlert(`🚫 Cancellation Request: ${requesterName} (${requestedBy}) for ${studentName}'s class`, html);
+  await notifyOwner({
+    title: `🚫 Cancellation Request: ${studentName}'s class`,
+    content: `**Requested by ${requestedBy}:** ${requesterName} — [WhatsApp](${waLink(requesterPhone, requesterWaMsg)})\n**Other party:** ${otherPartyName} — [WhatsApp](${waLink(otherPartyPhone, otherWaMsg)})${reason ? `\n**Reason:** ${reason}` : ""}`,
+  }).catch(() => {});
 }

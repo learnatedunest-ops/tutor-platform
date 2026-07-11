@@ -474,7 +474,7 @@ export default function Admin() {
                     <tbody className="divide-y divide-gray-50">
                       {adminTutors.map(t => (
                         <tr key={t.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-4 text-gray-400 font-mono text-xs">{t.id}</td>
+                          <td className="px-4 py-4 text-gray-400 font-mono text-xs">T{t.id}</td>
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: "oklch(0.68 0.18 50)" }}>
@@ -646,7 +646,7 @@ export default function Admin() {
                       createdAt: Date;
                     }) => (
                       <tr key={sp.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-4 text-gray-400 font-mono text-xs">{sp.id}</td>
+                        <td className="px-4 py-4 text-gray-400 font-mono text-xs">S{sp.id}</td>
                         <td className="px-4 py-4">
                           <div className="font-semibold text-gray-800 whitespace-nowrap">{sp.name}</div>
                           {sp.studentName && <div className="text-xs text-gray-400">Student: {sp.studentName}</div>}
@@ -801,7 +801,7 @@ export default function Admin() {
                       status: string; createdAt: Date | string;
                     }) => (
                       <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-4 text-gray-400 font-mono text-xs">{p.id}</td>
+                        <td className="px-4 py-4 text-gray-400 font-mono text-xs">T{p.id}</td>
                         <td className="px-4 py-4 font-semibold text-gray-800 whitespace-nowrap">{p.name}</td>
                         <td className="px-4 py-4">
                           <div className="flex flex-col gap-0.5">
@@ -905,10 +905,10 @@ export default function Admin() {
                       <tr key={interest.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-4 text-gray-400 font-mono text-xs">{interest.id}</td>
                         <td className="px-4 py-4">
-                          <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-lg font-mono">Tutor #{interest.tutorProfileId}</span>
+                          <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-lg font-mono">Tutor T{interest.tutorProfileId}</span>
                         </td>
                         <td className="px-4 py-4">
-                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-lg font-mono">Student #{interest.studentProfileId}</span>
+                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-lg font-mono">Student S{interest.studentProfileId}</span>
                         </td>
                         <td className="px-4 py-4 text-xs text-gray-600 max-w-[200px]">
                           {interest.message ? <p className="line-clamp-2">{interest.message}</p> : <span className="text-gray-300">No message</span>}
@@ -971,7 +971,7 @@ export default function Admin() {
                   <tbody className="divide-y" style={{ borderColor: "oklch(0.95 0.005 80)" }}>
                     {(demoSlotsList as Array<{ id: number; studentProfileId: number; tutorProfileId: number; mode: string; scheduledDate?: string | null; scheduledTime?: string | null; notes?: string | null; status: string; createdAt: Date | number }>).map((slot) => (
                       <tr key={slot.id} className="hover:bg-blue-50/30 transition-colors">
-                        <td className="px-4 py-4 font-semibold text-gray-400 text-xs">#{slot.id}</td>
+                        <td className="px-4 py-4 font-semibold text-gray-400 text-xs">D{slot.id}</td>
                         <td className="px-4 py-4">
                           <span className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full text-xs font-semibold">
                             <Users size={11} /> #{slot.studentProfileId}
@@ -1064,10 +1064,10 @@ export default function Admin() {
                       <tr key={demo.id} className="hover:bg-orange-50/30 transition-colors">
                         <td className="px-4 py-4 text-gray-400 font-mono text-xs">{demo.id}</td>
                         <td className="px-4 py-4">
-                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-lg font-mono">Student #{demo.studentProfileId}</span>
+                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-lg font-mono">Student S{demo.studentProfileId}</span>
                         </td>
                         <td className="px-4 py-4">
-                          <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-lg font-mono">Tutor #{demo.tutorProfileId}</span>
+                          <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-lg font-mono">Tutor T{demo.tutorProfileId}</span>
                         </td>
                         <td className="px-4 py-4 text-gray-600 max-w-xs truncate text-xs">{demo.message || <span className="text-gray-400 italic">No message</span>}</td>
                         <td className="px-4 py-4">
@@ -1113,7 +1113,7 @@ export default function Admin() {
                 {confirmedMatchesList.map((match: any) => (
                   <div key={match.id} className="bg-white rounded-2xl shadow-sm border p-6" style={{ borderColor: match.classStatus === 'got_a_class' ? 'oklch(0.75 0.18 145)' : 'oklch(0.88 0.12 145)' }}>
                     <div className="flex flex-wrap items-center gap-3 mb-4">
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">🎉 Match #{match.id}</span>
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">🎉 Class C{match.id}</span>
                       {match.classStatus === 'got_a_class' ? (
                         <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-300">🎓 Got a Class!</span>
                       ) : (
@@ -1127,7 +1127,7 @@ export default function Admin() {
                       <div className="p-4 rounded-xl border" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.98 0.005 80)" }}>
                         <h3 className="font-bold text-sm mb-3" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>👨‍🏫 Tutor Details</h3>
                         <div className="space-y-1.5 text-sm">
-                          <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Profile ID</span><span className="font-semibold">#{match.tutorProfileId}</span></div>
+                          <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Profile ID</span><span className="font-semibold">T{match.tutorProfileId}</span></div>
                           {match.tutorName && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Name</span><span className="font-semibold">{match.tutorName}</span></div>}
                           {match.tutorEmail && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Email</span><a href={`mailto:${match.tutorEmail}`} className="font-semibold text-blue-600 hover:underline">{match.tutorEmail}</a></div>}
                           {match.tutorPhone && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Phone</span><a href={`tel:${match.tutorPhone}`} className="font-semibold text-green-700">{match.tutorPhone}</a></div>}
@@ -1137,7 +1137,7 @@ export default function Admin() {
                       <div className="p-4 rounded-xl border" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.98 0.005 80)" }}>
                         <h3 className="font-bold text-sm mb-3" style={{ color: "oklch(0.55 0.18 270)", fontFamily: "'Poppins', sans-serif" }}>👨‍👧 Student / Parent Details</h3>
                         <div className="space-y-1.5 text-sm">
-                          <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Profile ID</span><span className="font-semibold">#{match.studentProfileId}</span></div>
+                          <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Profile ID</span><span className="font-semibold">S{match.studentProfileId}</span></div>
                           {match.studentName && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Name</span><span className="font-semibold">{match.studentName}</span></div>}
                           {match.studentEmail && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Email</span><a href={`mailto:${match.studentEmail}`} className="font-semibold text-blue-600 hover:underline">{match.studentEmail}</a></div>}
                           {match.studentPhone && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Phone</span><a href={`tel:${match.studentPhone}`} className="font-semibold text-green-700">{match.studentPhone}</a></div>}
@@ -1206,7 +1206,7 @@ export default function Admin() {
                       : 'oklch(0.92 0.005 80)'
                   }}>
                     <div className="flex flex-wrap items-center gap-3 mb-4">
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Log #{log.id}</span>
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Class C{log.confirmedMatchId ?? log.id}</span>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                         log.paymentStatus === 'payment_processed' ? 'bg-green-100 text-green-700' :
                         log.paymentStatus === 'parent_paid' ? 'bg-purple-100 text-purple-700' :
@@ -1224,12 +1224,12 @@ export default function Admin() {
                       <div className="p-3 rounded-xl bg-orange-50 border border-orange-100">
                         <p className="text-xs font-bold text-orange-700 mb-1">👨‍🏫 Tutor</p>
                         <p className="text-sm font-semibold">{log.tutorName || `Profile #${log.tutorProfileId}`}</p>
-                        <p className="text-xs text-gray-500">Profile ID: #{log.tutorProfileId}</p>
+                        <p className="text-xs text-gray-500">Profile ID: T{log.tutorProfileId}</p>
                       </div>
                       <div className="p-3 rounded-xl bg-blue-50 border border-blue-100">
                         <p className="text-xs font-bold text-blue-700 mb-1">👨‍👧 Student / Parent</p>
                         <p className="text-sm font-semibold">{log.studentName || `Profile #${log.studentProfileId}`}</p>
-                        <p className="text-xs text-gray-500">Profile ID: #{log.studentProfileId}</p>
+                        <p className="text-xs text-gray-500">Profile ID: S{log.studentProfileId}</p>
                       </div>
                     </div>
                     {/* Parent payment details */}

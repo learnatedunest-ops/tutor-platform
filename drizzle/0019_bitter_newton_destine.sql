@@ -1,0 +1,2 @@
+ALTER TABLE `student_profiles` ADD `tutorGenderPreference` enum('male','female','no_preference') DEFAULT 'no_preference';--> statement-breakpoint
+ALTER TABLE `tutor_profiles` ADD `gender` enum('male','female','other');

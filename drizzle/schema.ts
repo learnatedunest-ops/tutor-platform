@@ -199,6 +199,8 @@ export const tutorProfiles = mysqlTable("tutor_profiles", {
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
   fullAddress: text("fullAddress"),
   area: varchar("area", { length: 128 }),
+  // Personal details
+  gender: mysqlEnum("gender", ["male", "female", "other"]),  // Tutor's gender
   // Payment
   upiId: varchar("upiId", { length: 64 }),              // Tutor's UPI ID for receiving payment
   // Phone verification
@@ -262,6 +264,8 @@ export const studentProfiles = mysqlTable("student_profiles", {
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
   fullAddress: text("fullAddress"),
   area: varchar("area", { length: 128 }),
+  // Preferences
+  tutorGenderPreference: mysqlEnum("tutorGenderPreference", ["male", "female", "no_preference"]).default("no_preference"),
   // Phone verification
   phoneVerified: mysqlEnum("phoneVerified", ["yes", "no"]).default("no").notNull(),
   // Status

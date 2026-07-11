@@ -84,6 +84,7 @@ import {
   approveMatchCancellation,
   getActiveStudentIdsForTutor,
   getActiveTutorIdsForStudent,
+  getAllActiveStudentIds,
   getCancellationRequests,
   // Session logs
   getOrCreateSessionLog,
@@ -392,6 +393,7 @@ export const appRouter = router({
         fullAddress: z.string().max(1000).optional(),
         area: z.string().max(128).optional(),
         upiId: z.string().max(64).optional(),
+        gender: z.enum(["male", "female", "other"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const profile = await upsertTutorProfile(ctx.user.id, {
@@ -434,10 +436,13 @@ export const appRouter = router({
         const myProfile = await getTutorProfileByUserId(ctx.user.id);
         if (!myProfile || myProfile.status !== "approved") return [];
         const students = await getActiveStudentProfiles();
+        // Get ALL student IDs that have an active class with ANY tutor (not just this tutor)
+        const allActiveStudentIds = await getAllActiveStudentIds();
+        const activeSet = new Set(allActiveStudentIds);
         // Haversine distance filter
         const R = 6371;
         return students
-          .filter(s => s.latitude && s.longitude)
+          .filter(s => s.latitude && s.longitude && !activeSet.has(s.id))
           .map(s => {
             const lat1 = input.latitude * Math.PI / 180;
             const lat2 = parseFloat(s.latitude!) * Math.PI / 180;
@@ -484,6 +489,7 @@ export const appRouter = router({
         longitude: z.number().optional(),
         fullAddress: z.string().max(1000).optional(),
         area: z.string().max(128).optional(),
+        tutorGenderPreference: z.enum(["male", "female", "no_preference"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const profile = await upsertStudentProfile(ctx.user.id, {

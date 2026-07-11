@@ -1128,3 +1128,13 @@ export async function getSessionLogsByStudent(studentProfileId: number): Promise
   if (!db) return [];
   return db.select().from(sessionLogs).where(eq(sessionLogs.studentProfileId, studentProfileId)).orderBy(desc(sessionLogs.createdAt));
 }
+
+/** Get ALL student profile IDs that have an active (non-cancelled) confirmed class with any tutor */
+export async function getAllActiveStudentIds(): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({ studentProfileId: confirmedMatches.studentProfileId })
+    .from(confirmedMatches)
+    .where(ne(confirmedMatches.classStatus, 'cancelled'));
+  return Array.from(new Set(rows.map(r => r.studentProfileId)));
+}

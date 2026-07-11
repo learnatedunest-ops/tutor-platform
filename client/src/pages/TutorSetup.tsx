@@ -12,6 +12,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { startLogin } from "@/const";
 import LoginWall from "@/components/LoginWall";
+import TutorTermsModal from "@/components/TutorTermsModal";
 import PhoneOtpVerifier from "@/components/PhoneOtpVerifier";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
@@ -51,13 +52,14 @@ interface FormData {
   fullAddress: string;
   area: string;
   upiId: string;
+  gender: "male" | "female" | "other" | "";
 }
 
 const INITIAL: FormData = {
   name: "", email: "", phone: "", qualification: "", subjects: "",
   experience: "", boards: "CBSE, ICSE", languages: "English, Kannada",
   mode: "both", bio: "", education: "", workExperience: "",
-  latitude: null, longitude: null, fullAddress: "", area: "", upiId: "",
+  latitude: null, longitude: null, fullAddress: "", area: "", upiId: "", gender: "" as "male" | "female" | "other" | "",
 };
 
 function LocationPicker({ onLocation }: { onLocation: (lat: number, lng: number, address: string) => void }) {
@@ -149,6 +151,7 @@ export default function TutorSetup() {
   const [submitted, setSubmitted] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showTutorTerms, setShowTutorTerms] = useState(false);
   // Initialize editMode from ?edit=true query param so TutorDashboard can link directly to edit
   const [editMode, setEditMode] = useState(() => new URLSearchParams(search).get("edit") === "true");
 
@@ -192,6 +195,7 @@ export default function TutorSetup() {
         fullAddress: existingProfile.fullAddress ?? "",
         area: existingProfile.area ?? "",
         upiId: (existingProfile as any).upiId ?? "",
+        gender: (existingProfile as any).gender ?? "",
       }));
     }
   }, [existingProfile]);
@@ -214,6 +218,14 @@ export default function TutorSetup() {
       toast.error("Please fill in all required fields.");
       return;
     }
+    if (!form.gender) {
+      toast.error("Please select your gender.");
+      return;
+    }
+    if (!form.upiId || !form.upiId.includes('@')) {
+      toast.error("Please enter a valid UPI ID (e.g. name@upi or 9876543210@paytm).");
+      return;
+    }
     if (!agreedToTerms) {
       toast.error("Please agree to the Terms & Conditions before submitting.");
       return;
@@ -222,6 +234,7 @@ export default function TutorSetup() {
       ...form,
       latitude: form.latitude ?? undefined,
       longitude: form.longitude ?? undefined,
+      gender: form.gender || undefined,
     });
   };
 
@@ -408,9 +421,26 @@ export default function TutorSetup() {
                   placeholder="Brief introduction about your teaching style and background..."
                 />
               </div>
+              {/* Gender */}
+              <div>
+                <label className={labelCls} style={labelStyle}>Gender *</label>
+                <select
+                  className={inputCls}
+                  style={inputStyle}
+                  value={form.gender}
+                  onChange={e => set("gender", e.target.value)}
+                  required
+                >
+                  <option value="">Select your gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
               <div className="rounded-xl p-4 border-2" style={{ borderColor: "oklch(0.88 0.12 145)", backgroundColor: "oklch(0.97 0.03 145)" }}>
                 <label className={labelCls} style={{ ...labelStyle, color: "oklch(0.35 0.12 145)" }}>
-                  💳 Your UPI ID (for receiving payment)
+                  💳 Your UPI ID (for receiving payment) *
                 </label>
                 <input
                   className={inputCls}
@@ -418,9 +448,10 @@ export default function TutorSetup() {
                   value={form.upiId}
                   onChange={e => set("upiId", e.target.value.trim())}
                   placeholder="e.g. yourname@upi or 9876543210@paytm"
+                  required
                 />
                 <p className="text-xs mt-1.5" style={{ color: "oklch(0.45 0.08 145)", fontFamily: "'Nunito', sans-serif" }}>
-                  EduNest will transfer your fee to this UPI ID after the parent pays. This is kept private and only used for payment.
+                  EduNest will transfer your fee to this UPI ID after the parent pays. This is kept private and only used for payment. <strong>Required.</strong>
                 </p>
               </div>
             </div>
@@ -529,6 +560,7 @@ export default function TutorSetup() {
               </div>
 
               {/* T&C Checkbox — step 4 */}
+              <TutorTermsModal open={showTutorTerms} onClose={() => setShowTutorTerms(false)} />
               <div className="flex items-start gap-3 p-4 rounded-xl border" style={{ borderColor: agreedToTerms ? "#22C55E" : "oklch(0.88 0.005 80)", backgroundColor: agreedToTerms ? "#F0FDF4" : "oklch(0.97 0.005 80)" }}>
                 <input
                   type="checkbox"
@@ -538,10 +570,10 @@ export default function TutorSetup() {
                   className="mt-0.5 w-4 h-4 accent-orange-500 cursor-pointer"
                 />
                 <label htmlFor="tutor-terms" className="text-sm cursor-pointer" style={{ color: "oklch(0.35 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>
-                  I have read and agree to the{" "}
-                  <a href="/terms-conditions" target="_blank" rel="noopener noreferrer" className="font-bold underline" style={{ color: "oklch(0.68 0.18 50)" }}>
-                    EduNest Terms &amp; Conditions
-                  </a>
+                  I have read and agree to the{"\ "}
+                  <button type="button" onClick={() => setShowTutorTerms(true)} className="font-bold underline" style={{ color: "oklch(0.68 0.18 50)", background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                    EduNest Tutor Terms &amp; Conditions
+                  </button>
                   , including the 40% first-month deduction policy, conduct guidelines, and platform rules.
                 </label>
               </div>

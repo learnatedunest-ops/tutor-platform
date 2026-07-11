@@ -11,6 +11,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { startLogin } from "@/const";
 import LoginWall from "@/components/LoginWall";
+import ParentTermsModal from "@/components/ParentTermsModal";
 import PhoneOtpVerifier from "@/components/PhoneOtpVerifier";
 import TimeRangePicker from "@/components/TimeRangePicker";
 import { toast } from "sonner";
@@ -61,6 +62,7 @@ interface FormData {
   longitude: number | null;
   fullAddress: string;
   area: string;
+  tutorGenderPreference: "male" | "female" | "no_preference";
 }
 
 const INITIAL: FormData = {
@@ -69,6 +71,7 @@ const INITIAL: FormData = {
   demoTime: "", regularTime: "", daysPerWeek: ["mon", "tue", "wed", "thu", "fri"],
   sessionsPerWeek: "5", sessionDuration: "1 hr", budget: "",
   specialRequirements: "", latitude: null, longitude: null, fullAddress: "", area: "",
+  tutorGenderPreference: "no_preference",
 };
 
 function LocationPicker({ onLocation }: { onLocation: (lat: number, lng: number, address: string) => void }) {
@@ -158,6 +161,7 @@ export default function StudentSetup() {
   const [submitted, setSubmitted] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showParentTerms, setShowParentTerms] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -426,6 +430,21 @@ export default function StudentSetup() {
                   <input className={inputCls} style={inputStyle} type="email" value={form.email} onChange={e => set("email", e.target.value)} placeholder="your@email.com" />
                 </div>
               </div>
+              {/* Tutor Gender Preference */}
+              <div>
+                <label className={labelCls} style={labelStyle}>Preferred Tutor Gender</label>
+                <select
+                  className={inputCls}
+                  style={inputStyle}
+                  value={form.tutorGenderPreference}
+                  onChange={e => set("tutorGenderPreference", e.target.value as "male" | "female" | "no_preference")}
+                >
+                  <option value="no_preference">No Preference</option>
+                  <option value="male">Male Tutor</option>
+                  <option value="female">Female Tutor</option>
+                </select>
+                <p className="text-xs mt-1" style={{ color: "oklch(0.55 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>Select your preferred gender for the tutor teaching your child.</p>
+              </div>
             </div>
           )}
 
@@ -585,6 +604,7 @@ export default function StudentSetup() {
               </div>
 
               {/* T&C Checkbox — step 4 */}
+              <ParentTermsModal open={showParentTerms} onClose={() => setShowParentTerms(false)} />
               <div className="flex items-start gap-3 p-4 rounded-xl border" style={{ borderColor: agreedToTerms ? "#22C55E" : "oklch(0.88 0.005 80)", backgroundColor: agreedToTerms ? "#F0FDF4" : "oklch(0.97 0.005 80)" }}>
                 <input
                   type="checkbox"
@@ -595,9 +615,9 @@ export default function StudentSetup() {
                 />
                 <label htmlFor="student-terms" className="text-sm cursor-pointer" style={{ color: "oklch(0.35 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>
                   I have read and agree to the{" "}
-                  <a href="/terms-conditions" target="_blank" rel="noopener noreferrer" className="font-bold underline" style={{ color: "oklch(0.68 0.18 50)" }}>
-                    EduNest Terms &amp; Conditions
-                  </a>
+                  <button type="button" onClick={() => setShowParentTerms(true)} className="font-bold underline" style={{ color: "oklch(0.68 0.18 50)", background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                    EduNest Parent Terms &amp; Conditions
+                  </button>
                   , including the free demo policy, ₹350 demo cancellation fee, and conduct guidelines.
                 </label>
               </div>

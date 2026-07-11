@@ -355,13 +355,25 @@
 - [x] 15/15 tests passing, 0 TypeScript errors
 
 ## Round 31 — WhatsApp Alerts + T&C + Conduct Guidelines
-- [ ] Scrape Otoo T&C and draft EduNest Terms & Conditions page with custom clauses
-- [ ] Build /terms page with full T&C (40% deduction first month, ₹350 demo cancellation fee, conduct guidelines)
-- [ ] Add T&C checkbox to TutorSetup (step 1) with link to /terms
-- [ ] Add T&C checkbox to StudentSetup (step 1) with link to /terms
-- [ ] Add WhatsApp alert helper: sendWhatsAppAlert(adminNumber, message, replyToNumber) using wa.me deep link in owner notification email
-- [ ] WhatsApp alert: when parent schedules demo — message to admin with parent's WhatsApp link
-- [ ] WhatsApp alert: when tutor uploads sheet — message to admin with tutor's WhatsApp link
-- [ ] WhatsApp alert: when parent marks payment — message to admin with parent's WhatsApp link
-- [ ] WhatsApp alert: when cancellation is requested — message to admin with requester's WhatsApp link
+- [x] Scrape Otoo T&C and draft EduNest Terms & Conditions page with custom clauses
+- [x] Build /terms page with full T&C (40% deduction first month, ₹350 demo cancellation fee, conduct guidelines)
+- [x] Add T&C checkbox to TutorSetup (step 1) with link to /terms
+- [x] Add T&C checkbox to StudentSetup (step 1) with link to /terms
+- [x] Add WhatsApp alert helper: sendWhatsAppAlert(adminNumber, message, replyToNumber) using wa.me deep link in owner notification email
+- [x] WhatsApp alert: when parent schedules demo — message to admin with parent's WhatsApp link
+- [x] WhatsApp alert: when tutor uploads sheet — message to admin with tutor's WhatsApp link
+- [x] WhatsApp alert: when parent marks payment — message to admin with parent's WhatsApp link
+- [x] WhatsApp alert: when cancellation is requested — message to admin with requester's WhatsApp link
+- [x] 15/15 tests passing, 0 TypeScript errors
+
+## Round 32 — T&C Split, Fields, IDs, Privacy, WhatsApp Fix
+- [ ] Split T&C: TutorSetup shows only tutor-specific T&C (conduct, UPI, 40% deduction); StudentSetup shows only parent-specific T&C (demo cancellation ₹350, payment terms)
+- [ ] Parent T&C: demo cancellation = ₹350 charge regardless of when they cancel (before or after class)
+- [ ] DB: add gender (male/female/other) to tutor_profiles; add tutorGenderPreference (male/female/no_preference) to student_profiles; run db:push
+- [ ] TutorSetup: make UPI ID mandatory (required field with validation); add gender dropdown
+- [ ] StudentSetup: add tutor gender preference dropdown (Male / Female / No Preference)
+- [ ] Session log sheet: replace "EduNest" text header with EduNest logo image; fix to single A4 page (reduce rows or font size)
+- [ ] ID display prefixes: show student IDs as S001, S002; tutor IDs as T001, T002; class/match IDs as C001, C002 in admin panel
+- [ ] Active class privacy: in NearbyStudents (tutor find-students), hide student profiles that have an active class with ANY tutor (not just this tutor)
+- [ ] Fix WhatsApp alerts: send real WhatsApp message to admin number 8618635627 — use wa.me link in email body prominently + also trigger owner notification with direct wa.me link
 - [ ] 15/15 tests passing, 0 TypeScript errors

@@ -1,18 +1,19 @@
 /**
  * SessionLogSheet — Daily Tuition Time Duration Sheet
- * Printable A4 sheet matching the handwritten format in the reference image.
+ * Printable single A4 page with EduNest logo header.
  * URL: /session-log/:matchId
  * - Tutor & student can both view and print this page.
- * - 20 rows for session entries (date, in-time, out-time, duration, parent signature).
+ * - 26 rows for session entries (date, in-time, out-time, duration, parent signature).
  * - Print button triggers window.print(); CSS hides everything except the sheet.
+ * - Designed to fit exactly one A4 page when printed.
  */
-import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Printer, ArrowLeft, Download } from "lucide-react";
+import { Printer, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const ROWS = 20;
+const ROWS = 26;
+const LOGO_URL = "/manus-storage/edunest-logo-v3_41a5bc0e.png";
 
 export default function SessionLogSheet() {
   const { matchId } = useParams<{ matchId: string }>();
@@ -51,7 +52,7 @@ export default function SessionLogSheet() {
         </Link>
         <div className="flex-1" />
         <p className="text-sm text-gray-500">
-          Match #{matchIdNum} · Session Log Sheet
+          Class C{matchIdNum} · Session Log Sheet
         </p>
         <Button
           onClick={() => window.print()}
@@ -65,97 +66,99 @@ export default function SessionLogSheet() {
       {/* ── A4 Sheet ── */}
       <div
         className="session-sheet mx-auto my-8 bg-white shadow-lg print:shadow-none print:my-0"
-          style={{
-            width: "210mm",
-            minHeight: "297mm",
-            padding: "12mm 12mm",
-            fontFamily: "'Times New Roman', Times, serif",
-            fontSize: "10.5pt",
-          }}
+        style={{
+          width: "210mm",
+          height: "297mm",
+          padding: "8mm 10mm 6mm 10mm",
+          fontFamily: "'Times New Roman', Times, serif",
+          fontSize: "9.5pt",
+          boxSizing: "border-box",
+          overflow: "hidden",
+        }}
       >
-        {/* Header */}
-        <div className="flex items-end justify-between mb-4">
-          <div>
-            <p style={{ fontSize: "10pt", marginBottom: "2mm" }}>
-              <strong>EduNest</strong> — Daily Tuition Time Duration
-            </p>
-            <div className="flex items-end gap-2">
-              <span style={{ fontSize: "10pt" }}>Daily Tuition time duration</span>
-              <span
-                style={{
-                  borderBottom: "1px solid #000",
-                  minWidth: "80mm",
-                  display: "inline-block",
-                  marginBottom: "1px",
-                }}
-              />
-            </div>
+        {/* Header — Logo left, Teacher/Student right */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4mm" }}>
+          {/* Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: "3mm" }}>
+            <img
+              src={LOGO_URL}
+              alt="EduNest"
+              style={{ height: "14mm", width: "auto", objectFit: "contain" }}
+            />
           </div>
-          <div className="text-right">
-            <p style={{ fontSize: "10pt" }}>
-              <strong>Teacher Name</strong>{" "}
-              <span
-                style={{
-                  borderBottom: "1px solid #000",
-                  minWidth: "60mm",
-                  display: "inline-block",
-                  paddingLeft: "4px",
-                  marginBottom: "1px",
-                }}
-              >
+
+          {/* Title center */}
+          <div style={{ textAlign: "center", flex: 1 }}>
+            <p style={{ fontSize: "12pt", fontWeight: "bold", margin: 0, letterSpacing: "0.5px" }}>
+              Daily Tuition Time Duration Sheet
+            </p>
+            <p style={{ fontSize: "8pt", color: "#555", margin: "1mm 0 0 0" }}>
+              Class ID: C{matchIdNum}
+            </p>
+          </div>
+
+          {/* Teacher / Student names */}
+          <div style={{ textAlign: "right", fontSize: "9pt", minWidth: "70mm" }}>
+            <p style={{ margin: "0 0 2mm 0" }}>
+              <strong>Teacher:</strong>{" "}
+              <span style={{ borderBottom: "1px solid #000", minWidth: "45mm", display: "inline-block", paddingLeft: "3px", marginBottom: "1px" }}>
                 {tutorName}
               </span>
             </p>
-            <p style={{ fontSize: "9pt", marginTop: "2mm" }}>
-              <strong>Student Name</strong>{" "}
-              <span
-                style={{
-                  borderBottom: "1px solid #000",
-                  minWidth: "55mm",
-                  display: "inline-block",
-                  paddingLeft: "4px",
-                  marginBottom: "1px",
-                }}
-              >
+            <p style={{ margin: 0 }}>
+              <strong>Student:</strong>{" "}
+              <span style={{ borderBottom: "1px solid #000", minWidth: "45mm", display: "inline-block", paddingLeft: "3px", marginBottom: "1px" }}>
                 {studentName}
               </span>
             </p>
           </div>
         </div>
 
+        {/* Divider */}
+        <div style={{ borderTop: "2px solid #000", marginBottom: "3mm" }} />
+
         {/* Table */}
         <table
           style={{
             width: "100%",
             borderCollapse: "collapse",
-            fontSize: "10pt",
+            fontSize: "8.5pt",
+            tableLayout: "fixed",
           }}
         >
+          <colgroup>
+            <col style={{ width: "9mm" }} />
+            <col style={{ width: "28mm" }} />
+            <col style={{ width: "26mm" }} />
+            <col style={{ width: "26mm" }} />
+            <col style={{ width: "36mm" }} />
+            <col />
+          </colgroup>
           <thead>
             <tr>
               {[
-                { label: "S.No", width: "8mm" },
-                { label: "Date", width: "28mm" },
-                { label: "In Time", width: "28mm" },
-                { label: "Out Time", width: "28mm" },
-                { label: "Total time duration\n(Out Time - In Time)", width: "40mm" },
-                { label: "Parents signature", width: "auto" },
-              ].map((col, i) => (
+                "S.No",
+                "Date",
+                "In Time",
+                "Out Time",
+                "Total Duration\n(Out − In)",
+                "Parent / Guardian Signature",
+              ].map((label, i) => (
                 <th
                   key={i}
                   style={{
                     border: "1px solid #000",
-                    padding: "2mm 2mm",
+                    padding: "1.5mm 2mm",
                     textAlign: "center",
                     fontWeight: "bold",
                     verticalAlign: "middle",
-                    width: col.width,
                     whiteSpace: "pre-line",
-                    lineHeight: "1.2",
-                    fontSize: "9.5pt",
+                    lineHeight: "1.3",
+                    fontSize: "8.5pt",
+                    backgroundColor: "#f5f5f5",
                   }}
                 >
-                  {col.label}
+                  {label}
                 </th>
               ))}
             </tr>
@@ -163,63 +166,51 @@ export default function SessionLogSheet() {
           <tbody>
             {Array.from({ length: ROWS }, (_, i) => (
               <tr key={i}>
-                {/* S.No */}
-                <td
-                  style={{
-                    border: "1px solid #000",
-                    padding: "0.5mm 2mm",
-                    textAlign: "center",
-                    fontSize: "8pt",
-                    color: "#555",
-                    verticalAlign: "top",
-                    height: "10mm",
-                  }}
-                >
+                <td style={{ border: "1px solid #000", padding: "0 2mm", textAlign: "center", fontSize: "7.5pt", color: "#555", height: "8mm", verticalAlign: "middle" }}>
                   {i + 1}
                 </td>
-                {/* Date */}
-                <td style={{ border: "1px solid #000", padding: "0.5mm 2mm", height: "10mm" }} />
-                {/* In Time */}
-                <td style={{ border: "1px solid #000", padding: "0.5mm 2mm", height: "10mm" }} />
-                {/* Out Time */}
-                <td style={{ border: "1px solid #000", padding: "0.5mm 2mm", height: "10mm" }} />
-                {/* Duration */}
-                <td style={{ border: "1px solid #000", padding: "0.5mm 2mm", height: "10mm" }} />
-                {/* Parent Signature */}
-                <td style={{ border: "1px solid #000", padding: "0.5mm 2mm", height: "10mm" }} />
+                <td style={{ border: "1px solid #000", height: "8mm" }} />
+                <td style={{ border: "1px solid #000", height: "8mm" }} />
+                <td style={{ border: "1px solid #000", height: "8mm" }} />
+                <td style={{ border: "1px solid #000", height: "8mm" }} />
+                <td style={{ border: "1px solid #000", height: "8mm" }} />
               </tr>
             ))}
           </tbody>
         </table>
 
         {/* Footer */}
-        <div className="mt-6 flex justify-between items-end" style={{ fontSize: "9pt" }}>
+        <div style={{ marginTop: "4mm", display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontSize: "8.5pt" }}>
           <div>
-            <p style={{ borderTop: "1px solid #000", paddingTop: "2mm", minWidth: "60mm" }}>
+            <p style={{ borderTop: "1px solid #000", paddingTop: "2mm", minWidth: "55mm", margin: 0 }}>
               Tutor Signature
             </p>
           </div>
-          <div className="text-center" style={{ fontSize: "8pt", color: "#666" }}>
-            <p>EduNest · learn.at.edunest@gmail.com · +91-8618635627</p>
-            <p>Bengaluru, Karnataka</p>
+          <div style={{ textAlign: "center", fontSize: "7.5pt", color: "#666" }}>
+            <p style={{ margin: "0 0 1mm 0" }}>EduNest · learn.at.edunest@gmail.com · +91-8618635627</p>
+            <p style={{ margin: 0 }}>Bengaluru, Karnataka</p>
           </div>
           <div>
-            <p style={{ borderTop: "1px solid #000", paddingTop: "2mm", minWidth: "60mm", textAlign: "right" }}>
+            <p style={{ borderTop: "1px solid #000", paddingTop: "2mm", minWidth: "55mm", textAlign: "right", margin: 0 }}>
               Parent / Guardian Signature
             </p>
           </div>
         </div>
       </div>
 
-      {/* Print CSS */}
+      {/* Print CSS — single A4 page, no page breaks */}
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { margin: 0; background: white; }
+          html, body { margin: 0; padding: 0; background: white; }
           .session-sheet {
             margin: 0 !important;
             box-shadow: none !important;
-            width: 100% !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            overflow: hidden !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
           }
           @page {
             size: A4 portrait;
