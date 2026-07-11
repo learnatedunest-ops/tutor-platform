@@ -2,13 +2,14 @@
  * PhoneOtpVerifier — inline OTP verification widget
  * Shows a "Verify Phone" button next to the phone input.
  * When clicked, sends a 6-digit OTP to the user's registered email address.
+ * If email delivery is restricted (Resend test sender), shows the code directly in the UI.
  * On success, shows a green "Verified ✓" badge.
  */
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle2, Loader2, Mail, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Loader2, Mail, ShieldCheck, Eye } from "lucide-react";
 
 interface PhoneOtpVerifierProps {
   phone: string;
@@ -30,6 +31,9 @@ export default function PhoneOtpVerifier({
   const [error, setError] = useState("");
   const [countdown, setCountdown] = useState(0);
   const [maskedEmail, setMaskedEmail] = useState<string | null>(null);
+  // fallbackCode is returned when Resend can't deliver to arbitrary emails (test sender)
+  const [fallbackCode, setFallbackCode] = useState<string | null>(null);
+  const [showFallback, setShowFallback] = useState(false);
 
   // Sync verified state when alreadyVerified prop changes (async profile load)
   useEffect(() => {
@@ -47,6 +51,8 @@ export default function PhoneOtpVerifier({
       setError("");
       setCountdown(0);
       setMaskedEmail(null);
+      setFallbackCode(null);
+      setShowFallback(false);
     }
     setLastPhone(phone);
   }, [phone]);
@@ -64,6 +70,10 @@ export default function PhoneOtpVerifier({
       setCountdown(60);
       setError("");
       setMaskedEmail(data.maskedEmail ?? null);
+      // If server returns a fallback code (email can't reach arbitrary recipients), show it in UI
+      if (data.fallbackCode) {
+        setFallbackCode(data.fallbackCode);
+      }
     },
     onError: (e) => setError(e.message),
   });
@@ -115,15 +125,47 @@ export default function PhoneOtpVerifier({
 
       {stage === "sent" && (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground flex items-start gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
-            <span>
-              A 6-digit OTP was sent to{" "}
-              <strong>{maskedEmail ?? "your registered email"}</strong>
-              {" "}to verify phone <strong>{phone}</strong>.
-              Check your inbox (and spam folder).
-            </span>
-          </p>
+          {fallbackCode ? (
+            // Fallback: email couldn't be delivered to arbitrary recipients — show code in UI
+            <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 space-y-2">
+              <p className="text-sm text-orange-700 font-medium flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 flex-shrink-0" />
+                Your verification code is ready
+              </p>
+              <p className="text-xs text-orange-600">
+                Email delivery is currently in test mode. Your OTP code is shown below — enter it to verify your phone number.
+              </p>
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex-1 rounded-md border border-orange-300 bg-white px-3 py-2 text-center font-mono text-2xl font-bold tracking-[0.3em] text-orange-600 select-all"
+                  style={{ letterSpacing: "0.3em" }}
+                >
+                  {showFallback ? fallbackCode : "••••••"}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="border-orange-300 text-orange-600 gap-1.5"
+                  onClick={() => setShowFallback(v => !v)}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  {showFallback ? "Hide" : "Show"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground flex items-start gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+              <span>
+                A 6-digit OTP was sent to{" "}
+                <strong>{maskedEmail ?? "your registered email"}</strong>
+                {" "}to verify phone <strong>{phone}</strong>.
+                Check your inbox (and spam folder).
+              </span>
+            </p>
+          )}
+
           <div className="flex gap-2 items-center">
             <Input
               type="text"
@@ -153,7 +195,11 @@ export default function PhoneOtpVerifier({
               <button
                 type="button"
                 className="text-orange-500 underline hover:no-underline"
-                onClick={() => sendOtp.mutate({ phone })}
+                onClick={() => {
+                  setFallbackCode(null);
+                  setShowFallback(false);
+                  sendOtp.mutate({ phone });
+                }}
                 disabled={sendOtp.isPending}
               >
                 {sendOtp.isPending ? "Sending…" : "Resend OTP"}

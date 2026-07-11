@@ -77,7 +77,9 @@ const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (server-to-server, curl, Postman in dev)
     if (!origin) return callback(null, true);
-    if (ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV === "development") {
+    // Allow any *.manus.space subdomain (covers auto-generated preview URLs)
+    const isManusSpace = /^https:\/\/[a-z0-9-]+\.manus\.space$/.test(origin);
+    if (isManusSpace || ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV === "development") {
       return callback(null, true);
     }
     return callback(new Error("Not allowed by CORS"), false);

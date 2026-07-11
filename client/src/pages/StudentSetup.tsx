@@ -12,6 +12,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { startLogin } from "@/const";
 import LoginWall from "@/components/LoginWall";
 import PhoneOtpVerifier from "@/components/PhoneOtpVerifier";
+import TimeRangePicker from "@/components/TimeRangePicker";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
 import {
@@ -500,12 +501,20 @@ export default function StudentSetup() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls} style={labelStyle}>Demo Class Time</label>
-                  <input className={inputCls} style={inputStyle} value={form.demoTime} onChange={e => set("demoTime", e.target.value)} placeholder="e.g. 10:00 AM - 12:00 PM" />
+                  <TimeRangePicker
+                    label="Demo Class Time"
+                    value={form.demoTime}
+                    onChange={v => set("demoTime", v)}
+                    placeholder="e.g. 10:00 AM - 12:00 PM"
+                  />
                 </div>
                 <div>
-                  <label className={labelCls} style={labelStyle}>Regular Class Time</label>
-                  <input className={inputCls} style={inputStyle} value={form.regularTime} onChange={e => set("regularTime", e.target.value)} placeholder="e.g. 04:30 PM - 05:30 PM" />
+                  <TimeRangePicker
+                    label="Regular Class Time"
+                    value={form.regularTime}
+                    onChange={v => set("regularTime", v)}
+                    placeholder="e.g. 04:30 PM - 05:30 PM"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
