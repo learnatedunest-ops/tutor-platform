@@ -280,6 +280,13 @@ export default function TutorDashboard() {
               </span>
             )}
             <button
+              onClick={() => navigate("/ongoing-classes")}
+              className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-90"
+              style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.55 0.18 50)", border: "1px solid oklch(0.88 0.08 50)", fontFamily: "'Poppins', sans-serif" }}
+            >
+              📚 My Classes
+            </button>
+            <button
               onClick={() => navigate("/tutor-setup?edit=true")}
               className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:bg-gray-50"
               style={{ border: "1px solid oklch(0.88 0.005 80)", color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}
@@ -416,8 +423,9 @@ export default function TutorDashboard() {
                             <p className="text-xs font-semibold text-green-700">🎉 Matched! Contact details have been shared with the student/parent via email.</p>
                             {/* Session Log Sheet & Payment Section */}
                             {(() => {
-                              // Find confirmed match for this slot
-                              const log = mySessionLogs?.find((l: any) => l.tutorProfileId === myProfile?.id);
+                              // Find session log for THIS specific confirmed match
+                              const matchId = (slot as any).confirmedMatchId;
+                              const log = mySessionLogs?.find((l: any) => l.matchId === matchId);
                               return (
                                 <div className="mt-3 border-t border-green-200 pt-3 space-y-2">
                                   <p className="text-xs font-bold text-green-800">📋 Session Log Sheet</p>
@@ -432,19 +440,17 @@ export default function TutorDashboard() {
                                     </a>
                                     {log ? (
                                       <>
-                                        {/* Payment status badge */}
-                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                                          log.paymentStatus === 'payment_processed'
-                                            ? 'bg-green-100 text-green-700'
-                                            : log.paymentStatus === 'sheet_uploaded'
-                                            ? 'bg-blue-100 text-blue-700'
-                                            : 'bg-yellow-100 text-yellow-700'
-                                        }`}>
-                                          <CreditCard size={13} />
-                                          {log.paymentStatus === 'payment_processed' ? '✅ Payment Processed' :
-                                           log.paymentStatus === 'sheet_uploaded' ? '⏳ Sheet Uploaded — Pending Payment' :
-                                           '⏳ Payment Pending'}
-                                        </span>
+                                        {/* Payment status badge — only show after sheet is uploaded */}
+                                        {(log.paymentStatus === 'sheet_uploaded' || log.paymentStatus === 'payment_processed') && (
+                                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                                            log.paymentStatus === 'payment_processed'
+                                              ? 'bg-green-100 text-green-700'
+                                              : 'bg-yellow-100 text-yellow-700'
+                                          }`}>
+                                            <CreditCard size={13} />
+                                            {log.paymentStatus === 'payment_processed' ? '✅ Payment Processed' : '⏳ Payment Pending'}
+                                          </span>
+                                        )}
                                         {/* Upload new sheet if not yet processed */}
                                         {log.paymentStatus !== 'payment_processed' && (
                                           <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors cursor-pointer">
@@ -457,20 +463,31 @@ export default function TutorDashboard() {
                                               onChange={async (e) => {
                                                 const file = e.target.files?.[0];
                                                 if (!file) return;
-                                                // Upload to S3 via storage API
+                                                // Reset input so same file can be re-selected
+                                                e.target.value = '';
+                                                // Validate file size client-side (10 MB)
+                                                if (file.size > 10 * 1024 * 1024) {
+                                                  toast.error('File too large. Maximum size is 10 MB.');
+                                                  return;
+                                                }
                                                 const formData = new FormData();
                                                 formData.append('file', file);
                                                 try {
+                                                  toast.info('Uploading sheet...');
                                                   const res = await fetch('/api/upload-session-sheet', {
                                                     method: 'POST',
                                                     body: formData,
                                                     credentials: 'include',
                                                   });
-                                                  if (!res.ok) throw new Error('Upload failed');
-                                                  const { url } = await res.json();
+                                                  const json = await res.json().catch(() => ({}));
+                                                  if (!res.ok) {
+                                                    throw new Error(json?.error ?? `Upload failed (${res.status})`);
+                                                  }
+                                                  const { url } = json;
+                                                  if (!url) throw new Error('No URL returned from server');
                                                   uploadSheet.mutate({ logId: log.id, uploadedSheetUrl: url });
-                                                } catch (err) {
-                                                  toast.error('Upload failed. Please try again.');
+                                                } catch (err: any) {
+                                                  toast.error(err?.message ?? 'Upload failed. Please try again with a JPEG, PNG, or PDF.');
                                                 }
                                               }}
                                             />

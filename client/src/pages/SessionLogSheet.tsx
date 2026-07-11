@@ -3,7 +3,7 @@
  * Printable A4 sheet matching the handwritten format in the reference image.
  * URL: /session-log/:matchId
  * - Tutor & student can both view and print this page.
- * - 30 rows for session entries (date, in-time, out-time, duration, parent signature).
+ * - 20 rows for session entries (date, in-time, out-time, duration, parent signature).
  * - Print button triggers window.print(); CSS hides everything except the sheet.
  */
 import { useState } from "react";
@@ -12,7 +12,7 @@ import { trpc } from "@/lib/trpc";
 import { Printer, ArrowLeft, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const ROWS = 30;
+const ROWS = 20;
 
 export default function SessionLogSheet() {
   const { matchId } = useParams<{ matchId: string }>();
@@ -65,13 +65,13 @@ export default function SessionLogSheet() {
       {/* ── A4 Sheet ── */}
       <div
         className="session-sheet mx-auto my-8 bg-white shadow-lg print:shadow-none print:my-0"
-        style={{
-          width: "210mm",
-          minHeight: "297mm",
-          padding: "16mm 14mm",
-          fontFamily: "'Times New Roman', Times, serif",
-          fontSize: "11pt",
-        }}
+          style={{
+            width: "210mm",
+            minHeight: "297mm",
+            padding: "12mm 12mm",
+            fontFamily: "'Times New Roman', Times, serif",
+            fontSize: "10.5pt",
+          }}
       >
         {/* Header */}
         <div className="flex items-end justify-between mb-4">
@@ -145,13 +145,14 @@ export default function SessionLogSheet() {
                   key={i}
                   style={{
                     border: "1px solid #000",
-                    padding: "3mm 2mm",
+                    padding: "2mm 2mm",
                     textAlign: "center",
                     fontWeight: "bold",
                     verticalAlign: "middle",
                     width: col.width,
                     whiteSpace: "pre-line",
-                    lineHeight: "1.3",
+                    lineHeight: "1.2",
+                    fontSize: "9.5pt",
                   }}
                 >
                   {col.label}
@@ -166,26 +167,26 @@ export default function SessionLogSheet() {
                 <td
                   style={{
                     border: "1px solid #000",
-                    padding: "1mm 2mm",
+                    padding: "0.5mm 2mm",
                     textAlign: "center",
                     fontSize: "8pt",
                     color: "#555",
                     verticalAlign: "top",
-                    height: "9mm",
+                    height: "10mm",
                   }}
                 >
                   {i + 1}
                 </td>
                 {/* Date */}
-                <td style={{ border: "1px solid #000", padding: "1mm 2mm", height: "9mm" }} />
+                <td style={{ border: "1px solid #000", padding: "0.5mm 2mm", height: "10mm" }} />
                 {/* In Time */}
-                <td style={{ border: "1px solid #000", padding: "1mm 2mm", height: "9mm" }} />
+                <td style={{ border: "1px solid #000", padding: "0.5mm 2mm", height: "10mm" }} />
                 {/* Out Time */}
-                <td style={{ border: "1px solid #000", padding: "1mm 2mm", height: "9mm" }} />
+                <td style={{ border: "1px solid #000", padding: "0.5mm 2mm", height: "10mm" }} />
                 {/* Duration */}
-                <td style={{ border: "1px solid #000", padding: "1mm 2mm", height: "9mm" }} />
+                <td style={{ border: "1px solid #000", padding: "0.5mm 2mm", height: "10mm" }} />
                 {/* Parent Signature */}
-                <td style={{ border: "1px solid #000", padding: "1mm 2mm", height: "9mm" }} />
+                <td style={{ border: "1px solid #000", padding: "0.5mm 2mm", height: "10mm" }} />
               </tr>
             ))}
           </tbody>

@@ -820,22 +820,18 @@ export const appRouter = router({
           // Avoid duplicate matches
           const existing = await getConfirmedMatchBySlotId(input.slotId);
           if (!existing) {
-            // Fetch full profiles for contact details
-            const tProfile = await getTutorProfileByUserId(ctx.user.id) ??
-              // If current user is student, we need to look up tutor by profile ID
-              (await (async () => {
-                const allTutors = await getAllTutorProfiles();
-                return allTutors.find(t => t.id === updatedSlot.tutorProfileId) ?? null;
-              })());
-            const sProfile = await getStudentProfileByUserId(ctx.user.id) ??
-              (await (async () => {
-                const allStudents = await getAllStudentProfiles();
-                return allStudents.find(s => s.id === updatedSlot.studentProfileId) ?? null;
-              })());
+            // Always look up profiles by the slot's profile IDs (not by current user)
+            // so both tutor and student get correct data regardless of who clicked last
+            const allTutors = await getAllTutorProfiles();
+            const allStudents = await getAllStudentProfiles();
+            const tProfile = allTutors.find(t => t.id === updatedSlot.tutorProfileId) ?? null;
+            const sProfile = allStudents.find(s => s.id === updatedSlot.studentProfileId) ?? null;
 
             // Look up user emails for both parties
             const tutorUser = tProfile ? await getUserById(tProfile.userId) : null;
             const studentUser = sProfile ? await getUserById(sProfile.userId) : null;
+
+            console.log(`[Match] Creating confirmed match: tutor=${tProfile?.name} (${tutorUser?.email}), student=${sProfile?.name} (${studentUser?.email})`);
 
             await createConfirmedMatch({
               demoSlotId: input.slotId,

@@ -206,41 +206,86 @@ async function startServer() {
   });
 
   // ── Session Sheet Upload Endpoint ──────────────────────────────────────────
-  // Accepts multipart/form-data with a 'file' field, uploads to S3, returns { url }
-  app.post("/api/upload-session-sheet", express.raw({ type: '*/*', limit: '20mb' }), async (req, res) => {
+  // Accepts multipart/form-data with a 'file' field (image/pdf up to 10MB), uploads to S3, returns { url }
+  // NOTE: No body-parser middleware here — busboy reads directly from the raw request stream
+  app.post("/api/upload-session-sheet", async (req, res) => {
+    // Validate content-type before touching the stream
+    const contentType = req.headers['content-type'] ?? '';
+    if (!contentType.includes('multipart/form-data')) {
+      res.status(400).json({ error: 'Expected multipart/form-data' });
+      return;
+    }
+
+    const ALLOWED_MIME = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/webp',
+      'image/heic', 'image/heif', 'application/pdf',
+    ];
+    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+
     try {
-      // Parse multipart manually using busboy
       const Busboy = (await import('busboy')).default;
-      const bb = Busboy({ headers: req.headers as any, limits: { fileSize: 20 * 1024 * 1024 } });
+      const bb = Busboy({
+        headers: req.headers as Record<string, string>,
+        limits: { files: 1, fileSize: MAX_SIZE },
+      });
+
       let fileBuffer: Buffer | null = null;
-      let mimeType = 'application/octet-stream';
-      let fileName = 'session-sheet';
+      let mimeType = 'image/jpeg';
+      let fileName = `sheet_${Date.now()}.jpg`;
+      let fileTooLarge = false;
 
       await new Promise<void>((resolve, reject) => {
-        bb.on('file', (_field: string, file: any, info: any) => {
-          mimeType = info.mimeType ?? 'application/octet-stream';
-          fileName = info.filename ?? 'session-sheet';
+        bb.on('file', (_field: string, fileStream: any, info: any) => {
+          const rawMime: string = (info.mimeType ?? '').toLowerCase();
+          // Accept any image/* or pdf regardless of exact subtype (handles HEIC from iOS)
+          const isAllowed = rawMime.startsWith('image/') || rawMime === 'application/pdf';
+          if (!isAllowed) {
+            fileStream.resume(); // drain to avoid hanging
+            return reject(new Error(`File type not allowed: ${rawMime}`));
+          }
+          mimeType = rawMime || 'image/jpeg';
+          fileName = info.filename ?? fileName;
+
           const chunks: Buffer[] = [];
-          file.on('data', (chunk: Buffer) => chunks.push(chunk));
-          file.on('end', () => { fileBuffer = Buffer.concat(chunks); });
+          fileStream.on('data', (chunk: Buffer) => chunks.push(chunk));
+          fileStream.on('limit', () => { fileTooLarge = true; fileStream.resume(); });
+          fileStream.on('end', () => {
+            if (!fileTooLarge) fileBuffer = Buffer.concat(chunks);
+          });
         });
         bb.on('finish', resolve);
-        bb.on('error', reject);
+        bb.on('error', (err: Error) => reject(err));
         req.pipe(bb);
       });
 
-      if (!fileBuffer) {
-        res.status(400).json({ error: 'No file provided' });
+      if (fileTooLarge) {
+        res.status(413).json({ error: 'File too large. Maximum size is 10 MB.' });
+        return;
+      }
+      if (!fileBuffer || (fileBuffer as Buffer).length === 0) {
+        res.status(400).json({ error: 'No file received. Please select a photo or PDF.' });
         return;
       }
 
-      const ext = fileName.includes('.') ? fileName.split('.').pop() : 'jpg';
+      // Derive extension from mime type for clean S3 keys
+      const extMap: Record<string, string> = {
+        'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png',
+        'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif',
+        'application/pdf': 'pdf',
+      };
+      const ext = extMap[mimeType] ?? (fileName.includes('.') ? fileName.split('.').pop() : 'jpg');
+      const key = `session-sheets/sheet_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+
       const { storagePut } = await import('../storage');
-      const { url } = await storagePut(`session-sheets/sheet_${Date.now()}.${ext}`, fileBuffer, mimeType);
+      const { url } = await storagePut(key, fileBuffer as Buffer, mimeType);
+      console.log(`[Upload] Session sheet uploaded: ${key} (${(fileBuffer as Buffer).length} bytes)`);
       res.json({ url });
     } catch (err: any) {
-      console.error('[Upload] Session sheet upload error:', err);
-      res.status(500).json({ error: 'Upload failed' });
+      console.error('[Upload] Session sheet upload error:', err?.message ?? err);
+      const msg = err?.message?.includes('not allowed')
+        ? err.message
+        : 'Upload failed. Please try again with a JPEG, PNG, or PDF file.';
+      res.status(500).json({ error: msg });
     }
   });
 

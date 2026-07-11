@@ -208,12 +208,19 @@ export default function StudentPortal() {
                 </h1>
                 <p className="text-orange-100 text-sm">{user.email}</p>
               </div>
-              {/* Home button */}
-              <Link href="/">
-                <a className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm font-semibold transition-all backdrop-blur-sm">
-                  <Home size={16} /> Home
-                </a>
-              </Link>
+              {/* Header buttons */}
+              <div className="flex items-center gap-2">
+                <Link href="/my-classes">
+                  <a className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm font-semibold transition-all backdrop-blur-sm">
+                    📚 My Classes
+                  </a>
+                </Link>
+                <Link href="/">
+                  <a className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm font-semibold transition-all backdrop-blur-sm">
+                    <Home size={16} /> Home
+                  </a>
+                </Link>
+              </div>
             </div>
             <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-10">
               <GraduationCap size={100} />

@@ -27,6 +27,8 @@ import TutorDashboard from "./pages/TutorDashboard";
 import NearbyTutors from "./pages/NearbyTutors";
 import RoleSelect from "./pages/RoleSelect";
 import SessionLogSheet from "./pages/SessionLogSheet";
+import OngoingClasses from "./pages/OngoingClasses";
+import MyClasses from "./pages/MyClasses";
 import AuthGate from "./components/AuthGate";
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -54,6 +56,8 @@ function Router() {
       <Route path="/nearby-tutors" component={NearbyTutors} />
       <Route path="/role-select" component={RoleSelect} />
       <Route path="/session-log/:matchId" component={SessionLogSheet} />
+      <Route path="/ongoing-classes" component={OngoingClasses} />
+      <Route path="/my-classes" component={MyClasses} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

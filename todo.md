@@ -207,11 +207,20 @@
 
 ## Round 18 — Session Log Sheet & Payment Tracking
 
-- [ ] DB: add session_logs table (matchId FK, tutorName, studentName, uploadedSheetUrl, paymentStatus, adminApprovedAt)
-- [ ] DB: run db:push
-- [ ] Backend: sessionLog.getOrCreate (by matchId), sessionLog.uploadSheet, sessionLog.getByMatch, sessionLog.updatePaymentStatus (admin)
-- [ ] Frontend: printable /session-log/:matchId page — Daily Tuition Time Duration sheet (20-row table, tutor name, student name, date/in-time/out-time/duration/parent signature columns)
-- [ ] TutorDashboard: "Download Session Sheet" link + "Upload Completed Sheet" button + Pending/Payment Processed badge per confirmed match
-- [ ] StudentPortal: payment icon (Pending/Payment Processed) shown once tutor uploads the sheet
-- [ ] Admin: Session Logs tab — view uploaded sheet, approve payment button, update status
-- [ ] 14+ tests passing, 0 TypeScript errors
+- [x] DB: add session_logs table (matchId FK, tutorName, studentName, uploadedSheetUrl, paymentStatus, adminApprovedAt)
+- [x] DB: run db:push
+- [x] Backend: sessionLog.getOrCreate (by matchId), sessionLog.uploadSheet, sessionLog.getByMatch, sessionLog.updatePaymentStatus (admin)
+- [x] Frontend: printable /session-log/:matchId page — Daily Tuition Time Duration sheet (20-row table, tutor name, student name, date/in-time/out-time/duration/parent signature columns)
+- [x] TutorDashboard: "Download Session Sheet" link + "Upload Completed Sheet" button + Pending/Payment Processed badge per confirmed match
+- [x] StudentPortal: payment icon (Pending/Payment Processed) shown once tutor uploads the sheet
+- [x] Admin: Session Logs tab — view uploaded sheet, approve payment button, update status
+- [x] 14+ tests passing, 0 TypeScript errors
+
+## Round 19 — Bug Fixes & Ongoing Classes
+
+- [ ] Fix S3 upload endpoint: accept image types (JPEG/PNG/HEIC/WebP), increase size to 10MB, fix auth
+- [ ] Fix contact reveal email: ensure parent/student receives tutor details email when both say yes
+- [ ] Reduce session log sheet from 30 to 20 rows, fix A4 print layout
+- [ ] Show payment pending badge only after successful sheet upload (not before)
+- [ ] TutorDashboard: Ongoing Classes section (confirmed matches + session sheet + upload + payment)
+- [ ] StudentPortal: My Classes section (ongoing classes + payment info)
