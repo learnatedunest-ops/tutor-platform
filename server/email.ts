@@ -183,3 +183,59 @@ export async function sendDemoBookingEmail(data: {
     console.warn("[Email] Failed to send demo booking email:", err);
   }
 }
+
+/**
+ * Send OTP verification code to user's email address.
+ * Used for phone number verification during tutor/student registration.
+ */
+export async function sendOtpEmail(data: {
+  toEmail: string;
+  toName: string;
+  phone: string;
+  code: string;
+  expiresMinutes: number;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn("[Email] RESEND_API_KEY not set — OTP email not sent. Code:", data.code);
+    return;
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: data.toEmail,
+      subject: `${data.code} — Your EduNest Phone Verification Code`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 20px; background: #fff;">
+          <div style="background: linear-gradient(135deg, #F47920, #e06510); padding: 24px 20px; border-radius: 8px 8px 0 0; text-align: center;">
+            <img src="https://edu-nest.manus.space/manus-storage/edunest-logo-v3_f012b9fe.png" alt="EduNest" style="height: 40px; margin-bottom: 10px;" />
+            <h1 style="color: white; margin: 0; font-size: 22px; font-weight: bold;">Phone Verification</h1>
+          </div>
+          <div style="background: #f9f9f9; padding: 28px 24px; border-radius: 0 0 8px 8px; border: 1px solid #eee; text-align: center;">
+            <p style="color: #555; font-size: 15px; margin: 0 0 20px;">Hi <strong>${data.toName}</strong>,</p>
+            <p style="color: #555; font-size: 15px; margin: 0 0 24px;">
+              Use the code below to verify your phone number <strong>${data.phone}</strong> on EduNest.
+            </p>
+            <div style="display: inline-block; background: #fff; border: 2px solid #F47920; border-radius: 12px; padding: 18px 40px; margin-bottom: 24px;">
+              <span style="font-size: 38px; font-weight: bold; letter-spacing: 10px; color: #F47920; font-family: 'Courier New', monospace;">${data.code}</span>
+            </div>
+            <p style="color: #888; font-size: 13px; margin: 0 0 8px;">
+              This code expires in <strong>${data.expiresMinutes} minutes</strong>.
+            </p>
+            <p style="color: #aaa; font-size: 12px; margin: 0;">
+              If you did not request this, please ignore this email.
+            </p>
+            <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #eee;">
+              <p style="color: #bbb; font-size: 11px; margin: 0;">EduNest — Best Home Tuition &amp; Tutors in Bengaluru</p>
+              <a href="https://edu-nest.manus.space" style="color: #F47920; font-size: 11px; text-decoration: none;">edu-nest.manus.space</a>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`[OTP Email] Sent to ${data.toEmail} for phone ${data.phone}`);
+  } catch (err) {
+    console.warn("[Email] Failed to send OTP email:", err);
+  }
+}

@@ -46,7 +46,7 @@ function formatDate(date: Date | string) {
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "bookings" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "bookings" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots">("inquiries");
   const [tutorForm, setTutorForm] = useState<typeof EMPTY_TUTOR>(EMPTY_TUTOR);
   const [editingTutorId, setEditingTutorId] = useState<number | null>(null);
   const [showTutorForm, setShowTutorForm] = useState(false);
@@ -121,6 +121,14 @@ export default function Admin() {
     onError: () => toast.error("Failed to update demo interest status"),
   });
 
+  // Demo Slots (scheduled demo classes) — must be before early returns
+  const { data: demoSlotsList, isLoading: loadingDemoSlots, refetch: refetchDemoSlots } =
+    trpc.demoSlot.listAll.useQuery(undefined, { enabled: isAdmin });
+  const updateDemoSlotStatusMutation = trpc.demoSlot.updateStatus.useMutation({
+    onSuccess: () => { refetchDemoSlots(); toast.success("Demo slot status updated"); },
+    onError: () => toast.error("Failed to update demo slot status"),
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
@@ -181,6 +189,7 @@ export default function Admin() {
   const pendingTutorProfiles = tutorProfiles?.filter((p: { status: string }) => p.status === "pending").length ?? 0;
   const pendingInterests = tutorInterestsList?.filter((i: { status: string }) => i.status === "pending").length ?? 0;
   const pendingDemoInterests = studentDemoInterestsList?.filter((d: { status: string }) => d.status === "pending").length ?? 0;
+  const pendingDemoSlots = demoSlotsList?.filter((s: { status: string }) => s.status === "pending_schedule").length ?? 0;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "oklch(0.97 0.005 80)", fontFamily: "'Nunito', sans-serif" }}>
@@ -230,7 +239,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["inquiries", "bookings", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests"] as const).map(tab => (
+          {(["inquiries", "bookings", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -251,13 +260,15 @@ export default function Admin() {
                 <span className="flex items-center gap-2"><CheckCircle2 size={15} /> Tutor Interests {pendingInterests > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingInterests}</span>}</span>
               ) : tab === "demoInterests" ? (
                 <span className="flex items-center gap-2"><BookOpen size={15} /> Demo Requests {pendingDemoInterests > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingDemoInterests}</span>}</span>
+              ) : tab === "demoSlots" ? (
+                <span className="flex items-center gap-2"><Clock size={15} /> Demo Slots {pendingDemoSlots > 0 && <span className="bg-white text-blue-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingDemoSlots}</span>}</span>
               ) : (
                 <span className="flex items-center gap-2"><UserCheck size={15} /> Manage Tutors <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
               )}
             </button>
           ))}
           <button
-            onClick={() => { refetchInquiries(); refetchBookings(); refetchTutors(); refetchReferrals(); refetchTutorProfiles(); refetchStudentProfiles(); refetchInterests(); refetchDemoInterests(); }}
+            onClick={() => { refetchInquiries(); refetchBookings(); refetchTutors(); refetchReferrals(); refetchTutorProfiles(); refetchStudentProfiles(); refetchInterests(); refetchDemoInterests(); refetchDemoSlots(); }}
             className="ml-auto flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             <RefreshCw size={15} /> Refresh
@@ -943,6 +954,97 @@ export default function Admin() {
             )}
           </div>
         )}
+        {/* ── Demo Slots Tab ── */}
+        {activeTab === "demoSlots" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                Demo Class Slots ({demoSlotsList?.length ?? 0})
+              </h2>
+              <p className="text-sm text-gray-500">Confirmed demo requests become slots. Students schedule them; tutors see them on their dashboard.</p>
+            </div>
+            {loadingDemoSlots ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="w-8 h-8 border-4 border-[oklch(0.68_0.18_50)] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : !demoSlotsList || demoSlotsList.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                <Clock size={40} className="mx-auto mb-3 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
+                <p className="text-gray-500 font-medium">No demo slots yet</p>
+                <p className="text-sm text-gray-400 mt-1">Confirm a demo request in the "Demo Requests" tab to create a slot</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto bg-white rounded-2xl shadow-sm">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Student Profile</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tutor Profile</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Mode</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Scheduled Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Time</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Notes</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Created</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Update</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y" style={{ borderColor: "oklch(0.95 0.005 80)" }}>
+                    {(demoSlotsList as Array<{ id: number; studentProfileId: number; tutorProfileId: number; mode: string; scheduledDate?: string | null; scheduledTime?: string | null; notes?: string | null; status: string; createdAt: Date | number }>).map((slot) => (
+                      <tr key={slot.id} className="hover:bg-blue-50/30 transition-colors">
+                        <td className="px-4 py-4 font-semibold text-gray-400 text-xs">#{slot.id}</td>
+                        <td className="px-4 py-4">
+                          <span className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full text-xs font-semibold">
+                            <Users size={11} /> #{slot.studentProfileId}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full text-xs font-semibold">
+                            <GraduationCap size={11} /> #{slot.tutorProfileId}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-gray-600 capitalize">{slot.mode.replace("_", " ")}</td>
+                        <td className="px-4 py-4 text-gray-700 font-medium">
+                          {slot.scheduledDate ? (
+                            <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-green-500" />{slot.scheduledDate}</span>
+                          ) : (
+                            <span className="text-gray-400 italic text-xs">Not scheduled yet</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-gray-600">{slot.scheduledTime ?? <span className="text-gray-400 italic text-xs">—</span>}</td>
+                        <td className="px-4 py-4 text-gray-500 max-w-[160px] truncate">{slot.notes ?? <span className="text-gray-300 italic text-xs">—</span>}</td>
+                        <td className="px-4 py-4">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold border ${
+                            slot.status === "completed" ? "bg-green-50 text-green-700 border-green-200" :
+                            slot.status === "cancelled" ? "bg-red-50 text-red-700 border-red-200" :
+                            slot.status === "scheduled" ? "bg-blue-50 text-blue-700 border-blue-200" :
+                            "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          }`}>{slot.status.replace("_", " ")}</span>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">{new Date(slot.createdAt).toLocaleDateString("en-IN")}</td>
+                        <td className="px-4 py-4">
+                          <select
+                            value={slot.status}
+                            onChange={e => updateDemoSlotStatusMutation.mutate({ id: slot.id, status: e.target.value as "pending_schedule" | "scheduled" | "completed" | "cancelled" })}
+                            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 cursor-pointer hover:border-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            disabled={updateDemoSlotStatusMutation.isPending}
+                          >
+                            <option value="pending_schedule">Pending Schedule</option>
+                            <option value="scheduled">Scheduled</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── Student Demo Interests Tab ── */}
         {activeTab === "demoInterests" && (
           <div className="space-y-4">

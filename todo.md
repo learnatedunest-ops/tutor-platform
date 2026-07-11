@@ -186,3 +186,8 @@
 - [x] Add education/workExperience display in Admin Tutor Profiles tab (expandable section)
 - [x] Fix tutor interest approval bug: show accepted/declined status in TutorDashboard instead of generic "Interest Expressed"
 - [x] Security hardening: helmet.js, rate limiting, input validation, CORS tightening, CSP headers
+
+## Round 16
+
+- [x] Email OTP integration for phone verification (free via Resend — OTP sent to user's registered email)
+- [x] Admin Demo Slots panel with status management (pending_schedule/scheduled/completed/cancelled)

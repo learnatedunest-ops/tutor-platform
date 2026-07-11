@@ -1,14 +1,14 @@
 /**
  * PhoneOtpVerifier — inline OTP verification widget
  * Shows a "Verify Phone" button next to the phone input.
- * When clicked, sends OTP and shows a 6-digit input field.
+ * When clicked, sends a 6-digit OTP to the user's registered email address.
  * On success, shows a green "Verified ✓" badge.
  */
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle2, Loader2, Phone, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Loader2, Mail, ShieldCheck } from "lucide-react";
 
 interface PhoneOtpVerifierProps {
   phone: string;
@@ -29,6 +29,27 @@ export default function PhoneOtpVerifier({
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [countdown, setCountdown] = useState(0);
+  const [maskedEmail, setMaskedEmail] = useState<string | null>(null);
+
+  // Sync verified state when alreadyVerified prop changes (async profile load)
+  useEffect(() => {
+    if (alreadyVerified && stage !== "verified") {
+      setStage("verified");
+    }
+  }, [alreadyVerified]);
+
+  // Reset to idle when phone number changes (user edited the field)
+  const [lastPhone, setLastPhone] = useState(phone);
+  useEffect(() => {
+    if (phone !== lastPhone && stage === "sent") {
+      setStage("idle");
+      setCode("");
+      setError("");
+      setCountdown(0);
+      setMaskedEmail(null);
+    }
+    setLastPhone(phone);
+  }, [phone]);
 
   // Countdown timer for resend
   useEffect(() => {
@@ -38,10 +59,11 @@ export default function PhoneOtpVerifier({
   }, [countdown]);
 
   const sendOtp = trpc.otp.send.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       setStage("sent");
       setCountdown(60);
       setError("");
+      setMaskedEmail(data.maskedEmail ?? null);
     },
     onError: (e) => setError(e.message),
   });
@@ -69,28 +91,38 @@ export default function PhoneOtpVerifier({
   return (
     <div className="mt-2 space-y-2">
       {stage === "idle" && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="text-orange-600 border-orange-300 hover:bg-orange-50 gap-2"
-          onClick={() => sendOtp.mutate({ phone })}
-          disabled={sendOtp.isPending}
-        >
-          {sendOtp.isPending ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
-          ) : (
-            <Phone className="w-3 h-3" />
-          )}
-          Verify Phone Number
-        </Button>
+        <div className="space-y-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="text-orange-600 border-orange-300 hover:bg-orange-50 gap-2"
+            onClick={() => sendOtp.mutate({ phone })}
+            disabled={sendOtp.isPending}
+          >
+            {sendOtp.isPending ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Mail className="w-3 h-3" />
+            )}
+            {sendOtp.isPending ? "Sending…" : "Verify Phone via Email OTP"}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            A 6-digit code will be sent to your registered email address.
+          </p>
+        </div>
       )}
 
       {stage === "sent" && (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground flex items-center gap-1">
-            <ShieldCheck className="w-4 h-4 text-orange-500" />
-            Enter the 6-digit OTP sent to <strong>{phone}</strong>
+          <p className="text-sm text-muted-foreground flex items-start gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+            <span>
+              A 6-digit OTP was sent to{" "}
+              <strong>{maskedEmail ?? "your registered email"}</strong>
+              {" "}to verify phone <strong>{phone}</strong>.
+              Check your inbox (and spam folder).
+            </span>
           </p>
           <div className="flex gap-2 items-center">
             <Input
@@ -102,6 +134,7 @@ export default function PhoneOtpVerifier({
               value={code}
               onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               className="w-32 text-center text-lg tracking-widest font-mono"
+              autoFocus
             />
             <Button
               type="button"
@@ -123,7 +156,7 @@ export default function PhoneOtpVerifier({
                 onClick={() => sendOtp.mutate({ phone })}
                 disabled={sendOtp.isPending}
               >
-                Resend OTP
+                {sendOtp.isPending ? "Sending…" : "Resend OTP"}
               </button>
             )}
           </div>

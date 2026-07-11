@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { notifyOwner } from "./_core/notification";
-import { sendDemoBookingEmail, sendInquiryEmail, sendTutorApplicationEmail } from "./email";
+import { sendDemoBookingEmail, sendInquiryEmail, sendOtpEmail, sendTutorApplicationEmail } from "./email";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
@@ -630,12 +630,12 @@ export const appRouter = router({
 
   // ─── OTP Phone Verification ─────────────────────────────────────────────────
   otp: router({
-    // Send OTP to a phone number (generates a 6-digit code, stores in DB, sends via email fallback)
+    // Send OTP to a phone number (generates a 6-digit code, stores in DB, sends via email to the logged-in user)
     send: protectedProcedure
       .input(z.object({
         phone: z.string().min(10).max(20).trim(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         // Rate limit: check if a recent OTP was sent in the last 60 seconds
         const recent = await getLatestOtp(input.phone);
         if (recent) {
@@ -648,15 +648,41 @@ export const appRouter = router({
         const code = String(Math.floor(100000 + Math.random() * 900000));
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
         await createOtp(input.phone, code, expiresAt);
-        // Notify owner with the OTP (since we don't have an SMS provider,
-        // the owner can relay it, or in production wire Twilio/MSG91 here)
-        await notifyOwner({
-          title: `📱 OTP for ${input.phone}`,
-          content: `OTP Code: **${code}**\nPhone: ${input.phone}\nExpires: ${expiresAt.toISOString()}\n\n_This is for EduNest phone verification._`,
-        }).catch(() => {});
-        // In development, log the OTP for easy testing
-        console.log(`[OTP] Phone: ${input.phone} | Code: ${code}`);
-        return { success: true, expiresAt };
+        // Send OTP via email to the logged-in user's email address (free, no SMS provider needed)
+        const userEmail = ctx.user.email;
+        const userName = ctx.user.name ?? "EduNest User";
+        if (!userEmail) {
+          throw new Error("Your account has no email address. Please contact EduNest support.");
+        }
+        // Attempt to send the OTP email — surface failure to the user
+        let emailSent = false;
+        try {
+          await sendOtpEmail({
+            toEmail: userEmail,
+            toName: userName,
+            phone: input.phone,
+            code,
+            expiresMinutes: 10,
+          });
+          emailSent = true;
+        } catch (emailErr) {
+          console.error(`[OTP] Email send failed for ${userEmail}:`, emailErr);
+        }
+        if (!emailSent) {
+          // If RESEND_API_KEY is missing, still allow dev/testing by logging the code
+          const hasResend = !!process.env.RESEND_API_KEY;
+          if (hasResend) {
+            // Real failure — inform the user
+            throw new Error("Failed to send OTP email. Please try again in a moment.");
+          }
+          // Dev mode: log the OTP so developers can test without Resend
+          console.log(`[OTP DEV] Phone: ${input.phone} | Email: ${userEmail} | Code: ${code}`);
+        } else {
+          console.log(`[OTP] Sent to ${userEmail} for phone ${input.phone}`);
+        }
+        // Return the masked email so the frontend can show a hint
+        const maskedEmail = userEmail.replace(/(.{2}).+(@.+)/, '$1***$2');
+        return { success: true, expiresAt, maskedEmail };
       }),
 
     // Verify OTP code entered by user
