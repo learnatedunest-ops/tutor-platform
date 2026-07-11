@@ -16,7 +16,7 @@ import {
   MapPin, BookOpen, GraduationCap, Clock, IndianRupee,
   Loader2, Navigation, AlertCircle, RefreshCw, User,
   ChevronRight, CheckCircle2, Calendar, Home, ShieldCheck,
-  Upload, FileText, CreditCard, ExternalLink
+  Upload, FileText, CreditCard, ExternalLink, BookMarked, Phone
 } from "lucide-react";
 
 function ModeLabel({ mode }: { mode: string }) {
@@ -116,6 +116,246 @@ function DemoSlotAvailabilityCard({ slot, onDone }: { slot: any; onDone: () => v
   );
 }
 
+/** Sub-component: My Classes card for a single confirmed match (completed demo) */
+function MyClassCard({ slot, mySessionLogs, onRefreshLogs }: { slot: any; mySessionLogs: any[]; onRefreshLogs: () => void }) {
+  const [isUploading, setIsUploading] = useState(false);
+
+  const uploadSheetFile = trpc.sessionLog.uploadSheetFile.useMutation({
+    onSuccess: (data) => {
+      setIsUploading(false);
+      onRefreshLogs();
+      toast.success("✅ Sheet uploaded successfully! EduNest will review and process your payment.");
+    },
+    onError: (err) => {
+      setIsUploading(false);
+      toast.error(err.message ?? "Upload failed. Please try again.");
+    },
+  });
+
+  const matchId = (slot as any).confirmedMatchId as number | null;
+  const log = matchId ? mySessionLogs?.find((l: any) => l.matchId === matchId) : null;
+
+  const parentName = (slot as any).studentName as string | undefined;
+  const childName = (slot as any).studentChildName as string | undefined;
+  const role = (slot as any).studentRole as string | undefined;
+  const displayName = role === 'parent' && childName ? `${childName}` : (parentName ?? 'Student');
+  const parentLabel = role === 'parent' && parentName ? `Parent: ${parentName}` : null;
+
+  const grade = (slot as any).studentGrade as string | undefined;
+  const subjects = (slot as any).studentSubjects as string | undefined;
+  const budget = (slot as any).studentBudget as string | undefined;
+  const area = (slot as any).studentArea as string | undefined;
+  const phone = (slot as any).studentPhone as string | undefined;
+  const addr = (slot as any).studentAddress as string | undefined;
+  const lat = (slot as any).studentLat as number | undefined;
+  const lng = (slot as any).studentLng as number | undefined;
+  const mapsUrl = lat && lng
+    ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+    : addr
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`
+    : null;
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File too large. Maximum size is 10 MB.');
+      return;
+    }
+
+    if (!matchId) {
+      toast.error('Match ID not found. Please refresh the page.');
+      return;
+    }
+
+    setIsUploading(true);
+    toast.info('Uploading sheet...');
+
+    try {
+      // Read file as base64
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8 = new Uint8Array(arrayBuffer);
+      let binary = '';
+      for (let i = 0; i < uint8.length; i++) {
+        binary += String.fromCharCode(uint8[i]);
+      }
+      const fileBase64 = btoa(binary);
+
+      uploadSheetFile.mutate({
+        matchId,
+        fileBase64,
+        mimeType: file.type || 'image/jpeg',
+        fileName: file.name || 'sheet.jpg',
+      });
+    } catch (err: any) {
+      setIsUploading(false);
+      toast.error(err?.message ?? 'Failed to read file. Please try again.');
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border overflow-hidden" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+      {/* Card header */}
+      <div className="px-5 py-4 border-b" style={{ borderColor: "oklch(0.95 0.005 80)", backgroundColor: "oklch(0.99 0.01 145)" }}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: "oklch(0.95 0.05 145)" }}>
+              <User size={18} style={{ color: "oklch(0.45 0.18 145)" }} />
+            </div>
+            <div>
+              <h3 className="font-bold text-base" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
+                {displayName}
+              </h3>
+              {parentLabel && (
+                <p className="text-xs" style={{ color: "oklch(0.55 0.01 270)" }}>{parentLabel}</p>
+              )}
+            </div>
+          </div>
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 flex items-center gap-1 shrink-0">
+            <CheckCircle2 size={11} /> Got a Class
+          </span>
+        </div>
+      </div>
+
+      <div className="px-5 py-4 space-y-4">
+        {/* Student details */}
+        <div className="rounded-xl p-3 space-y-2" style={{ backgroundColor: "oklch(0.97 0.01 240)" }}>
+          <p className="text-xs font-bold" style={{ color: "oklch(0.35 0.08 240)", fontFamily: "'Poppins', sans-serif" }}>📋 Student Details</p>
+          <div className="flex flex-wrap gap-2">
+            {grade && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">📚 {grade}</span>
+            )}
+            {subjects && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">📖 {subjects}</span>
+            )}
+            {area && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">📍 {area}</span>
+            )}
+            {budget && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">💰 ₹{budget}/month</span>
+            )}
+          </div>
+          {phone && (
+            <div className="flex items-center gap-1.5">
+              <Phone size={12} style={{ color: "oklch(0.45 0.08 240)" }} />
+              <a href={`tel:${phone}`} className="text-xs font-semibold underline" style={{ color: "oklch(0.35 0.12 240)" }}>
+                {phone}
+              </a>
+            </div>
+          )}
+          {addr && (
+            <p className="text-xs" style={{ color: "oklch(0.45 0.01 270)" }}>🏠 {addr}</p>
+          )}
+          {mapsUrl && (
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+              style={{ backgroundColor: "oklch(0.45 0.18 240)" }}
+            >
+              <ExternalLink size={12} /> Open in Google Maps
+            </a>
+          )}
+        </div>
+
+        {/* Demo info */}
+        {slot.scheduledDate && slot.scheduledTime && (
+          <div className="flex items-center gap-2 text-xs" style={{ color: "oklch(0.45 0.01 270)" }}>
+            <Calendar size={13} style={{ color: "oklch(0.68 0.18 50)" }} />
+            <span>Demo was on <strong>{slot.scheduledDate} at {slot.scheduledTime}</strong></span>
+          </div>
+        )}
+
+        {/* Session Log Sheet */}
+        <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: "oklch(0.97 0.01 80)" }}>
+          <p className="text-xs font-bold" style={{ color: "oklch(0.35 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+            📋 Session Log Sheet
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {/* Download/Print */}
+            {matchId && (
+              <a
+                href={`/session-log/${matchId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors"
+              >
+                <FileText size={13} /> Download / Print Sheet
+              </a>
+            )}
+
+            {/* Payment badge */}
+            {log && (log.paymentStatus === 'sheet_uploaded' || log.paymentStatus === 'payment_processed') && (
+              <span className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold ${
+                log.paymentStatus === 'payment_processed'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-yellow-100 text-yellow-700'
+              }`}>
+                <CreditCard size={13} />
+                {log.paymentStatus === 'payment_processed' ? '✅ Payment Processed' : '⏳ Payment Pending Review'}
+              </span>
+            )}
+
+            {/* Upload button — shown unless payment is processed */}
+            {(!log || log.paymentStatus !== 'payment_processed') && (
+              <label className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                isUploading
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+              }`}>
+                {isUploading ? (
+                  <><Loader2 size={13} className="animate-spin" /> Uploading...</>
+                ) : (
+                  <><Upload size={13} /> {log?.paymentStatus === 'sheet_uploaded' ? 'Re-upload Sheet' : 'Upload Completed Sheet'}</>
+                )}
+                <input
+                  type="file"
+                  accept="image/*,application/pdf,.pdf"
+                  className="hidden"
+                  disabled={isUploading}
+                  onChange={handleFileChange}
+                />
+              </label>
+            )}
+
+            {/* View uploaded sheet */}
+            {log?.uploadedSheetUrl && (
+              <a
+                href={log.uploadedSheetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+              >
+                <ExternalLink size={13} /> View Uploaded Sheet
+              </a>
+            )}
+          </div>
+
+          {/* Instructions */}
+          {(!log || log.paymentStatus === 'pending') && (
+            <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>
+              After all sessions are complete, take a clear photo of the signed sheet and upload it here. EduNest will verify and process your payment.
+            </p>
+          )}
+          {log?.paymentStatus === 'sheet_uploaded' && (
+            <p className="text-xs text-yellow-700">
+              ⏳ Sheet received! EduNest is reviewing it. Payment will be processed shortly.
+            </p>
+          )}
+          {log?.paymentStatus === 'payment_processed' && (
+            <p className="text-xs text-green-600 font-semibold">
+              🎉 Payment has been processed by EduNest. Thank you!
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TutorDashboard() {
   const [, navigate] = useLocation();
   const { user, loading, isAuthenticated } = useAuth();
@@ -124,6 +364,7 @@ export default function TutorDashboard() {
   const [locError, setLocError] = useState("");
   const [locLoading, setLocLoading] = useState(false);
   const [radiusKm, setRadiusKm] = useState(10);
+  const [activeTab, setActiveTab] = useState<'demos' | 'classes' | 'interests' | 'find'>('demos');
 
   // Get tutor's own profile
   const { data: myProfile, isLoading: profileLoading } = trpc.tutorProfile.getMyProfile.useQuery(
@@ -152,21 +393,6 @@ export default function TutorDashboard() {
     undefined,
     { enabled: isAuthenticated && myProfile?.status === "approved" }
   );
-
-  // Get or create session log mutation
-  const getOrCreateLog = trpc.sessionLog.getOrCreate.useMutation({
-    onSuccess: () => refetchSessionLogs(),
-    onError: (err) => toast.error(err.message ?? "Failed to create session log"),
-  });
-
-  // Upload sheet mutation
-  const uploadSheet = trpc.sessionLog.uploadSheet.useMutation({
-    onSuccess: () => {
-      refetchSessionLogs();
-      toast.success("✅ Sheet uploaded! EduNest will review and process your payment.");
-    },
-    onError: (err) => toast.error(err.message ?? "Upload failed"),
-  });
 
   // Proceed intent mutation
   const setProceedIntent = trpc.demoSlot.setProceedIntent.useMutation({
@@ -202,12 +428,10 @@ export default function TutorDashboard() {
   );
 
   // Build a map of studentProfileId → status from DB data + local optimistic adds
-  // This lets us show accepted/declined states after admin approval
   const [localExpressedIds, setLocalExpressedIds] = useState<Set<number>>(new Set());
   const interestStatusMap = new Map<number, string>(
     myInterests?.map(i => [i.studentProfileId, i.status]) ?? []
   );
-  // Locally added (optimistic) ones not yet in DB response default to 'pending'
   Array.from(localExpressedIds).forEach(id => {
     if (!interestStatusMap.has(id)) interestStatusMap.set(id, 'pending');
   });
@@ -253,6 +477,16 @@ export default function TutorDashboard() {
       navigate("/nearby-tutors");
     }
   }, [roleLoading, isAuthenticated, userRole, navigate]);
+
+  // Derive "My Classes" slots: completed demos where both parties said yes
+  const myClassSlots = demoSlots?.filter((slot: any) =>
+    slot.status === "completed" &&
+    slot.tutorProceedIntent === "yes" &&
+    slot.studentProceedIntent === "yes"
+  ) ?? [];
+
+  // Count pending student interests
+  const pendingInterestsCount = approvedStudentInterests?.filter((i: any) => i.status === 'pending').length ?? 0;
 
   if (loading || profileLoading || roleLoading) {
     return (
@@ -385,13 +619,6 @@ export default function TutorDashboard() {
               </span>
             )}
             <button
-              onClick={() => navigate("/ongoing-classes")}
-              className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-90"
-              style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.55 0.18 50)", border: "1px solid oklch(0.88 0.08 50)", fontFamily: "'Poppins', sans-serif" }}
-            >
-              📚 My Classes
-            </button>
-            <button
               onClick={() => navigate("/tutor-setup?edit=true")}
               className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:bg-gray-50"
               style={{ border: "1px solid oklch(0.88 0.005 80)", color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}
@@ -435,28 +662,61 @@ export default function TutorDashboard() {
           </div>
         </div>
 
-        {/* Demo Schedule Panel */}
-        {(slotsLoading || (demoSlots && demoSlots.length > 0)) && (
-          <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar size={18} style={{ color: "oklch(0.68 0.18 50)" }} />
-              <h2 className="font-bold text-base" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>My Demo Classes</h2>
-              {demoSlots && (
-                <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)" }}>
-                  {demoSlots.length} slot{demoSlots.length !== 1 ? "s" : ""}
-                </span>
-              )}
-            </div>
-            {slotsLoading && (
-              <div className="flex items-center gap-2 py-4">
-                <Loader2 size={16} className="animate-spin" style={{ color: "oklch(0.68 0.18 50)" }} />
-                <span className="text-sm" style={{ color: "oklch(0.65 0.01 270)" }}>Loading schedule...</span>
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-2xl shadow-sm border mb-6 overflow-hidden" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+          <div className="flex border-b" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+            {([
+              { id: 'demos', label: '📅 Demo Classes', count: demoSlots?.filter((s: any) => s.status !== 'completed' || (s.tutorProceedIntent !== 'yes' || s.studentProceedIntent !== 'yes')).length },
+              { id: 'classes', label: '🎓 My Classes', count: myClassSlots.length },
+              { id: 'interests', label: '👥 Student Interests', count: pendingInterestsCount },
+              { id: 'find', label: '🔍 Find Students', count: null },
+            ] as const).map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 px-3 py-3 text-xs font-semibold transition-all relative ${
+                  activeTab === tab.id
+                    ? 'text-orange-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                style={{ fontFamily: "'Poppins', sans-serif" }}
+              >
+                {tab.label}
+                {tab.count != null && tab.count > 0 && (
+                  <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-bold ${
+                    activeTab === tab.id ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+                {activeTab === tab.id && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: "oklch(0.68 0.18 50)" }} />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Tab: Demo Classes ─────────────────────────────────────────── */}
+        {activeTab === 'demos' && (
+          <div>
+            {slotsLoading ? (
+              <div className="bg-white rounded-2xl shadow-sm border p-8 text-center" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                <Loader2 size={24} className="animate-spin mx-auto mb-2" style={{ color: "oklch(0.68 0.18 50)" }} />
+                <p className="text-sm text-gray-500">Loading demo schedule...</p>
               </div>
-            )}
-            {demoSlots && demoSlots.length > 0 && (
+            ) : !demoSlots?.length ? (
+              <div className="bg-white rounded-2xl shadow-sm border p-8 text-center" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                <Calendar size={40} className="mx-auto mb-3 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
+                <p className="font-semibold text-sm mb-1" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.35 0.02 270)" }}>No demo classes yet</p>
+                <p className="text-xs text-gray-400">Demo slots will appear here once students schedule with you.</p>
+              </div>
+            ) : (
               <div className="space-y-3">
-                {demoSlots.map(slot => (
-                  <div key={slot.id} className="rounded-xl p-4 border" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.98 0.005 80)" }}>
+                {demoSlots
+                  .filter((slot: any) => !(slot.status === 'completed' && slot.tutorProceedIntent === 'yes' && slot.studentProceedIntent === 'yes'))
+                  .map((slot: any) => (
+                  <div key={slot.id} className="bg-white rounded-2xl shadow-sm border p-4" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -488,7 +748,8 @@ export default function TutorDashboard() {
                         <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)" }}>
                           Mode: {slot.mode === "online" ? "Online" : slot.mode === "home_tuition" ? "Home Tuition" : "Home + Online"}
                         </p>
-                        {/* Show student contact details once demo is scheduled — tutor needs address/phone to go there */}
+
+                        {/* Student contact details once demo is scheduled */}
                         {(slot.status === "scheduled" || slot.status === "completed") && (() => {
                           const addr = (slot as any).studentAddress as string | undefined;
                           const lat = (slot as any).studentLat as number | undefined;
@@ -509,19 +770,15 @@ export default function TutorDashboard() {
                           return (
                             <div className="mt-2 p-3 rounded-xl bg-blue-50 border border-blue-100 space-y-2">
                               <p className="text-xs font-bold text-blue-800">📋 Student / Parent Details</p>
-                              {/* Name */}
                               <p className="text-xs text-blue-900 font-semibold">👤 {displayName}</p>
-                              {/* Academic info */}
                               <div className="flex flex-wrap gap-2">
                                 {grade && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">📚 {grade}</span>}
                                 {subjects && <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">📖 {subjects}</span>}
                                 {area && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">📍 {area}</span>}
                               </div>
-                              {/* Fees / Budget */}
                               {budget && (
                                 <p className="text-xs font-semibold" style={{ color: 'oklch(0.45 0.18 50)' }}>💰 Budget: ₹{budget}/month</p>
                               )}
-                              {/* Contact */}
                               {addr && <p className="text-xs text-blue-800">🏠 {addr}</p>}
                               {(slot as any).studentPhone && (
                                 <p className="text-xs text-blue-800">📞 <a href={`tel:${(slot as any).studentPhone}`} className="underline font-medium">{(slot as any).studentPhone}</a></p>
@@ -605,119 +862,6 @@ export default function TutorDashboard() {
                             <p className="text-xs font-semibold text-blue-700">⏳ You said Yes! Waiting for the student/parent to respond...</p>
                           </div>
                         )}
-                        {slot.status === "completed" && (slot as any).tutorProceedIntent === "yes" && (slot as any).studentProceedIntent === "yes" && (() => {
-                          const confirmedMatch = myConfirmedMatches?.find((m: any) => m.demoSlotId === slot.id);
-                          const isGotAClass = confirmedMatch?.classStatus === 'got_a_class';
-                          return (
-                          <div className={`mt-3 p-3 rounded-xl border ${isGotAClass ? 'bg-emerald-50 border-emerald-300' : 'bg-green-50 border-green-200'}`}>
-                            <p className={`text-xs font-semibold ${isGotAClass ? 'text-emerald-700' : 'text-green-700'}`}>
-                              {isGotAClass ? '🎓 Got a Class! EduNest has confirmed your class arrangement.' : '🎉 Great news! Both parties agreed. You\'ve got a class!'}
-                            </p>
-                            {/* Session Log Sheet & Payment Section */}
-                            {(() => {
-                              // Find session log for THIS specific confirmed match
-                              const matchId = (slot as any).confirmedMatchId;
-                              const log = mySessionLogs?.find((l: any) => l.matchId === matchId);
-                              return (
-                                <div className="mt-3 border-t border-green-200 pt-3 space-y-2">
-                                  <p className="text-xs font-bold text-green-800">📋 Session Log Sheet</p>
-                                  <div className="flex flex-wrap gap-2">
-                                    <a
-                                      href={`/session-log/${(slot as any).confirmedMatchId ?? ''}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors"
-                                    >
-                                      <FileText size={13} /> Download / Print Sheet
-                                    </a>
-                                    {log ? (
-                                      <>
-                                        {/* Payment status badge — only show after sheet is uploaded */}
-                                        {(log.paymentStatus === 'sheet_uploaded' || log.paymentStatus === 'payment_processed') && (
-                                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                                            log.paymentStatus === 'payment_processed'
-                                              ? 'bg-green-100 text-green-700'
-                                              : 'bg-yellow-100 text-yellow-700'
-                                          }`}>
-                                            <CreditCard size={13} />
-                                            {log.paymentStatus === 'payment_processed' ? '✅ Payment Processed' : '⏳ Payment Pending'}
-                                          </span>
-                                        )}
-                                        {/* Upload new sheet if not yet processed */}
-                                        {log.paymentStatus !== 'payment_processed' && (
-                                          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors cursor-pointer">
-                                            <Upload size={13} />
-                                            {log.paymentStatus === 'sheet_uploaded' ? 'Re-upload Sheet' : 'Upload Completed Sheet'}
-                                            <input
-                                              type="file"
-                                              accept="image/*,application/pdf"
-                                              className="hidden"
-                                              onChange={async (e) => {
-                                                const file = e.target.files?.[0];
-                                                if (!file) return;
-                                                // Reset input so same file can be re-selected
-                                                e.target.value = '';
-                                                // Validate file size client-side (10 MB)
-                                                if (file.size > 10 * 1024 * 1024) {
-                                                  toast.error('File too large. Maximum size is 10 MB.');
-                                                  return;
-                                                }
-                                                const formData = new FormData();
-                                                formData.append('file', file);
-                                                try {
-                                                  toast.info('Uploading sheet...');
-                                                  const res = await fetch('/api/upload-session-sheet', {
-                                                    method: 'POST',
-                                                    body: formData,
-                                                    credentials: 'include',
-                                                  });
-                                                  const json = await res.json().catch(() => ({}));
-                                                  if (!res.ok) {
-                                                    throw new Error(json?.error ?? `Upload failed (${res.status})`);
-                                                  }
-                                                  const { url } = json;
-                                                  if (!url) throw new Error('No URL returned from server');
-                                                  uploadSheet.mutate({ logId: log.id, uploadedSheetUrl: url });
-                                                } catch (err: any) {
-                                                  toast.error(err?.message ?? 'Upload failed. Please try again with a JPEG, PNG, or PDF.');
-                                                }
-                                              }}
-                                            />
-                                          </label>
-                                        )}
-                                        {/* View uploaded sheet */}
-                                        {log.uploadedSheetUrl && (
-                                          <a
-                                            href={log.uploadedSheetUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                                          >
-                                            <ExternalLink size={13} /> View Uploaded Sheet
-                                          </a>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <button
-                                        onClick={() => {
-                                          const matchId = (slot as any).confirmedMatchId;
-                                          if (matchId) getOrCreateLog.mutate({ matchId });
-                                          else toast.error('Match ID not found. Please refresh.');
-                                        }}
-                                        disabled={getOrCreateLog.isPending}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
-                                      >
-                                        {getOrCreateLog.isPending ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
-                                        Upload Completed Sheet
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                          );
-                        })()}
                         {slot.status === "completed" && (slot as any).tutorProceedIntent === "no" && (
                           <div className="mt-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
                             <p className="text-xs font-semibold text-gray-500">You chose not to continue with this student.</p>
@@ -737,309 +881,274 @@ export default function TutorDashboard() {
           </div>
         )}
 
-        {/* Student Interests — Tutor must Accept/Reject (no admin gate) */}
-        <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6" style={{ borderColor: "oklch(0.88 0.12 145)" }}>
-          <div className="flex items-center gap-2 mb-4">
-            <CheckCircle2 size={18} style={{ color: "oklch(0.55 0.18 145)" }} />
-            <h2 className="font-bold text-base" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>Student Interests</h2>
-            {approvedStudentInterests && (
-              <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "oklch(0.95 0.05 145)", color: "oklch(0.35 0.12 145)" }}>
-                {approvedStudentInterests.filter((i: any) => i.status === 'pending').length} pending
-              </span>
+        {/* ── Tab: My Classes ───────────────────────────────────────────── */}
+        {activeTab === 'classes' && (
+          <div>
+            {slotsLoading ? (
+              <div className="bg-white rounded-2xl shadow-sm border p-8 text-center" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                <Loader2 size={24} className="animate-spin mx-auto mb-2" style={{ color: "oklch(0.68 0.18 50)" }} />
+                <p className="text-sm text-gray-500">Loading your classes...</p>
+              </div>
+            ) : myClassSlots.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-sm border p-8 text-center" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                <BookMarked size={40} className="mx-auto mb-3 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
+                <p className="font-semibold text-sm mb-1" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.35 0.02 270)" }}>No confirmed classes yet</p>
+                <p className="text-xs text-gray-400 mb-3">Classes appear here once both you and the student/parent agree to proceed after a demo.</p>
+                <button
+                  onClick={() => setActiveTab('demos')}
+                  className="text-xs px-4 py-2 rounded-lg font-semibold text-white"
+                  style={{ backgroundColor: "oklch(0.68 0.18 50)" }}
+                >
+                  View Demo Classes
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm font-semibold" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>
+                  {myClassSlots.length} confirmed class{myClassSlots.length !== 1 ? "es" : ""}
+                </p>
+                {myClassSlots.map((slot: any) => (
+                  <MyClassCard
+                    key={slot.id}
+                    slot={slot}
+                    mySessionLogs={mySessionLogs ?? []}
+                    onRefreshLogs={refetchSessionLogs}
+                  />
+                ))}
+              </div>
             )}
           </div>
-          <p className="text-xs text-gray-500 mb-4">Students who are interested in learning from you. Accept to create a demo slot (parent will set the timing), or decline if unavailable.</p>
-          {!approvedStudentInterests?.length ? (
-            <p className="text-sm text-gray-400 text-center py-6">No student interests yet. Once a student shows interest in you, it will appear here.</p>
-          ) : (
-            <div className="space-y-3">
-              {approvedStudentInterests.map((interest: any) => (
-                <div key={interest.id} className="rounded-xl p-4 border" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.98 0.005 80)" }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
-                        {interest.studentName ?? `Student #${interest.studentProfileId}`}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5 mt-1 mb-1">
-                        {interest.studentGrade && (
-                          <span className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full border border-orange-100">
-                            Grade: {interest.studentGrade}
-                          </span>
-                        )}
-                        {interest.studentSubjects && (
-                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">
-                            {interest.studentSubjects}
-                          </span>
-                        )}
-                        {interest.studentMode && (
-                          <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-100">
-                            {interest.studentMode === 'online' ? '💻 Online' : interest.studentMode === 'home_tuition' ? '🏠 Home Tuition' : '🏠💻 Both'}
-                          </span>
-                        )}
-                        {interest.studentArea && (
-                          <span className="text-xs bg-gray-50 text-gray-600 px-2 py-0.5 rounded-full border border-gray-100">
-                            📍 {interest.studentArea}
-                          </span>
-                        )}
-                      </div>
-                      {interest.message && (
-                        <p className="text-xs mt-1" style={{ color: "oklch(0.45 0.01 270)" }}>Message: {interest.message}</p>
-                      )}
-                      <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)" }}>
-                        Received: {new Date(interest.createdAt).toLocaleDateString('en-IN')}
-                      </p>
-                    </div>
-                    {interest.status === 'pending' ? (
-                      <div className="flex gap-2 shrink-0">
-                        <button
-                          onClick={() => respondToStudentInterest.mutate({ interestId: interest.id, response: 'confirmed' })}
-                          disabled={respondToStudentInterest.isPending}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-                          style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
-                        >
-                          ✔ Accept
-                        </button>
-                        <button
-                          onClick={() => respondToStudentInterest.mutate({ interestId: interest.id, response: 'cancelled' })}
-                          disabled={respondToStudentInterest.isPending}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all hover:bg-red-50"
-                          style={{ borderColor: "oklch(0.88 0.12 20)", color: "oklch(0.55 0.18 20)" }}
-                        >
-                          ✕ Decline
-                        </button>
-                      </div>
-                    ) : (
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-                        interest.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
-                      }`}>
-                        {interest.status === 'confirmed' ? '✔ Accepted' : '✕ Declined'}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
 
-        {/* Location & Radius Controls */}
-        <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h2 className="font-bold text-base mb-0.5" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
-                Nearby Student Requirements
-              </h2>
-              <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>
-                {location ? `Showing within ${radiusKm} km of your current location` : "Share your location to see nearby students"}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {location && (
-                <>
-                  <select
-                    value={radiusKm}
-                    onChange={e => setRadiusKm(Number(e.target.value))}
-                    className="text-sm px-3 py-2 rounded-lg border outline-none"
-                    style={{ borderColor: "oklch(0.88 0.005 80)", fontFamily: "'Nunito', sans-serif" }}
-                  >
-                    <option value={5}>5 km</option>
-                    <option value={10}>10 km</option>
-                    <option value={15}>15 km</option>
-                    <option value={20}>20 km</option>
-                  </select>
-                  <button
-                    onClick={() => refetch()}
-                    className="p-2 rounded-lg border transition-all hover:bg-gray-50"
-                    style={{ borderColor: "oklch(0.88 0.005 80)" }}
-                    title="Refresh"
-                  >
-                    <RefreshCw size={16} style={{ color: "oklch(0.65 0.01 270)" }} />
-                  </button>
-                </>
+        {/* ── Tab: Student Interests ────────────────────────────────────── */}
+        {activeTab === 'interests' && (
+          <div className="bg-white rounded-2xl shadow-sm border p-5" style={{ borderColor: "oklch(0.88 0.12 145)" }}>
+            <div className="flex items-center gap-2 mb-4">
+              <CheckCircle2 size={18} style={{ color: "oklch(0.55 0.18 145)" }} />
+              <h2 className="font-bold text-base" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>Student Interests</h2>
+              {approvedStudentInterests && (
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "oklch(0.95 0.05 145)", color: "oklch(0.35 0.12 145)" }}>
+                  {pendingInterestsCount} pending
+                </span>
               )}
-              {!location && (
+            </div>
+            <p className="text-xs text-gray-500 mb-4">Students who are interested in learning from you. Accept to create a demo slot (parent will set the timing), or decline if unavailable.</p>
+            {!approvedStudentInterests?.length ? (
+              <p className="text-sm text-gray-400 text-center py-6">No student interests yet. Once a student shows interest in you, it will appear here.</p>
+            ) : (
+              <div className="space-y-3">
+                {approvedStudentInterests.map((interest: any) => (
+                  <div key={interest.id} className="rounded-xl p-4 border" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.98 0.005 80)" }}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+                          {interest.studentName ?? `Student #${interest.studentProfileId}`}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5 mt-1 mb-1">
+                          {interest.studentGrade && (
+                            <span className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full border border-orange-100">
+                              Grade: {interest.studentGrade}
+                            </span>
+                          )}
+                          {interest.studentSubjects && (
+                            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">
+                              {interest.studentSubjects}
+                            </span>
+                          )}
+                          {interest.studentMode && (
+                            <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-100">
+                              {interest.studentMode === 'online' ? '💻 Online' : interest.studentMode === 'home_tuition' ? '🏠 Home Tuition' : '🏠💻 Both'}
+                            </span>
+                          )}
+                          {interest.studentArea && (
+                            <span className="text-xs bg-gray-50 text-gray-600 px-2 py-0.5 rounded-full border border-gray-100">
+                              📍 {interest.studentArea}
+                            </span>
+                          )}
+                        </div>
+                        {interest.message && (
+                          <p className="text-xs mt-1" style={{ color: "oklch(0.45 0.01 270)" }}>Message: {interest.message}</p>
+                        )}
+                        <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)" }}>
+                          Received: {new Date(interest.createdAt).toLocaleDateString('en-IN')}
+                        </p>
+                      </div>
+                      {interest.status === 'pending' ? (
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={() => respondToStudentInterest.mutate({ interestId: interest.id, response: 'confirmed' })}
+                            disabled={respondToStudentInterest.isPending}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                            style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
+                          >
+                            ✔ Accept
+                          </button>
+                          <button
+                            onClick={() => respondToStudentInterest.mutate({ interestId: interest.id, response: 'cancelled' })}
+                            disabled={respondToStudentInterest.isPending}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all hover:bg-red-50 disabled:opacity-50"
+                            style={{ borderColor: "oklch(0.88 0.12 20)", color: "oklch(0.55 0.18 20)" }}
+                          >
+                            ✕ Decline
+                          </button>
+                        </div>
+                      ) : (
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${
+                          interest.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {interest.status === 'confirmed' ? '✔ Accepted' : '✕ Declined'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Tab: Find Students ────────────────────────────────────────── */}
+        {activeTab === 'find' && (
+          <div>
+            {/* Location & Radius Controls */}
+            <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Navigation size={18} style={{ color: "oklch(0.68 0.18 50)" }} />
+                <h2 className="font-bold text-base" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>Find Nearby Students</h2>
+              </div>
+              <p className="text-xs mb-4" style={{ color: "oklch(0.55 0.01 270)" }}>
+                Allow location access to see students looking for tutors in your area.
+              </p>
+              <div className="flex items-center gap-3 mb-3">
+                <label className="text-xs font-semibold" style={{ color: "oklch(0.45 0.01 270)" }}>Search Radius:</label>
+                <select
+                  value={radiusKm}
+                  onChange={e => setRadiusKm(Number(e.target.value))}
+                  className="border rounded-lg px-2 py-1 text-sm"
+                  style={{ borderColor: "oklch(0.88 0.005 80)" }}
+                >
+                  {[5, 10, 15, 20, 30].map(r => (
+                    <option key={r} value={r}>{r} km</option>
+                  ))}
+                </select>
+              </div>
+              {!location ? (
                 <button
                   onClick={getLocation}
                   disabled={locLoading}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
                   style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
                 >
-                  {locLoading ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
-                  {locLoading ? "Getting location..." : "Share My Location"}
+                  {locLoading ? <Loader2 size={16} className="animate-spin" /> : <Navigation size={16} />}
+                  {locLoading ? "Getting Location..." : "Allow Location Access"}
                 </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-green-600 font-semibold">✔ Location active</span>
+                  <button
+                    onClick={() => refetch()}
+                    className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-all hover:bg-gray-50"
+                    style={{ borderColor: "oklch(0.88 0.005 80)", color: "oklch(0.45 0.01 270)" }}
+                  >
+                    <RefreshCw size={12} /> Refresh
+                  </button>
+                </div>
+              )}
+              {locError && (
+                <p className="text-xs text-red-500 mt-2">{locError}</p>
               )}
             </div>
-          </div>
-          {locError && (
-            <div className="flex items-start gap-2 mt-3 p-3 rounded-xl" style={{ backgroundColor: "#FEF2F2" }}>
-              <AlertCircle size={16} className="shrink-0 mt-0.5" style={{ color: "#DC2626" }} />
-              <p className="text-xs" style={{ color: "#DC2626", fontFamily: "'Nunito', sans-serif" }}>{locError}</p>
-            </div>
-          )}
-          {location && (
-            <div className="flex items-center gap-2 mt-3">
-              <CheckCircle2 size={14} style={{ color: "#16A34A" }} />
-              <p className="text-xs" style={{ color: "#15803D", fontFamily: "'Nunito', sans-serif" }}>
-                Location active — {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-              </p>
-              <button onClick={getLocation} className="text-xs underline ml-1" style={{ color: "oklch(0.68 0.18 50)" }}>Update</button>
-            </div>
-          )}
-        </div>
 
-        {/* Student Cards */}
-        {!location && (
-          <div className="text-center py-16">
-            <Navigation size={48} className="mx-auto mb-4 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
-            <p className="text-base font-semibold mb-2" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.35 0.02 270)" }}>
-              Share your location to see nearby students
-            </p>
-            <p className="text-sm" style={{ color: "oklch(0.65 0.01 270)" }}>
-              Click "Share My Location" above to find students near you
-            </p>
-          </div>
-        )}
-
-        {location && studentsLoading && (
-          <div className="text-center py-16">
-            <Loader2 size={32} className="animate-spin mx-auto mb-3" style={{ color: "oklch(0.68 0.18 50)" }} />
-            <p className="text-sm" style={{ color: "oklch(0.65 0.01 270)" }}>Finding students near you...</p>
-          </div>
-        )}
-
-        {location && !studentsLoading && nearbyStudents && nearbyStudents.length === 0 && (
-          <div className="text-center py-16">
-            <MapPin size={48} className="mx-auto mb-4 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
-            <p className="text-base font-semibold mb-2" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.35 0.02 270)" }}>
-              No students found within {radiusKm} km
-            </p>
-            <p className="text-sm mb-4" style={{ color: "oklch(0.65 0.01 270)" }}>
-              Try increasing the search radius
-            </p>
-            <button
-              onClick={() => setRadiusKm(r => Math.min(r + 5, 30))}
-              className="px-5 py-2.5 rounded-xl font-bold text-white text-sm"
-              style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
-            >
-              Expand to {Math.min(radiusKm + 5, 30)} km
-            </button>
-          </div>
-        )}
-
-        {location && nearbyStudents && nearbyStudents.length > 0 && (
-          <div className="space-y-4">
-            <p className="text-sm font-semibold" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>
-              {nearbyStudents.length} student{nearbyStudents.length !== 1 ? "s" : ""} found within {radiusKm} km
-            </p>
-            {nearbyStudents.map((student) => (
-              <div
-                key={student.id}
-                className="bg-white rounded-2xl shadow-sm border p-5 transition-all hover:shadow-md"
-                style={{ borderColor: "oklch(0.92 0.005 80)" }}
-              >
-                {/* Header row */}
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
-                        {student.board}
-                      </span>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8", fontFamily: "'Poppins', sans-serif" }}>
-                        <ModeLabel mode={student.mode} />
-                      </span>
-                    </div>
-                    <h3 className="text-base font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
-                      {student.grade} — {student.subjects}
-                    </h3>
+            {/* Nearby Students List */}
+            {location && (
+              <div>
+                {studentsLoading ? (
+                  <div className="bg-white rounded-2xl shadow-sm border p-8 text-center" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                    <Loader2 size={24} className="animate-spin mx-auto mb-2" style={{ color: "oklch(0.68 0.18 50)" }} />
+                    <p className="text-sm text-gray-500">Searching for students nearby...</p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="flex items-center gap-1 justify-end" style={{ color: "oklch(0.68 0.18 50)" }}>
-                      <MapPin size={12} />
-                      <span className="text-sm font-bold" style={{ fontFamily: "'Poppins', sans-serif" }}>{student.distKm} km</span>
-                    </div>
-                    <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>away</p>
+                ) : !nearbyStudents?.length ? (
+                  <div className="bg-white rounded-2xl shadow-sm border p-8 text-center" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                    <MapPin size={40} className="mx-auto mb-3 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
+                    <p className="font-semibold text-sm mb-1" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.35 0.02 270)" }}>No students found nearby</p>
+                    <p className="text-xs text-gray-400">Try increasing the search radius or check back later.</p>
                   </div>
-                </div>
-
-                {/* Details grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs mb-4">
-                  {student.regularTime && (
-                    <div className="flex items-center gap-1.5" style={{ color: "oklch(0.45 0.01 270)" }}>
-                      <Clock size={12} style={{ color: "oklch(0.68 0.18 50)" }} />
-                      <span>{student.regularTime}</span>
-                    </div>
-                  )}
-                  {student.daysPerWeek && (
-                    <div className="flex items-center gap-1.5" style={{ color: "oklch(0.45 0.01 270)" }}>
-                      <Calendar size={12} style={{ color: "oklch(0.68 0.18 50)" }} />
-                      <span>{student.daysPerWeek}</span>
-                    </div>
-                  )}
-                  {student.sessionDuration && student.sessionsPerWeek && (
-                    <div className="flex items-center gap-1.5" style={{ color: "oklch(0.45 0.01 270)" }}>
-                      <BookOpen size={12} style={{ color: "oklch(0.68 0.18 50)" }} />
-                      <span>{student.sessionDuration}/day · {student.sessionsPerWeek} days/week</span>
-                    </div>
-                  )}
-                  {student.budget && (
-                    <div className="flex items-center gap-1.5" style={{ color: "oklch(0.45 0.01 270)" }}>
-                      <IndianRupee size={12} style={{ color: "oklch(0.68 0.18 50)" }} />
-                      <span>Budget: ₹{student.budget}/month</span>
-                    </div>
-                  )}
-                  {student.area && (
-                    <div className="flex items-center gap-1.5" style={{ color: "oklch(0.45 0.01 270)" }}>
-                      <MapPin size={12} style={{ color: "oklch(0.68 0.18 50)" }} />
-                      <span>{student.area}</span>
-                    </div>
-                  )}
-                </div>
-
-                {student.specialRequirements && (
-                  <div className="rounded-lg px-3 py-2 mb-4 text-xs" style={{ backgroundColor: "oklch(0.97 0.005 80)", color: "oklch(0.45 0.01 270)" }}>
-                    <span className="font-semibold" style={{ color: "oklch(0.68 0.18 50)" }}>Special: </span>
-                    {student.specialRequirements}
-                  </div>
-                )}
-
-                {/* Express Interest — shows real status from DB after admin action */}
-                {interestStatusMap.has(student.id) ? (
-                  (() => {
-                    const status = interestStatusMap.get(student.id)!;
-                    if (status === 'accepted') {
-                      return (
-                        <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm" style={{ backgroundColor: "#DCFCE7", color: "#15803D", fontFamily: "'Poppins', sans-serif" }}>
-                          <CheckCircle2 size={14} /> Interest Accepted — EduNest will contact you!
-                        </div>
-                      );
-                    }
-                    if (status === 'declined') {
-                      return (
-                        <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm" style={{ backgroundColor: "#FEE2E2", color: "#DC2626", fontFamily: "'Poppins', sans-serif" }}>
-                          <AlertCircle size={14} /> Interest Declined
-                        </div>
-                      );
-                    }
-                    // pending (default)
-                    return (
-                      <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm" style={{ backgroundColor: "oklch(0.95 0.05 145)", color: "oklch(0.35 0.12 145)", fontFamily: "'Poppins', sans-serif" }}>
-                        <CheckCircle2 size={14} /> Interest Expressed — Awaiting Review
-                      </div>
-                    );
-                  })()
                 ) : (
-                  <button
-                    onClick={() => expressInterest.mutate({ studentProfileId: student.id })}
-                    disabled={expressInterest.isPending}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
-                  >
-                    {expressInterest.isPending ? <Loader2 size={14} className="animate-spin" /> : <ChevronRight size={14} />}
-                    Express Interest
-                  </button>
+                  <div className="space-y-3">
+                    <p className="text-sm font-semibold" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>
+                      {nearbyStudents.length} student{nearbyStudents.length !== 1 ? "s" : ""} within {radiusKm} km
+                    </p>
+                    {nearbyStudents.map((student: any) => {
+                      const status = interestStatusMap.get(student.id);
+                      return (
+                        <div key={student.id} className="bg-white rounded-2xl shadow-sm border p-4" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-semibold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+                                  {student.role === "parent" ? "Parent" : "Student"} — {student.grade ?? "Grade N/A"}
+                                </span>
+                                {student.distanceKm != null && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)" }}>
+                                    {student.distanceKm < 1 ? `${Math.round(student.distanceKm * 1000)} m` : `${student.distanceKm.toFixed(1)} km`}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 mb-2">
+                                {student.subjects && (
+                                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">
+                                    {student.subjects}
+                                  </span>
+                                )}
+                                {student.mode && (
+                                  <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-100">
+                                    <ModeLabel mode={student.mode} />
+                                  </span>
+                                )}
+                                {student.area && (
+                                  <span className="text-xs bg-gray-50 text-gray-600 px-2 py-0.5 rounded-full border border-gray-100">
+                                    📍 {student.area}
+                                  </span>
+                                )}
+                              </div>
+                              {student.budget && (
+                                <div className="flex items-center gap-1 text-xs" style={{ color: "oklch(0.45 0.01 270)" }}>
+                                  <IndianRupee size={12} />
+                                  <span>Budget: ₹{student.budget}/month</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="shrink-0">
+                              {!status ? (
+                                <button
+                                  onClick={() => expressInterest.mutate({ studentProfileId: student.id })}
+                                  disabled={expressInterest.isPending}
+                                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
+                                  style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
+                                >
+                                  {expressInterest.isPending ? <Loader2 size={13} className="animate-spin" /> : <ChevronRight size={13} />}
+                                  Express Interest
+                                </button>
+                              ) : (
+                                <span className={`text-xs px-2.5 py-1.5 rounded-full font-semibold ${
+                                  status === 'accepted' ? 'bg-green-100 text-green-700' :
+                                  status === 'declined' ? 'bg-red-100 text-red-700' :
+                                  'bg-orange-100 text-orange-700'
+                                }`}>
+                                  {status === 'accepted' ? '✔ Accepted' :
+                                   status === 'declined' ? '✕ Declined' :
+                                   '⏳ Pending'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>

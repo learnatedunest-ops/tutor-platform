@@ -1219,6 +1219,61 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    /**
+     * Tutor: upload completed session sheet via base64 (tRPC-native, no multipart).
+     * Accepts base64-encoded file data, uploads to S3, updates the session log.
+     */
+    uploadSheetFile: protectedProcedure
+      .input(z.object({
+        matchId: z.number().int().positive(),
+        fileBase64: z.string().min(1).max(15 * 1024 * 1024), // ~10 MB in base64
+        mimeType: z.string().max(64).default('image/jpeg'),
+        fileName: z.string().max(256).default('sheet.jpg'),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Verify tutor owns this match
+        const profile = await getTutorProfileByUserId(ctx.user.id);
+        if (!profile) throw new Error('Tutor profile not found');
+        const match = await getAllConfirmedMatches().then(all => all.find(m => m.id === input.matchId));
+        if (!match) throw new Error('Match not found');
+        if (match.tutorProfileId !== profile.id) throw new Error('Not authorised to upload for this match');
+
+        // Decode base64 → Buffer
+        const buffer = Buffer.from(input.fileBase64, 'base64');
+        if (buffer.length === 0) throw new Error('Empty file received');
+        if (buffer.length > 10 * 1024 * 1024) throw new Error('File too large (max 10 MB)');
+
+        // Derive extension
+        const extMap: Record<string, string> = {
+          'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png',
+          'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif',
+          'application/pdf': 'pdf',
+        };
+        const ext = extMap[input.mimeType] ?? 'jpg';
+        const key = `session-sheets/sheet_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+
+        const { storagePut } = await import('./storage');
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        console.log(`[Upload] Session sheet uploaded via tRPC: ${key} (${buffer.length} bytes)`);
+
+        // Get or create session log, then update with URL
+        const log = await getOrCreateSessionLog(input.matchId, {
+          tutorProfileId: match.tutorProfileId,
+          studentProfileId: match.studentProfileId,
+          tutorName: match.tutorName,
+          studentName: match.studentName,
+        });
+        await updateSessionLogSheet(log.id, url);
+
+        // Notify owner
+        await notifyOwner({
+          title: '📋 Session Sheet Uploaded',
+          content: `Tutor uploaded session log sheet for match #${input.matchId}. Please review and approve payment.`,
+        }).catch(() => {});
+
+        return { success: true, url };
+      }),
+
     /** Admin: list all session logs */
     listAll: adminProcedure.query(async () => getAllSessionLogs()),
 

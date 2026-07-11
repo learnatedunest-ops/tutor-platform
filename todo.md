@@ -315,3 +315,8 @@
 - [x] Fix session log PDF upload bug — root cause was wrong cookie name ('session=' vs 'app_session_id=') in upload auth check; fixed in server/_core/index.ts
 - [x] Show full student/parent details in tutor demo slot card: name (with child name if parent), grade, subjects, area, budget (fees), phone, address, Google Maps link
 - [x] 15/15 tests passing, 0 TypeScript errors
+
+## Round 28 — Fix Sheet Upload + Tutor My Classes Section
+- [x] Fix session log sheet upload — file selected but not received by server; replace busboy multipart with tRPC base64 upload to avoid multipart parsing issues in production
+- [x] Add My Classes section to Tutor Dashboard — show completed demo cards with full student details and upload sheet UI
+- [x] 15/15 tests passing, 0 TypeScript errors
