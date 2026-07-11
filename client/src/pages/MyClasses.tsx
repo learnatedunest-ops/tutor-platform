@@ -33,14 +33,11 @@ export default function MyClasses() {
     { enabled: isAuthenticated }
   );
 
-  // All confirmed matches
-  const { data: allMatches, isLoading: matchesLoading } = trpc.confirmedMatch.listAll.useQuery(
+  // Confirmed matches for this student only (non-admin procedure)
+  const { data: myMatches = [], isLoading: matchesLoading } = trpc.confirmedMatch.getMineForStudent.useQuery(
     undefined,
     { enabled: isAuthenticated && !!myProfile }
   );
-
-  // Filter to only this student's matches
-  const myMatches = allMatches?.filter((m: any) => m.studentProfileId === myProfile?.id) ?? [];
 
   // Session logs for this student
   const { data: mySessionLogs, isLoading: logsLoading } = trpc.sessionLog.myStudentLogs.useQuery(

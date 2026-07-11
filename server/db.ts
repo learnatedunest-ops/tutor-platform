@@ -660,6 +660,24 @@ export async function getAllConfirmedMatches(): Promise<ConfirmedMatch[]> {
   return db.select().from(confirmedMatches).orderBy(desc(confirmedMatches.matchedAt));
 }
 
+/** Get confirmed matches for a specific tutor profile */
+export async function getConfirmedMatchesByTutor(tutorProfileId: number): Promise<ConfirmedMatch[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(confirmedMatches)
+    .where(eq(confirmedMatches.tutorProfileId, tutorProfileId))
+    .orderBy(desc(confirmedMatches.matchedAt));
+}
+
+/** Get confirmed matches for a specific student profile */
+export async function getConfirmedMatchesByStudent(studentProfileId: number): Promise<ConfirmedMatch[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(confirmedMatches)
+    .where(eq(confirmedMatches.studentProfileId, studentProfileId))
+    .orderBy(desc(confirmedMatches.matchedAt));
+}
+
 // ─── Session Logs ────────────────────────────────────────────────────────────
 
 /** Get or create a session log for a confirmed match */

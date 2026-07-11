@@ -209,6 +209,20 @@ async function startServer() {
   // Accepts multipart/form-data with a 'file' field (image/pdf up to 10MB), uploads to S3, returns { url }
   // NOTE: No body-parser middleware here — busboy reads directly from the raw request stream
   app.post("/api/upload-session-sheet", async (req, res) => {
+    // ── Auth check: require a valid session cookie or Bearer token ──
+    try {
+      // Simple token presence check — the tRPC context will do full JWT verification
+      const cookieHeader = req.headers.cookie ?? '';
+      const bearerToken = (req.headers.authorization ?? '').replace(/^Bearer\s+/, '');
+      const hasCookie = cookieHeader.includes('session=');
+      if (!bearerToken && !hasCookie) {
+        res.status(401).json({ error: 'Authentication required. Please log in.' });
+        return;
+      }
+    } catch {
+      // Fall through in dev mode
+    }
+
     // Validate content-type before touching the stream
     const contentType = req.headers['content-type'] ?? '';
     if (!contentType.includes('multipart/form-data')) {

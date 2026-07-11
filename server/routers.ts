@@ -67,6 +67,8 @@ import {
   getConfirmedMatchBySlotId,
   createConfirmedMatch,
   getAllConfirmedMatches,
+  getConfirmedMatchesByTutor,
+  getConfirmedMatchesByStudent,
   // Session logs
   getOrCreateSessionLog,
   getSessionLogByMatchId,
@@ -893,6 +895,20 @@ export const appRouter = router({
   // ─── Confirmed Matches (Admin) ───────────────────────────────────────────────
   confirmedMatch: router({
     listAll: adminProcedure.query(async () => getAllConfirmedMatches()),
+
+    /** Tutor: get confirmed matches for their own profile */
+    getMineForTutor: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await getTutorProfileByUserId(ctx.user.id);
+      if (!profile) return [];
+      return getConfirmedMatchesByTutor(profile.id);
+    }),
+
+    /** Student: get confirmed matches for their own profile */
+    getMineForStudent: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await getStudentProfileByUserId(ctx.user.id);
+      if (!profile) return [];
+      return getConfirmedMatchesByStudent(profile.id);
+    }),
   }),
 
   // ─── Session Logs ─────────────────────────────────────────────────────────────

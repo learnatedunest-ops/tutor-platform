@@ -34,14 +34,11 @@ export default function OngoingClasses() {
     { enabled: isAuthenticated }
   );
 
-  // All confirmed matches for this tutor
-  const { data: allMatches, isLoading: matchesLoading } = trpc.confirmedMatch.listAll.useQuery(
+  // Confirmed matches for this tutor only (non-admin procedure)
+  const { data: myMatches = [], isLoading: matchesLoading } = trpc.confirmedMatch.getMineForTutor.useQuery(
     undefined,
     { enabled: isAuthenticated && myProfile?.status === "approved" }
   );
-
-  // Filter to only this tutor's matches
-  const myMatches = allMatches?.filter((m: any) => m.tutorProfileId === myProfile?.id) ?? [];
 
   // Session logs for this tutor
   const { data: mySessionLogs, refetch: refetchLogs } = trpc.sessionLog.myLogs.useQuery(

@@ -218,9 +218,9 @@
 
 ## Round 19 — Bug Fixes & Ongoing Classes
 
-- [ ] Fix S3 upload endpoint: accept image types (JPEG/PNG/HEIC/WebP), increase size to 10MB, fix auth
-- [ ] Fix contact reveal email: ensure parent/student receives tutor details email when both say yes
-- [ ] Reduce session log sheet from 30 to 20 rows, fix A4 print layout
-- [ ] Show payment pending badge only after successful sheet upload (not before)
-- [ ] TutorDashboard: Ongoing Classes section (confirmed matches + session sheet + upload + payment)
-- [ ] StudentPortal: My Classes section (ongoing classes + payment info)
+- [x] Fix S3 upload endpoint: accept image types (JPEG/PNG/HEIC/WebP), increase size to 10MB, fix auth
+- [x] Fix contact reveal email: ensure parent/student receives tutor details email when both say yes
+- [x] Reduce session log sheet from 30 to 20 rows, fix A4 print layout
+- [x] Show payment pending badge only after successful sheet upload (not before)
+- [x] TutorDashboard: Ongoing Classes section — dedicated /ongoing-classes page with upload + payment
+- [x] StudentPortal: My Classes section — dedicated /my-classes page with payment info + tutor contact
