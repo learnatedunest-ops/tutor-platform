@@ -148,6 +148,7 @@ export default function TutorSetup() {
   const [form, setForm] = useState<FormData>(INITIAL);
   const [submitted, setSubmitted] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   // Initialize editMode from ?edit=true query param so TutorDashboard can link directly to edit
   const [editMode, setEditMode] = useState(() => new URLSearchParams(search).get("edit") === "true");
 
@@ -211,6 +212,10 @@ export default function TutorSetup() {
   const handleSubmit = () => {
     if (!form.name || !form.phone || !form.qualification || !form.subjects || !form.experience) {
       toast.error("Please fill in all required fields.");
+      return;
+    }
+    if (!agreedToTerms) {
+      toast.error("Please agree to the Terms & Conditions before submitting.");
       return;
     }
     saveMutation.mutate({
@@ -521,6 +526,24 @@ export default function TutorSetup() {
                 <label className={labelCls} style={labelStyle}>Your Area / Locality</label>
                 <input className={inputCls} style={inputStyle} value={form.area} onChange={e => set("area", e.target.value)} placeholder="e.g. Koramangala, Bengaluru" />
                 <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>This is shown to students when they search for tutors nearby.</p>
+              </div>
+
+              {/* T&C Checkbox — step 4 */}
+              <div className="flex items-start gap-3 p-4 rounded-xl border" style={{ borderColor: agreedToTerms ? "#22C55E" : "oklch(0.88 0.005 80)", backgroundColor: agreedToTerms ? "#F0FDF4" : "oklch(0.97 0.005 80)" }}>
+                <input
+                  type="checkbox"
+                  id="tutor-terms"
+                  checked={agreedToTerms}
+                  onChange={e => setAgreedToTerms(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-orange-500 cursor-pointer"
+                />
+                <label htmlFor="tutor-terms" className="text-sm cursor-pointer" style={{ color: "oklch(0.35 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>
+                  I have read and agree to the{" "}
+                  <a href="/terms-conditions" target="_blank" rel="noopener noreferrer" className="font-bold underline" style={{ color: "oklch(0.68 0.18 50)" }}>
+                    EduNest Terms &amp; Conditions
+                  </a>
+                  , including the 40% first-month deduction policy, conduct guidelines, and platform rules.
+                </label>
               </div>
             </div>
           )}

@@ -353,3 +353,15 @@
 - [x] Both sides: show "Class Stopped" badge when admin cancels; unlock find-tutor/find-student
 - [x] Admin panel: show cancellation requests with Approve Cancellation button
 - [x] 15/15 tests passing, 0 TypeScript errors
+
+## Round 31 — WhatsApp Alerts + T&C + Conduct Guidelines
+- [ ] Scrape Otoo T&C and draft EduNest Terms & Conditions page with custom clauses
+- [ ] Build /terms page with full T&C (40% deduction first month, ₹350 demo cancellation fee, conduct guidelines)
+- [ ] Add T&C checkbox to TutorSetup (step 1) with link to /terms
+- [ ] Add T&C checkbox to StudentSetup (step 1) with link to /terms
+- [ ] Add WhatsApp alert helper: sendWhatsAppAlert(adminNumber, message, replyToNumber) using wa.me deep link in owner notification email
+- [ ] WhatsApp alert: when parent schedules demo — message to admin with parent's WhatsApp link
+- [ ] WhatsApp alert: when tutor uploads sheet — message to admin with tutor's WhatsApp link
+- [ ] WhatsApp alert: when parent marks payment — message to admin with parent's WhatsApp link
+- [ ] WhatsApp alert: when cancellation is requested — message to admin with requester's WhatsApp link
+- [ ] 15/15 tests passing, 0 TypeScript errors

@@ -16,6 +16,7 @@ import BlogPost from "./pages/BlogPost";
 import FAQ from "./pages/FAQ";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
+import TermsAndConditions from "./pages/TermsAndConditions";
 import WhatsAppButton from "./components/WhatsAppButton";
 import Admin from "./pages/Admin";
 import StudentPortal from "./pages/StudentPortal";
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/faq" component={FAQ} />
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/terms" component={Terms} />
+      <Route path="/terms-conditions" component={TermsAndConditions} />
       <Route path="/tutor/:id" component={TutorProfile} />
       <Route path="/admin" component={Admin} />
       <Route path="/portal" component={StudentPortal} />

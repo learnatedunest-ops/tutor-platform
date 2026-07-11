@@ -157,6 +157,7 @@ export default function StudentSetup() {
   const [form, setForm] = useState<FormData>(INITIAL);
   const [submitted, setSubmitted] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -224,6 +225,10 @@ export default function StudentSetup() {
   };
 
   const handleSubmit = () => {
+    if (!agreedToTerms) {
+      toast.error("Please agree to the Terms & Conditions before submitting.");
+      return;
+    }
     if (!form.name || !form.phone || !form.subjects || !form.grade) {
       toast.error("Please fill in all required fields.");
       return;
@@ -577,6 +582,24 @@ export default function StudentSetup() {
               <div>
                 <label className={labelCls} style={labelStyle}>Your Area / Locality</label>
                 <input className={inputCls} style={inputStyle} value={form.area} onChange={e => set("area", e.target.value)} placeholder="e.g. Koramangala, Bengaluru" />
+              </div>
+
+              {/* T&C Checkbox — step 4 */}
+              <div className="flex items-start gap-3 p-4 rounded-xl border" style={{ borderColor: agreedToTerms ? "#22C55E" : "oklch(0.88 0.005 80)", backgroundColor: agreedToTerms ? "#F0FDF4" : "oklch(0.97 0.005 80)" }}>
+                <input
+                  type="checkbox"
+                  id="student-terms"
+                  checked={agreedToTerms}
+                  onChange={e => setAgreedToTerms(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-orange-500 cursor-pointer"
+                />
+                <label htmlFor="student-terms" className="text-sm cursor-pointer" style={{ color: "oklch(0.35 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>
+                  I have read and agree to the{" "}
+                  <a href="/terms-conditions" target="_blank" rel="noopener noreferrer" className="font-bold underline" style={{ color: "oklch(0.68 0.18 50)" }}>
+                    EduNest Terms &amp; Conditions
+                  </a>
+                  , including the free demo policy, ₹350 demo cancellation fee, and conduct guidelines.
+                </label>
               </div>
             </div>
           )}

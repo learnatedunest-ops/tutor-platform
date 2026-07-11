@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { notifyOwner } from "./_core/notification";
 import { sendContactRevealToStudent, sendContactRevealToTutor, sendDemoBookingEmail, sendInquiryEmail, sendOtpEmail, sendParentPayNowEmail, sendTutorApplicationEmail, sendTutorFeePaidEmail } from "./email";
+import { notifyAdminDemoScheduled, notifyAdminSheetUploaded, notifyAdminParentPaid, notifyAdminCancellationRequested } from "./whatsapp";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
@@ -948,6 +949,19 @@ export const appRouter = router({
           title: `📅 Demo Slot Scheduled`,
           content: `Student Profile #${profile.id} scheduled a demo on **${input.scheduledDate}** at **${input.scheduledTime}**.\nTutor Profile ID: ${slot.tutorProfileId}\nNotes: ${input.notes ?? 'None'}`,
         }).catch(() => {});
+        // WhatsApp alert to admin
+        if (tProfile && profile) {
+          const studentName = profile.studentName ?? profile.name;
+          notifyAdminDemoScheduled({
+            parentName: profile.name,
+            parentPhone: profile.phone,
+            tutorName: tProfile.name ?? "Tutor",
+            tutorPhone: tProfile.phone ?? "",
+            studentName,
+            subject: profile.subjects ?? "General",
+            demoDate: `${input.scheduledDate} at ${input.scheduledTime}`,
+          }).catch(() => {});
+        }
         return { success: true };
       }),
 
@@ -1184,6 +1198,26 @@ export const appRouter = router({
           title: `⚠️ Class Cancellation Requested`,
           content: `A ${input.requestedBy} has requested cancellation for Match #${input.matchId}. Note: ${input.note ?? 'No reason given'}. Please review and approve in Admin → Cancellation Requests.`,
         }).catch(() => {});
+        // WhatsApp alert to admin — look up both parties
+        const allMatches = await getAllConfirmedMatches();
+        const theMatch = allMatches.find(m => m.id === input.matchId);
+        if (theMatch) {
+          const { getTutorProfileById: getTutorProfForCancel, getStudentProfileById: getStudentProfForCancel } = await import('./db');
+          const tProf = await getTutorProfForCancel(theMatch.tutorProfileId).catch(() => null);
+          const sProf = await getStudentProfForCancel(theMatch.studentProfileId).catch(() => null);
+          if (tProf && sProf) {
+            const isParent = input.requestedBy === 'parent';
+            notifyAdminCancellationRequested({
+              requestedBy: input.requestedBy,
+              requesterName: isParent ? sProf.name : tProf.name,
+              requesterPhone: isParent ? (sProf.phone ?? '') : (tProf.phone ?? ''),
+              otherPartyName: isParent ? tProf.name : sProf.name,
+              otherPartyPhone: isParent ? (tProf.phone ?? '') : (sProf.phone ?? ''),
+              studentName: theMatch.studentName ?? sProf.studentName ?? 'Student',
+              reason: input.note,
+            }).catch(() => {});
+          }
+        }
         return { success: true };
       }),
 
@@ -1319,8 +1353,7 @@ export const appRouter = router({
           content: `Tutor uploaded session log sheet for match #${input.matchId}. Please review and approve payment.`,
         }).catch(() => {});
 
-        // Email parent/student to pay now
-        // Look up student profile by studentProfileId from the match
+        // Email parent/student to pay now + WhatsApp alert to admin
         const { getStudentProfileById } = await import('./db');
         const studentProf = await getStudentProfileById(match.studentProfileId).catch(() => null);
         if (studentProf?.email) {
@@ -1331,6 +1364,15 @@ export const appRouter = router({
             amount: studentProf.budget ? String(studentProf.budget) : null,
           }).catch(() => {});
         }
+        // WhatsApp alert to admin
+        notifyAdminSheetUploaded({
+          tutorName: profile.name,
+          tutorPhone: profile.phone ?? '',
+          parentName: studentProf?.name ?? 'Parent',
+          parentPhone: studentProf?.phone ?? '',
+          studentName: match.studentName ?? studentProf?.studentName ?? 'Student',
+          sheetUrl: url,
+        }).catch(() => {});
 
         return { success: true, url };
       }),
@@ -1356,6 +1398,16 @@ export const appRouter = router({
         await notifyOwner({
           title: '💰 Parent Marked Payment — Awaiting Approval',
           content: `Parent for session log #${input.logId} (${log.studentName ?? 'unknown'}) has marked payment as done via UPI. Please verify and approve in Admin → Session Payments.`,
+        }).catch(() => {});
+        // WhatsApp alert to admin
+        const { getTutorProfileById: getTutorProfById } = await import('./db');
+        const tutorProfForPayment = await getTutorProfById(log.tutorProfileId).catch(() => null);
+        notifyAdminParentPaid({
+          parentName: profile.name,
+          parentPhone: profile.phone ?? '',
+          tutorName: tutorProfForPayment?.name ?? 'Tutor',
+          tutorPhone: tutorProfForPayment?.phone ?? '',
+          studentName: log.studentName ?? 'Student',
         }).catch(() => {});
         return { success: true };
       }),
