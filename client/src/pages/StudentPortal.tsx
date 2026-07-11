@@ -68,6 +68,19 @@ export default function StudentPortal() {
     onError: (err: { message?: string }) => toast.error(err.message || "Failed to schedule. Please try again."),
   });
 
+  // Post-demo proceed intent
+  const setProceedIntent = trpc.demoSlot.setProceedIntent.useMutation({
+    onSuccess: (data) => {
+      utils.demoSlot.mySlots.invalidate();
+      if (data.matched) {
+        toast.success("🎉 It's a match! Both parties agreed. Tutor contact details have been sent to your email.");
+      } else {
+        toast.success("Your response has been recorded.");
+      }
+    },
+    onError: (err: { message?: string }) => toast.error(err.message ?? "Failed to record response"),
+  });
+
   const updateProfileMutation = trpc.studentProfile.save.useMutation({
     onSuccess: () => {
       toast.success("Requirement updated successfully!");
@@ -354,8 +367,8 @@ export default function StudentPortal() {
                             "bg-orange-100 text-orange-700"
                           }`}>
                             {slot.status === "pending_schedule" ? "⏳ Awaiting Your Schedule" :
-                             slot.status === "scheduled" ? "✅ Scheduled" :
-                             slot.status === "completed" ? "🎓 Completed" : "❌ Cancelled"}
+                             slot.status === "scheduled" ? "📅 Demo Confirmed ✓" :
+                             slot.status === "completed" ? "🎓 Demo Completed" : "❌ Cancelled"}
                           </span>
                         </div>
                         <p className="text-sm text-gray-500">Tutor Profile #{slot.tutorProfileId} · {slot.mode === "online" ? "Online" : "Home Tuition"}</p>
@@ -434,6 +447,56 @@ export default function StudentPortal() {
 
                     {slot.notes && slot.status !== "pending_schedule" && (
                       <p className="text-xs text-gray-500 mt-2">Note: {slot.notes}</p>
+                    )}
+
+                    {/* Post-demo proceed intent UI */}
+                    {slot.status === "completed" && !(slot as any).studentProceedIntent && (
+                      <div className="mt-4 p-4 rounded-xl border-2" style={{ borderColor: "oklch(0.88 0.12 50)", backgroundColor: "oklch(0.98 0.03 50)" }}>
+                        <p className="text-sm font-semibold mb-1" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+                          🎓 Would you like to continue with this tutor?
+                        </p>
+                        <p className="text-xs mb-3 text-gray-500">
+                          If both you and the tutor agree, EduNest will share each other's full contact details so you can start regular classes.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setProceedIntent.mutate({ slotId: slot.id, intent: "yes" })}
+                            disabled={setProceedIntent.isPending}
+                            className="flex-1 py-2.5 px-4 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
+                            style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
+                          >
+                            {setProceedIntent.isPending ? <Loader2 size={14} className="animate-spin mx-auto" /> : "✔ Yes, Proceed"}
+                          </button>
+                          <button
+                            onClick={() => setProceedIntent.mutate({ slotId: slot.id, intent: "no" })}
+                            disabled={setProceedIntent.isPending}
+                            className="flex-1 py-2.5 px-4 rounded-xl text-sm font-bold border transition-all hover:bg-red-50"
+                            style={{ borderColor: "#fca5a5", color: "#dc2626" }}
+                          >
+                            ✕ No Thanks
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {slot.status === "completed" && (slot as any).studentProceedIntent === "yes" && !(slot as any).tutorProceedIntent && (
+                      <div className="mt-4 p-3 rounded-xl bg-blue-50 border border-blue-200">
+                        <p className="text-xs font-semibold text-blue-700">⏳ You said Yes! Waiting for the tutor to respond...</p>
+                      </div>
+                    )}
+                    {slot.status === "completed" && (slot as any).studentProceedIntent === "yes" && (slot as any).tutorProceedIntent === "yes" && (
+                      <div className="mt-4 p-3 rounded-xl bg-green-50 border border-green-200">
+                        <p className="text-xs font-semibold text-green-700">🎉 Matched! Tutor's contact details have been sent to your email. Check your inbox!</p>
+                      </div>
+                    )}
+                    {slot.status === "completed" && (slot as any).studentProceedIntent === "no" && (
+                      <div className="mt-4 p-3 rounded-xl bg-gray-50 border border-gray-200">
+                        <p className="text-xs font-semibold text-gray-500">You chose not to proceed. You can find another tutor in Find a Tutor.</p>
+                      </div>
+                    )}
+                    {slot.status === "completed" && (slot as any).studentProceedIntent === "yes" && (slot as any).tutorProceedIntent === "no" && (
+                      <div className="mt-4 p-3 rounded-xl bg-gray-50 border border-gray-200">
+                        <p className="text-xs font-semibold text-gray-500">The tutor chose not to proceed. EduNest will help you find another tutor.</p>
+                      </div>
                     )}
                   </div>
                 ))

@@ -46,7 +46,7 @@ function formatDate(date: Date | string) {
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "bookings" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "bookings" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches">("inquiries");
   const [tutorForm, setTutorForm] = useState<typeof EMPTY_TUTOR>(EMPTY_TUTOR);
   const [editingTutorId, setEditingTutorId] = useState<number | null>(null);
   const [showTutorForm, setShowTutorForm] = useState(false);
@@ -128,6 +128,10 @@ export default function Admin() {
     onSuccess: () => { refetchDemoSlots(); toast.success("Demo slot status updated"); },
     onError: () => toast.error("Failed to update demo slot status"),
   });
+
+  // Confirmed Matches — must be before early returns
+  const { data: confirmedMatchesList, isLoading: loadingMatches, refetch: refetchMatches } =
+    trpc.confirmedMatch.listAll.useQuery(undefined, { enabled: isAdmin });
 
   if (loading) {
     return (
@@ -239,7 +243,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["inquiries", "bookings", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots"] as const).map(tab => (
+          {(["inquiries", "bookings", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -262,13 +266,15 @@ export default function Admin() {
                 <span className="flex items-center gap-2"><BookOpen size={15} /> Demo Requests {pendingDemoInterests > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingDemoInterests}</span>}</span>
               ) : tab === "demoSlots" ? (
                 <span className="flex items-center gap-2"><Clock size={15} /> Demo Slots {pendingDemoSlots > 0 && <span className="bg-white text-blue-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingDemoSlots}</span>}</span>
+              ) : tab === "confirmedMatches" ? (
+                <span className="flex items-center gap-2"><CheckCircle2 size={15} /> Confirmed Matches <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "confirmedMatches" ? "bg-white/30" : "bg-gray-100 text-gray-600"}`}>{confirmedMatchesList?.length ?? 0}</span></span>
               ) : (
                 <span className="flex items-center gap-2"><UserCheck size={15} /> Manage Tutors <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
               )}
             </button>
           ))}
           <button
-            onClick={() => { refetchInquiries(); refetchBookings(); refetchTutors(); refetchReferrals(); refetchTutorProfiles(); refetchStudentProfiles(); refetchInterests(); refetchDemoInterests(); refetchDemoSlots(); }}
+            onClick={() => { refetchInquiries(); refetchBookings(); refetchTutors(); refetchReferrals(); refetchTutorProfiles(); refetchStudentProfiles(); refetchInterests(); refetchDemoInterests(); refetchDemoSlots(); refetchMatches(); }}
             className="ml-auto flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             <RefreshCw size={15} /> Refresh
@@ -1106,6 +1112,65 @@ export default function Admin() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+      {/* ── Confirmed Matches Tab ── */}
+        {activeTab === "confirmedMatches" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                Confirmed Matches ({confirmedMatchesList?.length ?? 0})
+              </h2>
+              <p className="text-sm text-gray-500">Both tutor and student/parent agreed to proceed. Contact details have been shared via email.</p>
+            </div>
+            {loadingMatches ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="w-8 h-8 border-4 border-[oklch(0.68_0.18_50)] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : !confirmedMatchesList || confirmedMatchesList.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                <CheckCircle2 size={40} className="mx-auto mb-3 opacity-30" style={{ color: "oklch(0.55 0.18 145)" }} />
+                <p className="text-gray-500 font-medium">No confirmed matches yet</p>
+                <p className="text-sm text-gray-400 mt-1">When both tutor and student/parent agree to proceed after a demo, the match will appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {confirmedMatchesList.map((match: any) => (
+                  <div key={match.id} className="bg-white rounded-2xl shadow-sm border p-6" style={{ borderColor: "oklch(0.88 0.12 145)" }}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">🎉 Confirmed Match #{match.id}</span>
+                      <span className="text-xs text-gray-400">{new Date(match.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                      <span className="text-xs text-gray-400 ml-auto">Demo Slot #{match.demoSlotId}</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Tutor Details */}
+                      <div className="p-4 rounded-xl border" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.98 0.005 80)" }}>
+                        <h3 className="font-bold text-sm mb-3" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>👨‍🏫 Tutor Details</h3>
+                        <div className="space-y-1.5 text-sm">
+                          <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Profile ID</span><span className="font-semibold">#{match.tutorProfileId}</span></div>
+                          {match.tutorName && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Name</span><span className="font-semibold">{match.tutorName}</span></div>}
+                          {match.tutorEmail && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Email</span><a href={`mailto:${match.tutorEmail}`} className="font-semibold text-blue-600 hover:underline">{match.tutorEmail}</a></div>}
+                          {match.tutorPhone && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Phone</span><a href={`tel:${match.tutorPhone}`} className="font-semibold text-green-700">{match.tutorPhone}</a></div>}
+                        </div>
+                      </div>
+                      {/* Student/Parent Details */}
+                      <div className="p-4 rounded-xl border" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.98 0.005 80)" }}>
+                        <h3 className="font-bold text-sm mb-3" style={{ color: "oklch(0.55 0.18 270)", fontFamily: "'Poppins', sans-serif" }}>👨‍👧 Student / Parent Details</h3>
+                        <div className="space-y-1.5 text-sm">
+                          <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Profile ID</span><span className="font-semibold">#{match.studentProfileId}</span></div>
+                          {match.studentName && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Name</span><span className="font-semibold">{match.studentName}</span></div>}
+                          {match.studentEmail && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Email</span><a href={`mailto:${match.studentEmail}`} className="font-semibold text-blue-600 hover:underline">{match.studentEmail}</a></div>}
+                          {match.studentPhone && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Phone</span><a href={`tel:${match.studentPhone}`} className="font-semibold text-green-700">{match.studentPhone}</a></div>}
+                          {match.studentArea && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Area</span><span>{match.studentArea}</span></div>}
+                          {match.studentGrade && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Grade</span><span>{match.studentGrade}</span></div>}
+                          {match.studentSubjects && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Subjects</span><span>{match.studentSubjects}</span></div>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

@@ -191,3 +191,16 @@
 
 - [x] Email OTP integration for phone verification (free via Resend — OTP sent to user's registered email)
 - [x] Admin Demo Slots panel with status management (pending_schedule/scheduled/completed/cancelled)
+
+## Round 17 — Post-Demo Proceed Flow & Confirmed Matches
+
+- [ ] Add tutorProceedIntent and studentProceedIntent fields to demo_slots table
+- [ ] Add confirmed_matches table (demoSlotId, tutorProfileId, studentProfileId, matchedAt)
+- [ ] Run db:push for schema changes
+- [ ] Backend: demoSlot.setProceedIntent tRPC procedure (tutor/student sets yes/no)
+- [ ] Backend: auto-create confirmed_match when both parties say yes, send contact reveal emails
+- [ ] Backend: confirmedMatch.listAll admin procedure
+- [ ] Email: sendContactRevealEmail (tutor gets student details, student gets tutor details)
+- [ ] TutorDashboard: show "Demo Scheduled ✓" status label, "Proceed?" buttons after demo completes
+- [ ] StudentPortal: show "Demo Confirmed ✓" status label, "Proceed?" buttons after demo completes
+- [ ] Admin: Confirmed Matches tab with full student + tutor details

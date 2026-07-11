@@ -317,9 +317,37 @@ export const demoSlots = mysqlTable("demo_slots", {
   mode: mysqlEnum("mode", ["home_tuition", "online"]).default("online").notNull(),
   notes: text("notes"),
   status: mysqlEnum("status", ["pending_schedule", "scheduled", "completed", "cancelled"]).default("pending_schedule").notNull(),
+  // Post-demo proceed intent: both parties express yes/no to continue
+  tutorProceedIntent: mysqlEnum("tutorProceedIntent", ["yes", "no"]),
+  studentProceedIntent: mysqlEnum("studentProceedIntent", ["yes", "no"]),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type DemoSlot = typeof demoSlots.$inferSelect;
 export type InsertDemoSlot = typeof demoSlots.$inferInsert;
+
+/**
+ * Confirmed matches — created when both tutor and student/parent say yes after a demo.
+ * Contact details are shared between both parties at this point.
+ */
+export const confirmedMatches = mysqlTable("confirmed_matches", {
+  id: int("id").autoincrement().primaryKey(),
+  demoSlotId: int("demoSlotId").notNull().unique(),       // FK → demo_slots.id
+  tutorProfileId: int("tutorProfileId").notNull(),        // FK → tutor_profiles.id
+  studentProfileId: int("studentProfileId").notNull(),    // FK → student_profiles.id
+  // Snapshot of contact details at time of match (for admin records)
+  tutorName: varchar("tutorName", { length: 128 }),
+  tutorEmail: varchar("tutorEmail", { length: 320 }),
+  tutorPhone: varchar("tutorPhone", { length: 20 }),
+  studentName: varchar("studentName", { length: 128 }),
+  studentEmail: varchar("studentEmail", { length: 320 }),
+  studentPhone: varchar("studentPhone", { length: 20 }),
+  studentArea: varchar("studentArea", { length: 128 }),
+  studentGrade: varchar("studentGrade", { length: 64 }),
+  studentSubjects: text("studentSubjects"),
+  matchedAt: timestamp("matchedAt").defaultNow().notNull(),
+});
+
+export type ConfirmedMatch = typeof confirmedMatches.$inferSelect;
+export type InsertConfirmedMatch = typeof confirmedMatches.$inferInsert;

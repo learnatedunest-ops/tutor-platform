@@ -239,3 +239,139 @@ export async function sendOtpEmail(data: {
     console.warn("[Email] Failed to send OTP email:", err);
   }
 }
+
+/**
+ * Send contact reveal email to tutor — contains full student/parent details.
+ * Sent when both parties confirm they want to proceed after the demo class.
+ */
+export async function sendContactRevealToTutor(data: {
+  tutorEmail: string;
+  tutorName: string;
+  studentName: string;
+  studentEmail: string;
+  studentPhone: string;
+  studentArea: string;
+  studentGrade: string;
+  studentSubjects: string;
+  studentParentName?: string;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn("[Email] RESEND_API_KEY not set — contact reveal email to tutor not sent");
+    return;
+  }
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: data.tutorEmail,
+      subject: `🎉 New Student Match — ${data.studentName} wants to proceed! — EduNest`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #fff;">
+          <div style="background: linear-gradient(135deg, #6C63FF, #5a52e0); padding: 24px 20px; border-radius: 8px 8px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 22px; font-weight: bold;">🎉 You Have a New Student Match!</h1>
+            <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Both you and the student/parent have agreed to proceed.</p>
+          </div>
+          <div style="background: #f9f9f9; padding: 28px 24px; border-radius: 0 0 8px 8px; border: 1px solid #eee;">
+            <p style="color: #555; font-size: 15px; margin: 0 0 20px;">Hi <strong>${data.tutorName}</strong>,</p>
+            <p style="color: #555; font-size: 15px; margin: 0 0 24px;">
+              Great news! Your demo class was a success. Here are the full contact details of your new student:
+            </p>
+            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+              <h3 style="color: #6C63FF; margin: 0 0 14px; font-size: 16px;">👤 Student / Parent Details</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr><td style="padding: 7px 0; color: #666; width: 130px;"><strong>Name</strong></td><td style="padding: 7px 0; color: #333;">${data.studentName}</td></tr>
+                ${data.studentParentName ? `<tr><td style="padding: 7px 0; color: #666;"><strong>Parent Name</strong></td><td style="padding: 7px 0; color: #333;">${data.studentParentName}</td></tr>` : ""}
+                <tr><td style="padding: 7px 0; color: #666;"><strong>Phone</strong></td><td style="padding: 7px 0; color: #333;"><a href="tel:${data.studentPhone}" style="color: #6C63FF; font-weight: bold; font-size: 16px;">${data.studentPhone}</a></td></tr>
+                <tr><td style="padding: 7px 0; color: #666;"><strong>Email</strong></td><td style="padding: 7px 0; color: #333;"><a href="mailto:${data.studentEmail}" style="color: #6C63FF;">${data.studentEmail}</a></td></tr>
+                <tr><td style="padding: 7px 0; color: #666;"><strong>Area</strong></td><td style="padding: 7px 0; color: #333;">${data.studentArea}</td></tr>
+                <tr><td style="padding: 7px 0; color: #666;"><strong>Grade</strong></td><td style="padding: 7px 0; color: #333;">${data.studentGrade}</td></tr>
+                <tr><td style="padding: 7px 0; color: #666;"><strong>Subjects</strong></td><td style="padding: 7px 0; color: #333;">${data.studentSubjects}</td></tr>
+              </table>
+            </div>
+            <p style="color: #888; font-size: 13px; margin: 0 0 20px;">
+              Please reach out to the student/parent directly to schedule your first regular class. Congratulations on the match!
+            </p>
+            <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+              <p style="color: #bbb; font-size: 11px; margin: 0;">EduNest — Best Home Tuition &amp; Tutors in Bengaluru</p>
+              <a href="https://edu-nest.manus.space" style="color: #6C63FF; font-size: 11px; text-decoration: none;">edu-nest.manus.space</a>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`[Email] Contact reveal sent to tutor: ${data.tutorEmail}`);
+  } catch (err) {
+    console.warn("[Email] Failed to send contact reveal to tutor:", err);
+  }
+}
+
+/**
+ * Send contact reveal email to student/parent — contains full tutor details.
+ * Sent when both parties confirm they want to proceed after the demo class.
+ */
+export async function sendContactRevealToStudent(data: {
+  studentEmail: string;
+  studentName: string;
+  tutorName: string;
+  tutorEmail: string;
+  tutorPhone: string;
+  tutorQualification: string;
+  tutorSubjects: string;
+  tutorArea: string;
+  tutorMode: string;
+  tutorBio?: string;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn("[Email] RESEND_API_KEY not set — contact reveal email to student not sent");
+    return;
+  }
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: data.studentEmail,
+      subject: `🎉 Your Tutor Match — ${data.tutorName} is ready to teach! — EduNest`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #fff;">
+          <div style="background: linear-gradient(135deg, #F47920, #e06510); padding: 24px 20px; border-radius: 8px 8px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 22px; font-weight: bold;">🎉 Your Tutor Match is Confirmed!</h1>
+            <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Both you and your tutor have agreed to proceed.</p>
+          </div>
+          <div style="background: #f9f9f9; padding: 28px 24px; border-radius: 0 0 8px 8px; border: 1px solid #eee;">
+            <p style="color: #555; font-size: 15px; margin: 0 0 20px;">Hi <strong>${data.studentName}</strong>,</p>
+            <p style="color: #555; font-size: 15px; margin: 0 0 24px;">
+              Wonderful news! Your demo class went well and your tutor is ready to start regular sessions. Here are their full contact details:
+            </p>
+            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+              <h3 style="color: #F47920; margin: 0 0 14px; font-size: 16px;">🎓 Tutor Details</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr><td style="padding: 7px 0; color: #666; width: 130px;"><strong>Name</strong></td><td style="padding: 7px 0; color: #333;">${data.tutorName}</td></tr>
+                <tr><td style="padding: 7px 0; color: #666;"><strong>Phone</strong></td><td style="padding: 7px 0; color: #333;"><a href="tel:${data.tutorPhone}" style="color: #F47920; font-weight: bold; font-size: 16px;">${data.tutorPhone}</a></td></tr>
+                <tr><td style="padding: 7px 0; color: #666;"><strong>Email</strong></td><td style="padding: 7px 0; color: #333;"><a href="mailto:${data.tutorEmail}" style="color: #F47920;">${data.tutorEmail}</a></td></tr>
+                <tr><td style="padding: 7px 0; color: #666;"><strong>Qualification</strong></td><td style="padding: 7px 0; color: #333;">${data.tutorQualification}</td></tr>
+                <tr><td style="padding: 7px 0; color: #666;"><strong>Subjects</strong></td><td style="padding: 7px 0; color: #333;">${data.tutorSubjects}</td></tr>
+                <tr><td style="padding: 7px 0; color: #666;"><strong>Area</strong></td><td style="padding: 7px 0; color: #333;">${data.tutorArea}</td></tr>
+                <tr><td style="padding: 7px 0; color: #666;"><strong>Mode</strong></td><td style="padding: 7px 0; color: #333; text-transform: capitalize;">${data.tutorMode.replace("_", " ")}</td></tr>
+              </table>
+              ${data.tutorBio ? `
+              <div style="margin-top: 12px; padding: 10px; background: #fef9f5; border-left: 3px solid #F47920; border-radius: 4px;">
+                <strong style="color: #666; font-size: 12px;">About the Tutor:</strong>
+                <p style="color: #555; margin: 6px 0 0; font-size: 13px; line-height: 1.5;">${data.tutorBio}</p>
+              </div>` : ""}
+            </div>
+            <p style="color: #888; font-size: 13px; margin: 0 0 20px;">
+              Please contact your tutor directly to schedule your first regular class. Best of luck with your learning journey!
+            </p>
+            <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+              <p style="color: #bbb; font-size: 11px; margin: 0;">EduNest — Best Home Tuition &amp; Tutors in Bengaluru</p>
+              <a href="https://edu-nest.manus.space" style="color: #F47920; font-size: 11px; text-decoration: none;">edu-nest.manus.space</a>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`[Email] Contact reveal sent to student: ${data.studentEmail}`);
+  } catch (err) {
+    console.warn("[Email] Failed to send contact reveal to student:", err);
+  }
+}

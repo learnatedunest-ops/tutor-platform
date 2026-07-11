@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { notifyOwner } from "./_core/notification";
-import { sendDemoBookingEmail, sendInquiryEmail, sendOtpEmail, sendTutorApplicationEmail } from "./email";
+import { sendContactRevealToStudent, sendContactRevealToTutor, sendDemoBookingEmail, sendInquiryEmail, sendOtpEmail, sendTutorApplicationEmail } from "./email";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
@@ -61,6 +61,12 @@ import {
   updateDemoSlotSchedule,
   updateDemoSlotStatus,
   getAllDemoSlots,
+  // Proceed intent & confirmed matches
+  setDemoSlotProceedIntent,
+  getDemoSlotById,
+  getConfirmedMatchBySlotId,
+  createConfirmedMatch,
+  getAllConfirmedMatches,
 } from "./db";
 import { z } from "zod";
 
@@ -763,6 +769,125 @@ export const appRouter = router({
         await updateDemoSlotStatus(input.id, input.status);
         return { success: true };
       }),
+
+    // Tutor or Student: set proceed intent after demo completes
+    // party is inferred from the user's role (tutor profile vs student profile)
+    setProceedIntent: protectedProcedure
+      .input(z.object({
+        slotId: z.number(),
+        intent: z.enum(["yes", "no"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Determine if caller is tutor or student by checking their profile
+        const tutorProfile = await getTutorProfileByUserId(ctx.user.id);
+        const studentProfile = await getStudentProfileByUserId(ctx.user.id);
+
+        if (!tutorProfile && !studentProfile) {
+          throw new Error("No profile found. Please complete your profile first.");
+        }
+
+        // Verify the slot belongs to this user
+        let party: "tutor" | "student";
+        if (tutorProfile) {
+          const tutorSlots = await getDemoSlotsByTutor(tutorProfile.id);
+          if (!tutorSlots.find(s => s.id === input.slotId)) {
+            throw new Error("Demo slot not found or access denied.");
+          }
+          party = "tutor";
+        } else {
+          const studentSlots = await getDemoSlotsByStudent(studentProfile!.id);
+          if (!studentSlots.find(s => s.id === input.slotId)) {
+            throw new Error("Demo slot not found or access denied.");
+          }
+          party = "student";
+        }
+
+        // Update intent
+        const updatedSlot = await setDemoSlotProceedIntent(input.slotId, party, input.intent);
+        if (!updatedSlot) throw new Error("Failed to update proceed intent.");
+
+        // Check if both parties have now said yes → create confirmed match
+        if (updatedSlot.tutorProceedIntent === "yes" && updatedSlot.studentProceedIntent === "yes") {
+          // Avoid duplicate matches
+          const existing = await getConfirmedMatchBySlotId(input.slotId);
+          if (!existing) {
+            // Fetch full profiles for contact details
+            const tProfile = await getTutorProfileByUserId(ctx.user.id) ??
+              // If current user is student, we need to look up tutor by profile ID
+              (await (async () => {
+                const allTutors = await getAllTutorProfiles();
+                return allTutors.find(t => t.id === updatedSlot.tutorProfileId) ?? null;
+              })());
+            const sProfile = await getStudentProfileByUserId(ctx.user.id) ??
+              (await (async () => {
+                const allStudents = await getAllStudentProfiles();
+                return allStudents.find(s => s.id === updatedSlot.studentProfileId) ?? null;
+              })());
+
+            // Look up user emails for both parties
+            const tutorUser = tProfile ? await getUserById(tProfile.userId) : null;
+            const studentUser = sProfile ? await getUserById(sProfile.userId) : null;
+
+            await createConfirmedMatch({
+              demoSlotId: input.slotId,
+              tutorProfileId: updatedSlot.tutorProfileId,
+              studentProfileId: updatedSlot.studentProfileId,
+              tutorName: tProfile?.name ?? null,
+              tutorEmail: tutorUser?.email ?? null,
+              tutorPhone: tProfile?.phone ?? null,
+              studentName: sProfile?.name ?? null,
+              studentEmail: studentUser?.email ?? null,
+              studentPhone: sProfile?.phone ?? null,
+              studentArea: sProfile?.area ?? null,
+              studentGrade: sProfile?.grade ?? null,
+              studentSubjects: sProfile?.subjects ?? null,
+            });
+
+            // Send contact reveal emails to both parties
+            if (tutorUser?.email && tProfile) {
+              sendContactRevealToTutor({
+                tutorEmail: tutorUser.email,
+                tutorName: tProfile.name ?? "Tutor",
+                studentName: sProfile?.name ?? "Student",
+                studentEmail: studentUser?.email ?? "",
+                studentPhone: sProfile?.phone ?? "",
+                studentArea: sProfile?.area ?? "",
+                studentGrade: sProfile?.grade ?? "",
+                studentSubjects: sProfile?.subjects ?? "",
+              }).catch(() => {});
+            }
+            if (studentUser?.email && sProfile) {
+              sendContactRevealToStudent({
+                studentEmail: studentUser.email,
+                studentName: sProfile.name ?? "Student",
+                tutorName: tProfile?.name ?? "Tutor",
+                tutorEmail: tutorUser?.email ?? "",
+                tutorPhone: tProfile?.phone ?? "",
+                tutorQualification: tProfile?.qualification ?? "",
+                tutorSubjects: tProfile?.subjects ?? "",
+                tutorArea: tProfile?.area ?? "",
+                tutorMode: tProfile?.mode ?? "online",
+                tutorBio: tProfile?.bio ?? undefined,
+              }).catch(() => {});
+            }
+
+            // Notify owner
+            await notifyOwner({
+              title: `🎉 New Confirmed Match!`,
+              content: `Tutor Profile #${updatedSlot.tutorProfileId} and Student Profile #${updatedSlot.studentProfileId} have both agreed to proceed after their demo class. Contact details have been shared via email.`,
+            }).catch(() => {});
+
+            return { success: true, matched: true };
+          }
+        }
+
+        return { success: true, matched: false };
+      }),
+  }),
+
+  // ─── Confirmed Matches (Admin) ───────────────────────────────────────────────
+  confirmedMatch: router({
+    listAll: adminProcedure.query(async () => getAllConfirmedMatches()),
   }),
 });
 export type AppRouter = typeof appRouter;

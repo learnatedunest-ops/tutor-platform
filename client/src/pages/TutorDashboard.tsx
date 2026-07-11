@@ -43,10 +43,23 @@ export default function TutorDashboard() {
   );
 
   // Get demo slots for this tutor
-  const { data: demoSlots, isLoading: slotsLoading } = trpc.demoSlot.tutorSlots.useQuery(
+  const { data: demoSlots, isLoading: slotsLoading, refetch: refetchSlots } = trpc.demoSlot.tutorSlots.useQuery(
     undefined,
     { enabled: isAuthenticated && myProfile?.status === "approved" }
   );
+
+  // Proceed intent mutation
+  const setProceedIntent = trpc.demoSlot.setProceedIntent.useMutation({
+    onSuccess: (data) => {
+      refetchSlots();
+      if (data.matched) {
+        toast.success("🎉 It's a match! Both parties agreed. Contact details have been shared via email.");
+      } else {
+        toast.success("Your response has been recorded.");
+      }
+    },
+    onError: (err) => toast.error(err.message ?? "Failed to record response"),
+  });
 
   // Get nearby students (only runs once location is available)
   const { data: nearbyStudents, isLoading: studentsLoading, refetch } =
@@ -320,8 +333,8 @@ export default function TutorDashboard() {
                             "bg-orange-100 text-orange-700"
                           }`}>
                             {slot.status === "pending_schedule" ? "Awaiting Schedule" :
-                             slot.status === "scheduled" ? "Scheduled" :
-                             slot.status === "completed" ? "Completed" : "Cancelled"}
+                             slot.status === "scheduled" ? "📅 Demo Scheduled ✓" :
+                             slot.status === "completed" ? "Demo Completed" : "Cancelled"}
                           </span>
                           <span className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>
                             Student Profile #{slot.studentProfileId}
@@ -341,6 +354,56 @@ export default function TutorDashboard() {
                         <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)" }}>
                           Mode: {slot.mode === "online" ? "Online" : slot.mode === "home_tuition" ? "Home Tuition" : "Both"}
                         </p>
+
+                        {/* Post-demo proceed intent UI */}
+                        {slot.status === "completed" && !(slot as any).tutorProceedIntent && (
+                          <div className="mt-3 p-3 rounded-xl border-2" style={{ borderColor: "oklch(0.88 0.12 50)", backgroundColor: "oklch(0.98 0.03 50)" }}>
+                            <p className="text-sm font-semibold mb-2" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+                              🎓 Would you like to proceed with this student?
+                            </p>
+                            <p className="text-xs mb-3" style={{ color: "oklch(0.55 0.01 270)" }}>
+                              If both you and the student/parent agree, EduNest will share each other's contact details.
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setProceedIntent.mutate({ slotId: slot.id, intent: "yes" })}
+                                disabled={setProceedIntent.isPending}
+                                className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+                                style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
+                              >
+                                {setProceedIntent.isPending ? <Loader2 size={14} className="animate-spin mx-auto" /> : "✔ Yes, Proceed"}
+                              </button>
+                              <button
+                                onClick={() => setProceedIntent.mutate({ slotId: slot.id, intent: "no" })}
+                                disabled={setProceedIntent.isPending}
+                                className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold border transition-all hover:bg-red-50"
+                                style={{ borderColor: "oklch(0.88 0.12 20)", color: "oklch(0.55 0.18 20)" }}
+                              >
+                                ✕ No Thanks
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {slot.status === "completed" && (slot as any).tutorProceedIntent === "yes" && !(slot as any).studentProceedIntent && (
+                          <div className="mt-3 p-3 rounded-xl bg-blue-50 border border-blue-200">
+                            <p className="text-xs font-semibold text-blue-700">⏳ You said Yes! Waiting for the student/parent to respond...</p>
+                          </div>
+                        )}
+                        {slot.status === "completed" && (slot as any).tutorProceedIntent === "yes" && (slot as any).studentProceedIntent === "yes" && (
+                          <div className="mt-3 p-3 rounded-xl bg-green-50 border border-green-200">
+                            <p className="text-xs font-semibold text-green-700">🎉 Matched! Contact details have been shared with the student/parent via email.</p>
+                          </div>
+                        )}
+                        {slot.status === "completed" && (slot as any).tutorProceedIntent === "no" && (
+                          <div className="mt-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
+                            <p className="text-xs font-semibold text-gray-500">You declined to proceed with this student.</p>
+                          </div>
+                        )}
+                        {slot.status === "completed" && (slot as any).tutorProceedIntent === "yes" && (slot as any).studentProceedIntent === "no" && (
+                          <div className="mt-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
+                            <p className="text-xs font-semibold text-gray-500">The student/parent chose not to proceed. Better luck next time!</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

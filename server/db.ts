@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile, StudentDemoInterest, studentDemoInterests, OtpVerification, otpVerifications, DemoSlot, demoSlots } from "../drizzle/schema";
+import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile, StudentDemoInterest, studentDemoInterests, OtpVerification, otpVerifications, DemoSlot, demoSlots, ConfirmedMatch, confirmedMatches } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -558,4 +558,66 @@ export async function getAllDemoSlots(): Promise<DemoSlot[]> {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(demoSlots).orderBy(desc(demoSlots.createdAt));
+}
+
+// ─── Proceed Intent & Confirmed Matches ─────────────────────────────────────
+
+/** Set tutor or student proceed intent on a demo slot */
+export async function setDemoSlotProceedIntent(
+  id: number,
+  party: "tutor" | "student",
+  intent: "yes" | "no"
+): Promise<DemoSlot | null> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  if (party === "tutor") {
+    await db.update(demoSlots).set({ tutorProceedIntent: intent }).where(eq(demoSlots.id, id));
+  } else {
+    await db.update(demoSlots).set({ studentProceedIntent: intent }).where(eq(demoSlots.id, id));
+  }
+  const rows = await db.select().from(demoSlots).where(eq(demoSlots.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+/** Get a single demo slot by ID */
+export async function getDemoSlotById(id: number): Promise<DemoSlot | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(demoSlots).where(eq(demoSlots.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+/** Check if a confirmed match already exists for a demo slot */
+export async function getConfirmedMatchBySlotId(demoSlotId: number): Promise<ConfirmedMatch | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(confirmedMatches).where(eq(confirmedMatches.demoSlotId, demoSlotId)).limit(1);
+  return rows[0] ?? null;
+}
+
+/** Create a confirmed match record */
+export async function createConfirmedMatch(data: {
+  demoSlotId: number;
+  tutorProfileId: number;
+  studentProfileId: number;
+  tutorName?: string | null;
+  tutorEmail?: string | null;
+  tutorPhone?: string | null;
+  studentName?: string | null;
+  studentEmail?: string | null;
+  studentPhone?: string | null;
+  studentArea?: string | null;
+  studentGrade?: string | null;
+  studentSubjects?: string | null;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(confirmedMatches).values(data);
+}
+
+/** List all confirmed matches (admin) */
+export async function getAllConfirmedMatches(): Promise<ConfirmedMatch[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(confirmedMatches).orderBy(desc(confirmedMatches.matchedAt));
 }
