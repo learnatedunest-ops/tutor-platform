@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { notifyOwner } from "./_core/notification";
-import { sendContactRevealToStudent, sendContactRevealToTutor, sendDemoBookingEmail, sendInquiryEmail, sendOtpEmail, sendTutorApplicationEmail } from "./email";
+import { sendContactRevealToStudent, sendContactRevealToTutor, sendDemoBookingEmail, sendInquiryEmail, sendOtpEmail, sendParentPayNowEmail, sendTutorApplicationEmail, sendTutorFeePaidEmail } from "./email";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
@@ -85,6 +85,7 @@ import {
   getSessionLogById,
   updateSessionLogSheet,
   updateSessionLogPaymentStatus,
+  markSessionLogParentPaid,
   getAllSessionLogs,
   getSessionLogsByTutor,
   getSessionLogsByStudent,
@@ -384,6 +385,7 @@ export const appRouter = router({
         longitude: z.number().optional(),
         fullAddress: z.string().max(1000).optional(),
         area: z.string().max(128).optional(),
+        upiId: z.string().max(64).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const profile = await upsertTutorProfile(ctx.user.id, {
@@ -1271,17 +1273,69 @@ export const appRouter = router({
           content: `Tutor uploaded session log sheet for match #${input.matchId}. Please review and approve payment.`,
         }).catch(() => {});
 
+        // Email parent/student to pay now
+        // Look up student profile by studentProfileId from the match
+        const { getStudentProfileById } = await import('./db');
+        const studentProf = await getStudentProfileById(match.studentProfileId).catch(() => null);
+        if (studentProf?.email) {
+          await sendParentPayNowEmail({
+            parentEmail: studentProf.email,
+            parentName: studentProf.name ?? 'Parent',
+            tutorName: profile.name,
+            amount: studentProf.budget ? String(studentProf.budget) : null,
+          }).catch(() => {});
+        }
+
         return { success: true, url };
+      }),
+
+    /**
+     * Parent/Student: mark that they have paid EduNest via UPI.
+     * Sets paymentStatus → parent_paid; admin will then approve and notify tutor.
+     */
+    markParentPaid: protectedProcedure
+      .input(z.object({
+        logId: z.number().int().positive(),
+        note: z.string().max(256).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Verify the log belongs to this student
+        const log = await getSessionLogById(input.logId);
+        if (!log) throw new Error('Session log not found');
+        const profile = await getStudentProfileByUserId(ctx.user.id);
+        if (!profile || log.studentProfileId !== profile.id) throw new Error('Not authorised');
+        if (log.paymentStatus !== 'sheet_uploaded') throw new Error('Sheet must be uploaded before payment can be marked');
+        await markSessionLogParentPaid(input.logId, input.note);
+        // Notify admin
+        await notifyOwner({
+          title: '💰 Parent Marked Payment — Awaiting Approval',
+          content: `Parent for session log #${input.logId} (${log.studentName ?? 'unknown'}) has marked payment as done via UPI. Please verify and approve in Admin → Session Payments.`,
+        }).catch(() => {});
+        return { success: true };
       }),
 
     /** Admin: list all session logs */
     listAll: adminProcedure.query(async () => getAllSessionLogs()),
 
-    /** Admin: approve payment */
+    /** Admin: approve payment — sets payment_processed and emails tutor */
     approvePayment: adminProcedure
       .input(z.object({ logId: z.number().int().positive() }))
       .mutation(async ({ input }) => {
-        await updateSessionLogPaymentStatus(input.logId, "payment_processed");
+        const log = await getSessionLogById(input.logId);
+        if (!log) throw new Error('Session log not found');
+        await updateSessionLogPaymentStatus(input.logId, 'payment_processed');
+        // Look up tutor's UPI ID and email to notify them
+        const { getTutorProfileById } = await import('./db');
+        const tutorProfile = await getTutorProfileById(log.tutorProfileId).catch(() => null);
+        if (tutorProfile?.email) {
+          await sendTutorFeePaidEmail({
+            tutorEmail: tutorProfile.email,
+            tutorName: tutorProfile.name,
+            studentName: log.studentName ?? 'your student',
+            upiId: (tutorProfile as any).upiId ?? null,
+            amount: null, // amount not stored separately yet
+          }).catch(() => {});
+        }
         return { success: true };
       }),
 
@@ -1289,7 +1343,7 @@ export const appRouter = router({
     resetPayment: adminProcedure
       .input(z.object({ logId: z.number().int().positive() }))
       .mutation(async ({ input }) => {
-        await updateSessionLogPaymentStatus(input.logId, "sheet_uploaded");
+        await updateSessionLogPaymentStatus(input.logId, 'sheet_uploaded');
         return { success: true };
       }),
   }),

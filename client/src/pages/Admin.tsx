@@ -1189,16 +1189,23 @@ export default function Admin() {
             ) : (
               <div className="space-y-4">
                 {(sessionLogsList as Array<any>).map((log) => (
-                  <div key={log.id} className="bg-white rounded-2xl shadow-sm border p-6" style={{ borderColor: log.paymentStatus === 'payment_processed' ? 'oklch(0.88 0.12 145)' : log.paymentStatus === 'sheet_uploaded' ? 'oklch(0.88 0.12 50)' : 'oklch(0.92 0.005 80)' }}>
+                  <div key={log.id} className="bg-white rounded-2xl shadow-sm border p-6" style={{
+                    borderColor: log.paymentStatus === 'payment_processed' ? 'oklch(0.88 0.12 145)'
+                      : log.paymentStatus === 'parent_paid' ? 'oklch(0.82 0.15 290)'
+                      : log.paymentStatus === 'sheet_uploaded' ? 'oklch(0.88 0.12 50)'
+                      : 'oklch(0.92 0.005 80)'
+                  }}>
                     <div className="flex flex-wrap items-center gap-3 mb-4">
                       <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Log #{log.id}</span>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                         log.paymentStatus === 'payment_processed' ? 'bg-green-100 text-green-700' :
+                        log.paymentStatus === 'parent_paid' ? 'bg-purple-100 text-purple-700' :
                         log.paymentStatus === 'sheet_uploaded' ? 'bg-orange-100 text-orange-700' :
                         'bg-yellow-100 text-yellow-700'
                       }`}>
-                        {log.paymentStatus === 'payment_processed' ? '✅ Payment Processed' :
-                         log.paymentStatus === 'sheet_uploaded' ? '📋 Sheet Uploaded — Awaiting Payment' :
+                        {log.paymentStatus === 'payment_processed' ? '✅ Payment Processed — Tutor Notified' :
+                         log.paymentStatus === 'parent_paid' ? '💰 Parent Paid — Awaiting Your Approval' :
+                         log.paymentStatus === 'sheet_uploaded' ? '📋 Sheet Uploaded — Awaiting Parent Payment' :
                          '⏳ Pending Sheet Upload'}
                       </span>
                       <span className="text-xs text-gray-400 ml-auto">Created {new Date(log.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
@@ -1215,6 +1222,19 @@ export default function Admin() {
                         <p className="text-xs text-gray-500">Profile ID: #{log.studentProfileId}</p>
                       </div>
                     </div>
+                    {/* Parent payment details */}
+                    {log.parentPaid && (
+                      <div className="mb-4 p-3 rounded-xl border" style={{ borderColor: 'oklch(0.82 0.15 290)', backgroundColor: 'oklch(0.97 0.03 290)' }}>
+                        <p className="text-xs font-bold mb-1" style={{ color: 'oklch(0.4 0.15 290)' }}>💳 Parent Payment Details</p>
+                        <p className="text-sm text-gray-700">Parent marked payment done via UPI</p>
+                        {log.parentPaidAt && (
+                          <p className="text-xs text-gray-500 mt-0.5">Paid at: {new Date(log.parentPaidAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                        )}
+                        {log.parentPaymentNote && (
+                          <p className="text-xs text-gray-600 mt-1">Note: {log.parentPaymentNote}</p>
+                        )}
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-2 items-center">
                       {/* View uploaded sheet */}
                       {log.uploadedSheetUrl ? (
@@ -1231,15 +1251,16 @@ export default function Admin() {
                           <Upload size={13} /> No sheet uploaded yet
                         </span>
                       )}
-                      {/* Approve payment button */}
-                      {log.paymentStatus === 'sheet_uploaded' && (
+                      {/* Approve payment button — only when parent has marked paid */}
+                      {log.paymentStatus === 'parent_paid' && (
                         <button
                           onClick={() => approvePaymentMutation.mutate({ logId: log.id })}
                           disabled={approvePaymentMutation.isPending}
-                          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-green-500 text-white hover:bg-green-600 transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-colors disabled:opacity-50"
+                          style={{ backgroundColor: 'oklch(0.55 0.18 145)' }}
                         >
                           {approvePaymentMutation.isPending ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={13} />}
-                          Approve Payment to Tutor
+                          ✅ Approve & Notify Tutor
                         </button>
                       )}
                       {/* Undo payment (reset to sheet_uploaded) */}

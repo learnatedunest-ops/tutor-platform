@@ -287,15 +287,17 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs }: { slot: any; mySess
               </a>
             )}
 
-            {/* Payment badge */}
-            {log && (log.paymentStatus === 'sheet_uploaded' || log.paymentStatus === 'payment_processed') && (
+            {/* Payment badge — tutor only sees sheet_uploaded and payment_processed; parent_paid is hidden */}
+            {log && (log.paymentStatus === 'sheet_uploaded' || log.paymentStatus === 'parent_paid' || log.paymentStatus === 'payment_processed') && (
               <span className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold ${
                 log.paymentStatus === 'payment_processed'
                   ? 'bg-green-100 text-green-700'
                   : 'bg-yellow-100 text-yellow-700'
               }`}>
                 <CreditCard size={13} />
-                {log.paymentStatus === 'payment_processed' ? '✅ Payment Processed' : '⏳ Payment Pending Review'}
+                {log.paymentStatus === 'payment_processed'
+                  ? '✅ Fee Paid — EduNest has processed your payment'
+                  : '⏳ Fee Pending — Awaiting EduNest Processing'}
               </span>
             )}
 
@@ -340,14 +342,14 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs }: { slot: any; mySess
               After all sessions are complete, take a clear photo of the signed sheet and upload it here. EduNest will verify and process your payment.
             </p>
           )}
-          {log?.paymentStatus === 'sheet_uploaded' && (
+          {(log?.paymentStatus === 'sheet_uploaded' || log?.paymentStatus === 'parent_paid') && (
             <p className="text-xs text-yellow-700">
-              ⏳ Sheet received! EduNest is reviewing it. Payment will be processed shortly.
+              ⏳ Sheet received! EduNest is processing your payment. You'll receive an email once the fee is transferred to your UPI ID.
             </p>
           )}
           {log?.paymentStatus === 'payment_processed' && (
             <p className="text-xs text-green-600 font-semibold">
-              🎉 Payment has been processed by EduNest. Thank you!
+              🎉 Your fee has been processed by EduNest and sent to your UPI ID. Thank you!
             </p>
           )}
         </div>

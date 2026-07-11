@@ -418,3 +418,129 @@ export async function sendContactRevealToStudent(data: {
     console.warn("[Email] Failed to send contact reveal to student:", err);
   }
 }
+
+/**
+ * Notify parent/student that the tutor has uploaded the session sheet
+ * and they should now pay EduNest via UPI.
+ */
+export async function sendParentPayNowEmail(data: {
+  parentEmail: string;
+  parentName: string;
+  tutorName: string;
+  amount?: string | null;
+  portalUrl?: string;
+}): Promise<void> {
+  const transport = getGmailTransport();
+  if (!transport) {
+    console.warn("[Email] Gmail SMTP not configured — parent pay-now email not sent");
+    return;
+  }
+  const upiId = "8618635627@yescred";
+  const portalUrl = data.portalUrl ?? "https://edu-nest.manus.space/student-portal";
+  try {
+    await transport.sendMail({
+      from: FROM_EMAIL_GMAIL,
+      to: data.parentEmail,
+      subject: `📋 Session Sheet Ready — Please Pay Tutor Fee | EduNest`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #fff;">
+          <div style="background: linear-gradient(135deg, #F47920, #e06510); padding: 24px 20px; border-radius: 8px 8px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 22px; font-weight: bold;">Session Sheet Ready!</h1>
+            <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">EduNest — Best Home Tuition &amp; Tutors</p>
+          </div>
+          <div style="background: #f9f9f9; padding: 28px 24px; border-radius: 0 0 8px 8px; border: 1px solid #eee;">
+            <p style="color: #555; font-size: 15px; margin: 0 0 16px;">Hi <strong>${data.parentName}</strong>,</p>
+            <p style="color: #555; font-size: 15px; margin: 0 0 20px;">
+              Your tutor <strong>${data.tutorName}</strong> has uploaded the completed session sheet.
+              Please pay the tutor fee to EduNest via UPI to confirm your classes.
+            </p>
+            <div style="background: #fff; border: 2px solid #F47920; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px;">
+              <p style="color: #888; font-size: 13px; margin: 0 0 8px;">Pay to EduNest UPI ID</p>
+              <p style="font-size: 22px; font-weight: bold; color: #F47920; letter-spacing: 1px; margin: 0 0 4px;">${upiId}</p>
+              ${data.amount ? `<p style="color: #333; font-size: 16px; font-weight: bold; margin: 8px 0 0;">Amount: ₹${data.amount}</p>` : ""}
+              <p style="color: #888; font-size: 12px; margin: 12px 0 0;">
+                Open any UPI app (GPay, PhonePe, Paytm, BHIM) and pay to the above UPI ID.
+              </p>
+            </div>
+            <div style="text-align: center; margin-bottom: 20px;">
+              <a href="${portalUrl}" style="background: #F47920; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 15px; display: inline-block;">
+                Go to My Classes →
+              </a>
+            </div>
+            <p style="color: #888; font-size: 13px; margin: 0;">
+              After paying, click <strong>"I've Paid — Notify EduNest"</strong> in your portal so our team can verify and confirm.
+            </p>
+            <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+              <p style="color: #bbb; font-size: 11px; margin: 0;">EduNest — Best Home Tuition &amp; Tutors in Bengaluru</p>
+              <a href="https://edu-nest.manus.space" style="color: #F47920; font-size: 11px; text-decoration: none;">edu-nest.manus.space</a>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`[Email] Pay-now email sent to parent: ${data.parentEmail}`);
+  } catch (err) {
+    console.warn("[Email] Failed to send parent pay-now email:", err);
+  }
+}
+
+/**
+ * Notify tutor that EduNest has approved payment and transferred the fee.
+ * Sent when admin clicks "Approve Payment" in the admin panel.
+ */
+export async function sendTutorFeePaidEmail(data: {
+  tutorEmail: string;
+  tutorName: string;
+  studentName: string;
+  upiId?: string | null;
+  amount?: string | null;
+}): Promise<void> {
+  const transport = getGmailTransport();
+  if (!transport) {
+    console.warn("[Email] Gmail SMTP not configured — tutor fee-paid email not sent");
+    return;
+  }
+  try {
+    await transport.sendMail({
+      from: FROM_EMAIL_GMAIL,
+      to: data.tutorEmail,
+      subject: `💰 Your Fee Has Been Processed — EduNest`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #fff;">
+          <div style="background: linear-gradient(135deg, #16A34A, #15803d); padding: 24px 20px; border-radius: 8px 8px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 22px; font-weight: bold;">Fee Processed! 🎉</h1>
+            <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">EduNest — Best Home Tuition &amp; Tutors</p>
+          </div>
+          <div style="background: #f9f9f9; padding: 28px 24px; border-radius: 0 0 8px 8px; border: 1px solid #eee;">
+            <p style="color: #555; font-size: 15px; margin: 0 0 16px;">Hi <strong>${data.tutorName}</strong>,</p>
+            <p style="color: #555; font-size: 15px; margin: 0 0 20px;">
+              Great news! EduNest has processed your fee for the session with <strong>${data.studentName}</strong>.
+            </p>
+            ${data.upiId ? `
+            <div style="background: #fff; border: 2px solid #16A34A; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px;">
+              <p style="color: #888; font-size: 13px; margin: 0 0 8px;">Payment sent to your UPI ID</p>
+              <p style="font-size: 20px; font-weight: bold; color: #16A34A; letter-spacing: 1px; margin: 0;">${data.upiId}</p>
+              ${data.amount ? `<p style="color: #333; font-size: 16px; font-weight: bold; margin: 8px 0 0;">Amount: ₹${data.amount}</p>` : ""}
+            </div>` : `
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+              <p style="color: #166534; font-size: 14px; margin: 0;">
+                ✅ Your payment has been approved. Please check your UPI app for the transfer.
+                If you haven't registered a UPI ID yet, please update it in your tutor profile.
+              </p>
+            </div>`}
+            <p style="color: #888; font-size: 13px; margin: 0;">
+              Thank you for being a valued tutor on EduNest. Keep up the great work!
+            </p>
+            <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+              <p style="color: #bbb; font-size: 11px; margin: 0;">EduNest — Best Home Tuition &amp; Tutors in Bengaluru</p>
+              <a href="https://edu-nest.manus.space" style="color: #F47920; font-size: 11px; text-decoration: none;">edu-nest.manus.space</a>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`[Email] Fee-paid email sent to tutor: ${data.tutorEmail}`);
+  } catch (err) {
+    console.warn("[Email] Failed to send tutor fee-paid email:", err);
+  }
+}

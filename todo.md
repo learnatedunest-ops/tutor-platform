@@ -320,3 +320,20 @@
 - [x] Fix session log sheet upload — file selected but not received by server; replace busboy multipart with tRPC base64 upload to avoid multipart parsing issues in production
 - [x] Add My Classes section to Tutor Dashboard — show completed demo cards with full student details and upload sheet UI
 - [x] 15/15 tests passing, 0 TypeScript errors
+
+## Round 29 — Manual UPI Payment Flow
+- [x] DB: add upiId field to tutor_profiles table; run db:push
+- [x] DB: add parentPaid (boolean), parentPaidAt (timestamp), parentPaymentNote to session_logs; run db:push
+- [x] Backend: sessionLog.markParentPaid procedure (parent marks they've paid)
+- [x] Backend: sessionLog.adminApprovePayment procedure — sets paymentStatus=payment_processed, notifies tutor via email
+- [x] Backend: sessionLog.myLogsAsStudent procedure (student/parent can query their session logs)
+- [x] TutorSetup: add UPI ID field (step 1 or step 4) with validation
+- [x] StudentPortal: after tutor uploads sheet, show "Pay Now" card with EduNest UPI ID (8618635627@yescred), UPI QR code, amount, and "I've Paid — Notify EduNest" button
+- [x] StudentPortal: after parent marks paid, show "Payment Under Review by EduNest" state
+- [x] StudentPortal: after admin approves, show "Payment Processed ✅ — EduNest has paid your tutor" state
+- [x] Admin Session Payments tab: list all sessions with parentPaid=true and paymentStatus=sheet_uploaded; show Approve Payment button
+- [x] Admin approval: set paymentStatus=payment_processed, send tutor fee-paid email with their UPI ID
+- [x] TutorDashboard My Classes: show "Fee Pending" until admin approves, then "Fee Paid ✅" (never show parent paid status)
+- [x] Email: parent gets pay-now email when tutor uploads sheet (with EduNest UPI + amount)
+- [x] Email: tutor gets fee-paid email when admin approves (with their UPI ID + amount)
+- [x] 15/15 tests passing, 0 TypeScript errors

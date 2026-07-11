@@ -283,6 +283,13 @@ export async function getTutorProfileByUserId(userId: number): Promise<TutorProf
   return result[0] ?? null;
 }
 
+export async function getTutorProfileById(id: number): Promise<TutorProfile | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(tutorProfiles).where(eq(tutorProfiles.id, id)).limit(1);
+  return result[0] ?? null;
+}
+
 export async function getAllTutorProfiles(): Promise<TutorProfile[]> {
   const db = await getDb();
   if (!db) return [];
@@ -317,6 +324,13 @@ export async function upsertStudentProfile(
   }
   const result = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, userId)).limit(1);
   return result[0];
+}
+
+export async function getStudentProfileById(id: number): Promise<StudentProfile | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(studentProfiles).where(eq(studentProfiles.id, id)).limit(1);
+  return result[0] ?? null;
 }
 
 export async function getStudentProfileByUserId(userId: number): Promise<StudentProfile | null> {
@@ -952,8 +966,17 @@ export async function updateSessionLogSheet(id: number, uploadedSheetUrl: string
     .where(eq(sessionLogs.id, id));
 }
 
+/** Parent: mark that they have paid EduNest */
+export async function markSessionLogParentPaid(id: number, note?: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(sessionLogs)
+    .set({ parentPaid: true, parentPaidAt: new Date(), parentPaymentNote: note ?? null, paymentStatus: "parent_paid" })
+    .where(eq(sessionLogs.id, id));
+}
+
 /** Admin: update payment status */
-export async function updateSessionLogPaymentStatus(id: number, status: "pending" | "sheet_uploaded" | "payment_processed"): Promise<void> {
+export async function updateSessionLogPaymentStatus(id: number, status: "pending" | "sheet_uploaded" | "parent_paid" | "payment_processed"): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const updates: Partial<SessionLog> = { paymentStatus: status };

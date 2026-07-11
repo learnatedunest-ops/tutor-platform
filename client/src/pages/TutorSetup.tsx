@@ -50,13 +50,14 @@ interface FormData {
   longitude: number | null;
   fullAddress: string;
   area: string;
+  upiId: string;
 }
 
 const INITIAL: FormData = {
   name: "", email: "", phone: "", qualification: "", subjects: "",
   experience: "", boards: "CBSE, ICSE", languages: "English, Kannada",
   mode: "both", bio: "", education: "", workExperience: "",
-  latitude: null, longitude: null, fullAddress: "", area: "",
+  latitude: null, longitude: null, fullAddress: "", area: "", upiId: "",
 };
 
 function LocationPicker({ onLocation }: { onLocation: (lat: number, lng: number, address: string) => void }) {
@@ -189,6 +190,7 @@ export default function TutorSetup() {
         longitude: existingProfile.longitude ? parseFloat(existingProfile.longitude) : null,
         fullAddress: existingProfile.fullAddress ?? "",
         area: existingProfile.area ?? "",
+        upiId: (existingProfile as any).upiId ?? "",
       }));
     }
   }, [existingProfile]);
@@ -400,6 +402,21 @@ export default function TutorSetup() {
                   onChange={e => set("bio", e.target.value)}
                   placeholder="Brief introduction about your teaching style and background..."
                 />
+              </div>
+              <div className="rounded-xl p-4 border-2" style={{ borderColor: "oklch(0.88 0.12 145)", backgroundColor: "oklch(0.97 0.03 145)" }}>
+                <label className={labelCls} style={{ ...labelStyle, color: "oklch(0.35 0.12 145)" }}>
+                  💳 Your UPI ID (for receiving payment)
+                </label>
+                <input
+                  className={inputCls}
+                  style={inputStyle}
+                  value={form.upiId}
+                  onChange={e => set("upiId", e.target.value.trim())}
+                  placeholder="e.g. yourname@upi or 9876543210@paytm"
+                />
+                <p className="text-xs mt-1.5" style={{ color: "oklch(0.45 0.08 145)", fontFamily: "'Nunito', sans-serif" }}>
+                  EduNest will transfer your fee to this UPI ID after the parent pays. This is kept private and only used for payment.
+                </p>
               </div>
             </div>
           )}

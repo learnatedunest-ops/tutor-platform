@@ -115,6 +115,19 @@ export default function StudentPortal() {
     onError: (err: { message?: string }) => toast.error(err.message ?? "Failed to respond"),
   });
 
+  // Payment state
+  const [payingLogId, setPayingLogId] = useState<number | null>(null);
+
+  const markParentPaidMutation = trpc.sessionLog.markParentPaid.useMutation({
+    onSuccess: () => {
+      utils.confirmedMatch.getMineForStudent.invalidate();
+      utils.sessionLog.myStudentLogs.invalidate();
+      setPayingLogId(null);
+      toast.success("✅ Payment notification sent! EduNest team will verify and confirm shortly.");
+    },
+    onError: (err: { message?: string }) => toast.error(err.message ?? "Failed to notify payment"),
+  });
+
   const updateProfileMutation = trpc.studentProfile.save.useMutation({
     onSuccess: () => {
       toast.success("Requirement updated successfully!");
@@ -865,19 +878,26 @@ export default function StudentPortal() {
 
                       {/* Session log / payment status */}
                       {match.sessionLogId && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
+                        <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
+                          {/* Status badge row */}
                           <div className="flex flex-wrap items-center gap-2">
                             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
                               match.paymentStatus === 'payment_processed'
                                 ? 'bg-green-100 text-green-700'
+                                : match.paymentStatus === 'parent_paid'
+                                ? 'bg-purple-100 text-purple-700'
                                 : match.paymentStatus === 'sheet_uploaded'
                                 ? 'bg-blue-100 text-blue-700'
                                 : 'bg-yellow-100 text-yellow-700'
                             }`}>
                               <CreditCard size={12} />
-                              {match.paymentStatus === 'payment_processed' ? '✅ Payment Processed' :
-                               match.paymentStatus === 'sheet_uploaded' ? '⏳ Session Sheet Submitted — Payment Pending' :
-                               '⏳ Awaiting Session Sheet from Tutor'}
+                              {match.paymentStatus === 'payment_processed'
+                                ? '✅ Payment Processed — EduNest has paid your tutor'
+                                : match.paymentStatus === 'parent_paid'
+                                ? '🔍 Payment Under Review by EduNest Team'
+                                : match.paymentStatus === 'sheet_uploaded'
+                                ? '📋 Session Sheet Ready — Please Pay'
+                                : '⏳ Awaiting Session Sheet from Tutor'}
                             </span>
                             {match.uploadedSheetUrl && (
                               <a
@@ -890,6 +910,58 @@ export default function StudentPortal() {
                               </a>
                             )}
                           </div>
+
+                          {/* Pay Now card — shown only when sheet is uploaded and parent hasn't paid yet */}
+                          {match.paymentStatus === 'sheet_uploaded' && (
+                            <div className="rounded-xl border-2 p-4" style={{ borderColor: 'oklch(0.88 0.18 50)', backgroundColor: 'oklch(0.99 0.02 50)' }}>
+                              <p className="text-sm font-bold mb-3" style={{ color: 'oklch(0.35 0.18 50)', fontFamily: "'Poppins', sans-serif" }}>
+                                💳 Pay Tutor Fee to EduNest
+                              </p>
+                              <div className="bg-white rounded-lg p-3 text-center border mb-3" style={{ borderColor: 'oklch(0.88 0.18 50)' }}>
+                                <p className="text-xs text-gray-500 mb-1">Pay via UPI to EduNest</p>
+                                <p className="text-lg font-bold" style={{ color: 'oklch(0.55 0.18 50)', fontFamily: "'Poppins', sans-serif" }}>8618635627@yescred</p>
+                                {match.paymentAmount && (
+                                  <p className="text-sm font-semibold text-gray-700 mt-1">Amount: ₹{match.paymentAmount}</p>
+                                )}
+                                <p className="text-xs text-gray-400 mt-2">
+                                  Open GPay, PhonePe, Paytm or any UPI app and pay to the above ID
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (markParentPaidMutation.isPending) return;
+                                  markParentPaidMutation.mutate({ logId: match.sessionLogId });
+                                }}
+                                disabled={markParentPaidMutation.isPending}
+                                className="w-full py-2.5 rounded-lg font-bold text-white text-sm transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
+                                style={{ backgroundColor: 'oklch(0.55 0.18 145)' }}
+                              >
+                                {markParentPaidMutation.isPending ? (
+                                  <><Loader2 size={14} className="animate-spin" /> Notifying EduNest...</>
+                                ) : (
+                                  "✅ I've Paid — Notify EduNest"
+                                )}
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Under review state */}
+                          {match.paymentStatus === 'parent_paid' && (
+                            <div className="rounded-xl border p-4" style={{ borderColor: 'oklch(0.85 0.1 290)', backgroundColor: 'oklch(0.97 0.03 290)' }}>
+                              <p className="text-sm font-semibold" style={{ color: 'oklch(0.4 0.15 290)' }}>
+                                🔍 Your payment is being reviewed by the EduNest team. We'll notify you once confirmed.
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Payment processed state */}
+                          {match.paymentStatus === 'payment_processed' && (
+                            <div className="rounded-xl border p-4" style={{ borderColor: 'oklch(0.85 0.12 145)', backgroundColor: 'oklch(0.97 0.03 145)' }}>
+                              <p className="text-sm font-semibold" style={{ color: 'oklch(0.35 0.12 145)' }}>
+                                🎉 Payment confirmed! EduNest has processed the fee to your tutor. Enjoy your classes!
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
 

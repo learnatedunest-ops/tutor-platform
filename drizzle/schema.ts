@@ -1,4 +1,4 @@
-import { decimal, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, decimal, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -199,6 +199,8 @@ export const tutorProfiles = mysqlTable("tutor_profiles", {
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
   fullAddress: text("fullAddress"),
   area: varchar("area", { length: 128 }),
+  // Payment
+  upiId: varchar("upiId", { length: 64 }),              // Tutor's UPI ID for receiving payment
   // Phone verification
   phoneVerified: mysqlEnum("phoneVerified", ["yes", "no"]).default("no").notNull(),
   // Status
@@ -387,8 +389,12 @@ export const sessionLogs = mysqlTable("session_logs", {
   // Uploaded completed sheet (S3 key / URL)
   uploadedSheetUrl: text("uploadedSheetUrl"),
   uploadedAt: timestamp("uploadedAt"),
-  // Payment status: pending (not uploaded yet) → sheet_uploaded → payment_processed
-  paymentStatus: mysqlEnum("paymentStatus", ["pending", "sheet_uploaded", "payment_processed"]).default("pending").notNull(),
+  // Payment status: pending → sheet_uploaded → parent_paid → payment_processed
+  paymentStatus: mysqlEnum("paymentStatus", ["pending", "sheet_uploaded", "parent_paid", "payment_processed"]).default("pending").notNull(),
+  // Parent payment tracking
+  parentPaid: boolean("parentPaid").default(false).notNull(),
+  parentPaidAt: timestamp("parentPaidAt"),
+  parentPaymentNote: varchar("parentPaymentNote", { length: 256 }),
   adminApprovedAt: timestamp("adminApprovedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

@@ -120,6 +120,13 @@
       "when": 1783775155061,
       "tag": "0016_absurd_wiccan",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1783781476004,
+      "tag": "0017_wealthy_vulture",
+      "breakpoints": true
     }
   ]
 }
