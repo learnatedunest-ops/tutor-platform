@@ -328,6 +328,11 @@ export const demoSlots = mysqlTable("demo_slots", {
   parentAccepted: mysqlEnum("parentAccepted", ["yes", "no", "pending"]).default("pending").notNull(),
   // Tutor confirms they are coming for the demo
   tutorConfirmedComing: mysqlEnum("tutorConfirmedComing", ["yes", "no", "pending"]).default("pending").notNull(),
+  // Tutor's suggested reschedule (when they can't make the parent's chosen time)
+  tutorSuggestedDate: varchar("tutorSuggestedDate", { length: 32 }),
+  tutorSuggestedTime: varchar("tutorSuggestedTime", { length: 32 }),
+  // Parent's response to tutor's reschedule suggestion
+  parentRescheduleResponse: mysqlEnum("parentRescheduleResponse", ["accepted", "declined"]),
   // Post-demo proceed intent: both parties express yes/no to continue
   tutorProceedIntent: mysqlEnum("tutorProceedIntent", ["yes", "no"]),
   studentProceedIntent: mysqlEnum("studentProceedIntent", ["yes", "no"]),

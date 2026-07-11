@@ -53,6 +53,8 @@ import {
   getAdminApprovedDemoInterestsByTutor,
   getAllDemoInterestsByTutor,
   updateDemoSlotTutorConfirmedComing,
+  updateDemoSlotTutorReschedule,
+  updateDemoSlotParentRescheduleResponse,
   updateDemoSlotParentAccepted,
   // OTP
   createOtp,
@@ -962,6 +964,43 @@ export const appRouter = router({
             content: `Tutor Profile #${profile.id} confirmed they are coming for the demo on ${slot.scheduledDate ?? 'TBD'} at ${slot.scheduledTime ?? 'TBD'}.\nStudent Profile ID: ${slot.studentProfileId}`,
           }).catch(() => {});
         }
+        return { success: true };
+      }),
+
+    // Tutor: suggest a new reschedule time when they can't make the parent's chosen time
+    suggestReschedule: protectedProcedure
+      .input(z.object({
+        slotId: z.number(),
+        suggestedDate: z.string().min(1).max(32).trim(),
+        suggestedTime: z.string().min(1).max(32).trim(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const profile = await getTutorProfileByUserId(ctx.user.id);
+        if (!profile) throw new Error("Tutor profile not found.");
+        const slots = await getDemoSlotsByTutor(profile.id);
+        const slot = slots.find(s => s.id === input.slotId);
+        if (!slot) throw new Error("Demo slot not found or access denied.");
+        await updateDemoSlotTutorReschedule(input.slotId, input.suggestedDate, input.suggestedTime);
+        await notifyOwner({
+          title: `🔄 Tutor Suggested Reschedule`,
+          content: `Tutor Profile #${profile.id} suggested rescheduling the demo to ${input.suggestedDate} at ${input.suggestedTime}. Student Profile ID: ${slot.studentProfileId}`,
+        }).catch(() => {});
+        return { success: true };
+      }),
+
+    // Parent: accept or decline tutor's suggested reschedule
+    parentRespondReschedule: protectedProcedure
+      .input(z.object({
+        slotId: z.number(),
+        response: z.enum(["accepted", "declined"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const profile = await getStudentProfileByUserId(ctx.user.id);
+        if (!profile) throw new Error("Student profile not found.");
+        const slots = await getDemoSlotsByStudent(profile.id);
+        const slot = slots.find(s => s.id === input.slotId);
+        if (!slot) throw new Error("Demo slot not found or access denied.");
+        await updateDemoSlotParentRescheduleResponse(input.slotId, input.response);
         return { success: true };
       }),
 

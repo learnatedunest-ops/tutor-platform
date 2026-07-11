@@ -406,55 +406,145 @@ export default function TutorDashboard() {
                           Mode: {slot.mode === "online" ? "Online" : slot.mode === "home_tuition" ? "Home Tuition" : "Home + Online"}
                         </p>
                         {/* Show student contact details once demo is scheduled — tutor needs address/phone to go there */}
-                        {(slot.status === "scheduled" || slot.status === "completed") && ((slot as any).studentAddress || (slot as any).studentPhone) && (
-                          <div className="mt-2 p-2 rounded-lg bg-blue-50 border border-blue-100">
-                            <p className="text-xs font-bold text-blue-700 mb-1">📍 Student Contact Details</p>
-                            {(slot as any).studentAddress && (
-                              <p className="text-xs text-blue-800">🏠 {(slot as any).studentAddress}</p>
-                            )}
-                            {(slot as any).studentPhone && (
-                              <p className="text-xs text-blue-800">📞 <a href={`tel:${(slot as any).studentPhone}`} className="underline">{(slot as any).studentPhone}</a></p>
-                            )}
-                          </div>
-                        )}
+                        {(slot.status === "scheduled" || slot.status === "completed") && ((slot as any).studentAddress || (slot as any).studentPhone) && (() => {
+                          const addr = (slot as any).studentAddress as string | undefined;
+                          const lat = (slot as any).studentLat as number | undefined;
+                          const lng = (slot as any).studentLng as number | undefined;
+                          const mapsUrl = lat && lng
+                            ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+                            : addr
+                            ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`
+                            : null;
+                          return (
+                            <div className="mt-2 p-3 rounded-lg bg-blue-50 border border-blue-100">
+                              <p className="text-xs font-bold text-blue-700 mb-2">📍 Student Contact Details</p>
+                              {addr && (
+                                <p className="text-xs text-blue-800 mb-1">🏠 {addr}</p>
+                              )}
+                              {(slot as any).studentPhone && (
+                                <p className="text-xs text-blue-800 mb-2">📞 <a href={`tel:${(slot as any).studentPhone}`} className="underline font-medium">{(slot as any).studentPhone}</a></p>
+                              )}
+                              {mapsUrl && (
+                                <a
+                                  href={mapsUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+                                  style={{ backgroundColor: "oklch(0.45 0.18 240)" }}
+                                >
+                                  <ExternalLink size={12} /> Open in Google Maps
+                                </a>
+                              )}
+                            </div>
+                          );
+                        })()}
 
                         {/* Tutor: Confirm Coming for Demo */}
-                        {slot.status === "scheduled" && !(slot as any).tutorConfirmedComing && (
-                          <div className="mt-3 p-3 rounded-xl border-2" style={{ borderColor: "oklch(0.88 0.12 145)", backgroundColor: "oklch(0.97 0.03 145)" }}>
-                            <p className="text-sm font-semibold mb-1" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
-                              🚗 Are you coming for the demo?
-                            </p>
-                            <p className="text-xs mb-3" style={{ color: "oklch(0.55 0.01 270)" }}>Confirm so the student/parent knows to expect you.</p>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => tutorConfirmComing.mutate({ slotId: slot.id, response: 'yes' })}
-                                disabled={tutorConfirmComing.isPending}
-                                className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-                                style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
-                              >
-                                {tutorConfirmComing.isPending ? <span className="animate-pulse">...</span> : "✔ Yes, I'm Coming"}
-                              </button>
-                              <button
-                                onClick={() => tutorConfirmComing.mutate({ slotId: slot.id, response: 'no' })}
-                                disabled={tutorConfirmComing.isPending}
-                                className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold border transition-all hover:bg-red-50"
-                                style={{ borderColor: "oklch(0.88 0.12 20)", color: "oklch(0.55 0.18 20)" }}
-                              >
-                                ✕ Can't Make It
-                              </button>
+                        {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'pending' && (() => {
+                          const [showReschedule, setShowReschedule] = useState(false);
+                          const [suggestDate, setSuggestDate] = useState("");
+                          const [suggestTime, setSuggestTime] = useState("");
+                          const suggestReschedule = trpc.demoSlot.suggestReschedule.useMutation({
+                            onSuccess: () => { setShowReschedule(false); refetchSlots(); toast.success("Reschedule suggestion sent to parent!"); },
+                            onError: (err) => toast.error(err.message ?? "Failed to send suggestion"),
+                          });
+                          return (
+                            <div className="mt-3 p-3 rounded-xl border-2" style={{ borderColor: "oklch(0.88 0.12 145)", backgroundColor: "oklch(0.97 0.03 145)" }}>
+                              <p className="text-sm font-semibold mb-1" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+                                🚗 Are you available for this demo?
+                              </p>
+                              <p className="text-xs mb-3" style={{ color: "oklch(0.55 0.01 270)" }}>Confirm so the parent knows to expect you, or suggest a new time if you can't make it.</p>
+                              {!showReschedule ? (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => tutorConfirmComing.mutate({ slotId: slot.id, response: 'yes' })}
+                                    disabled={tutorConfirmComing.isPending}
+                                    className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+                                    style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
+                                  >
+                                    {tutorConfirmComing.isPending ? <span className="animate-pulse">...</span> : "✔ Yes, I'm Available"}
+                                  </button>
+                                  <button
+                                    onClick={() => setShowReschedule(true)}
+                                    className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold border transition-all hover:bg-orange-50"
+                                    style={{ borderColor: "oklch(0.88 0.12 50)", color: "oklch(0.55 0.18 50)" }}
+                                  >
+                                    🔄 Suggest New Time
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="space-y-3">
+                                  <p className="text-xs font-semibold" style={{ color: "oklch(0.14 0.02 270)" }}>Suggest a time that works for you:</p>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-xs font-medium block mb-1" style={{ color: "oklch(0.45 0.01 270)" }}>Date</label>
+                                      <input
+                                        type="date"
+                                        value={suggestDate}
+                                        onChange={e => setSuggestDate(e.target.value)}
+                                        className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                                        style={{ borderColor: "oklch(0.88 0.05 50)" }}
+                                        min={new Date().toISOString().split('T')[0]}
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-xs font-medium block mb-1" style={{ color: "oklch(0.45 0.01 270)" }}>Time</label>
+                                      <input
+                                        type="time"
+                                        value={suggestTime}
+                                        onChange={e => setSuggestTime(e.target.value)}
+                                        className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                                        style={{ borderColor: "oklch(0.88 0.05 50)" }}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => suggestReschedule.mutate({ slotId: slot.id, suggestedDate: suggestDate, suggestedTime: suggestTime })}
+                                      disabled={!suggestDate || !suggestTime || suggestReschedule.isPending}
+                                      className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                                      style={{ backgroundColor: "oklch(0.68 0.18 50)" }}
+                                    >
+                                      {suggestReschedule.isPending ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Send Suggestion to Parent"}
+                                    </button>
+                                    <button
+                                      onClick={() => setShowReschedule(false)}
+                                      className="px-3 py-2 rounded-lg text-sm border"
+                                      style={{ borderColor: "oklch(0.88 0.05 50)", color: "oklch(0.55 0.01 270)" }}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
                         {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'yes' && (
                           <div className="mt-3 p-2 rounded-lg bg-green-50 border border-green-200">
-                            <p className="text-xs font-semibold text-green-700">✔ You confirmed you're coming. The student has been notified.</p>
+                            <p className="text-xs font-semibold text-green-700">✔ You confirmed you're available. The parent has been notified.</p>
                           </div>
                         )}
-                        {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'no' && (
-                          <div className="mt-3 p-2 rounded-lg bg-red-50 border border-red-200">
-                            <p className="text-xs font-semibold text-red-700">❌ You indicated you can't make it. Please contact EduNest support to reschedule.</p>
-                          </div>
-                        )}
+                        {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'no' && (() => {
+                          const suggestedDate = (slot as any).tutorSuggestedDate;
+                          const suggestedTime = (slot as any).tutorSuggestedTime;
+                          const parentResponse = (slot as any).parentRescheduleResponse;
+                          return (
+                            <div className="mt-3 p-3 rounded-xl bg-orange-50 border border-orange-200">
+                              {suggestedDate && suggestedTime ? (
+                                <>
+                                  <p className="text-xs font-semibold text-orange-800 mb-1">🔄 Reschedule Suggestion Sent</p>
+                                  <p className="text-xs text-orange-700">You suggested: <strong>{suggestedDate} at {suggestedTime}</strong></p>
+                                  {parentResponse === 'accepted' && <p className="text-xs text-green-700 font-semibold mt-1">✔ Parent accepted your suggested time.</p>}
+                                  {parentResponse === 'declined' && <p className="text-xs text-red-700 font-semibold mt-1">✕ Parent kept their original time. Please contact EduNest if needed.</p>}
+                                  {!parentResponse && <p className="text-xs text-orange-600 mt-1">⏳ Waiting for parent's response...</p>}
+                                </>
+                              ) : (
+                                <p className="text-xs font-semibold text-red-700">❌ You indicated you can't make it. Use the "Suggest New Time" option above to propose an alternative.</p>
+                              )}
+                            </div>
+                          );
+                        })()}
 
                         {/* Post-demo proceed intent UI */}
                         {slot.status === "completed" && !(slot as any).tutorProceedIntent && (

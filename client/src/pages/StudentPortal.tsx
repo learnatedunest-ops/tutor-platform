@@ -93,6 +93,15 @@ export default function StudentPortal() {
     onError: (err: { message?: string }) => toast.error(err.message ?? "Failed to record response"),
   });
 
+  // Parent: respond to tutor's reschedule suggestion
+  const parentRespondReschedule = trpc.demoSlot.parentRespondReschedule.useMutation({
+    onSuccess: () => {
+      utils.demoSlot.mySlots.invalidate();
+      toast.success("Response sent to tutor!");
+    },
+    onError: (err: { message?: string }) => toast.error(err.message ?? "Failed to respond"),
+  });
+
   // All tutor interests for this student/parent to respond to (no admin gate)
   const { data: approvedTutorInterests, refetch: refetchApprovedInterests } = trpc.tutorInterest.getApprovedForMe.useQuery(
     undefined, { enabled: isAuthenticated }
@@ -495,15 +504,48 @@ export default function StudentPortal() {
                     {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'yes' && (
                       <div className="mt-3 p-3 rounded-xl bg-green-50 border border-green-200 flex items-center gap-2">
                         <span className="text-lg">🚗</span>
-                        <p className="text-xs font-semibold text-green-700">Your tutor has confirmed they are coming for the demo!</p>
+                        <p className="text-xs font-semibold text-green-700">Your tutor has confirmed they are available and coming for the demo!</p>
                       </div>
                     )}
-                    {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'no' && (
-                      <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2">
-                        <span className="text-lg">⚠️</span>
-                        <p className="text-xs font-semibold text-red-700">Your tutor indicated they cannot make it. Please contact EduNest to reschedule.</p>
-                      </div>
-                    )}
+                    {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'no' && (() => {
+                      const suggestedDate = (slot as any).tutorSuggestedDate;
+                      const suggestedTime = (slot as any).tutorSuggestedTime;
+                      const parentResponse = (slot as any).parentRescheduleResponse;
+                      return (
+                        <div className="mt-3 p-3 rounded-xl bg-orange-50 border border-orange-200">
+                          <p className="text-xs font-semibold text-orange-800 mb-1">🔄 Tutor Suggested a New Time</p>
+                          {suggestedDate && suggestedTime ? (
+                            <>
+                              <p className="text-xs text-orange-700 mb-2">Your tutor suggested: <strong>{suggestedDate} at {suggestedTime}</strong></p>
+                              {!parentResponse && (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => parentRespondReschedule.mutate({ slotId: slot.id, response: 'accepted' })}
+                                    disabled={parentRespondReschedule.isPending}
+                                    className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+                                    style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
+                                  >
+                                    {parentRespondReschedule.isPending ? <Loader2 size={12} className="animate-spin mx-auto" /> : "✔ Accept New Time"}
+                                  </button>
+                                  <button
+                                    onClick={() => parentRespondReschedule.mutate({ slotId: slot.id, response: 'declined' })}
+                                    disabled={parentRespondReschedule.isPending}
+                                    className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold border transition-all hover:bg-red-50"
+                                    style={{ borderColor: "#fca5a5", color: "#dc2626" }}
+                                  >
+                                    Keep Original Time
+                                  </button>
+                                </div>
+                              )}
+                              {parentResponse === 'accepted' && <p className="text-xs text-green-700 font-semibold">✔ You accepted the new time. Demo rescheduled!</p>}
+                              {parentResponse === 'declined' && <p className="text-xs text-gray-600 font-semibold">✓ You kept the original time. Tutor has been notified.</p>}
+                            </>
+                          ) : (
+                            <p className="text-xs text-orange-700">Your tutor indicated they cannot make the scheduled time. Waiting for them to suggest an alternative...</p>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Post-demo proceed intent UI */}
                     {slot.status === "completed" && !(slot as any).studentProceedIntent && (

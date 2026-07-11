@@ -628,6 +628,9 @@ export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(Demo
       interestDirection: demoSlots.interestDirection,
       parentAccepted: demoSlots.parentAccepted,
       tutorConfirmedComing: demoSlots.tutorConfirmedComing,
+      tutorSuggestedDate: demoSlots.tutorSuggestedDate,
+      tutorSuggestedTime: demoSlots.tutorSuggestedTime,
+      parentRescheduleResponse: demoSlots.parentRescheduleResponse,
       tutorProceedIntent: demoSlots.tutorProceedIntent,
       studentProceedIntent: demoSlots.studentProceedIntent,
       createdAt: demoSlots.createdAt,
@@ -635,13 +638,15 @@ export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(Demo
       confirmedMatchId: confirmedMatches.id,
       studentAddress: studentProfiles.fullAddress,
       studentPhone: studentProfiles.phone,
+      studentLat: studentProfiles.latitude,
+      studentLng: studentProfiles.longitude,
     })
     .from(demoSlots)
     .leftJoin(confirmedMatches, eq(confirmedMatches.demoSlotId, demoSlots.id))
     .leftJoin(studentProfiles, eq(studentProfiles.id, demoSlots.studentProfileId))
     .where(eq(demoSlots.tutorProfileId, tutorProfileId))
     .orderBy(desc(demoSlots.createdAt));
-  return rows.map(r => ({ ...r, confirmedMatchId: r.confirmedMatchId ?? null, studentAddress: r.studentAddress ?? null, studentPhone: r.studentPhone ?? null }));
+  return rows.map(r => ({ ...r, confirmedMatchId: r.confirmedMatchId ?? null, studentAddress: r.studentAddress ?? null, studentPhone: r.studentPhone ?? null, studentLat: r.studentLat ?? null, studentLng: r.studentLng ?? null }));
 }
 
 export async function getDemoSlotsByStudent(studentProfileId: number): Promise<(DemoSlot & { confirmedMatchId: number | null })[]> {
@@ -661,6 +666,9 @@ export async function getDemoSlotsByStudent(studentProfileId: number): Promise<(
       interestDirection: demoSlots.interestDirection,
       parentAccepted: demoSlots.parentAccepted,
       tutorConfirmedComing: demoSlots.tutorConfirmedComing,
+      tutorSuggestedDate: demoSlots.tutorSuggestedDate,
+      tutorSuggestedTime: demoSlots.tutorSuggestedTime,
+      parentRescheduleResponse: demoSlots.parentRescheduleResponse,
       tutorProceedIntent: demoSlots.tutorProceedIntent,
       studentProceedIntent: demoSlots.studentProceedIntent,
       createdAt: demoSlots.createdAt,
@@ -681,6 +689,44 @@ export async function updateDemoSlotTutorConfirmedComing(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(demoSlots).set({ tutorConfirmedComing: value }).where(eq(demoSlots.id, id));
+}
+
+export async function updateDemoSlotTutorReschedule(
+  id: number,
+  suggestedDate: string,
+  suggestedTime: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(demoSlots).set({
+    tutorSuggestedDate: suggestedDate,
+    tutorSuggestedTime: suggestedTime,
+    tutorConfirmedComing: "no",
+    parentRescheduleResponse: null,
+  }).where(eq(demoSlots.id, id));
+}
+
+export async function updateDemoSlotParentRescheduleResponse(
+  id: number,
+  response: "accepted" | "declined"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  if (response === "accepted") {
+    // Accept: copy tutor's suggested time into the scheduled fields
+    const rows = await db.select().from(demoSlots).where(eq(demoSlots.id, id)).limit(1);
+    const slot = rows[0];
+    if (slot?.tutorSuggestedDate && slot?.tutorSuggestedTime) {
+      await db.update(demoSlots).set({
+        scheduledDate: slot.tutorSuggestedDate,
+        scheduledTime: slot.tutorSuggestedTime,
+        parentRescheduleResponse: "accepted",
+        tutorConfirmedComing: "yes",
+      }).where(eq(demoSlots.id, id));
+    }
+  } else {
+    await db.update(demoSlots).set({ parentRescheduleResponse: "declined" }).where(eq(demoSlots.id, id));
+  }
 }
 
 export async function updateDemoSlotSchedule(

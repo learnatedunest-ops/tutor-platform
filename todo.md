@@ -281,3 +281,27 @@
 - [x] StudentPortal Demo tab: show "Tutor has confirmed they are coming" badge when tutor clicks coming
 - [x] Show student profile info (grade, subjects, mode, area) in student interest cards in TutorDashboard
 - [x] 15/15 tests passing, 0 TypeScript errors
+
+## Round 25 — Tutor Availability Confirmation & Google Maps Link
+- [ ] TutorDashboard: on scheduled demo slots, add "I'm Available / Coming" button and "Unavailable — Suggest New Time" button with a time picker
+- [ ] Backend: add demoSlot.suggestReschedule procedure — tutor proposes a new date/time; parent sees it and can accept or keep original
+- [ ] StudentPortal: show tutor's suggested reschedule time with Accept/Keep Original buttons
+- [ ] Replace student lat/lng coordinates in contact reveal email with a Google Maps navigation link (https://maps.google.com/?q=lat,lng or address)
+- [ ] Replace student lat/lng in TutorDashboard demo slot card with a clickable Google Maps link
+- [ ] 15/15 tests passing, 0 TypeScript errors
+
+## Round 25 — Tutor Availability Confirmation + Google Maps Navigation
+- [x] Add tutorSuggestedDate and tutorSuggestedTime columns to demo_slots schema; run db:push
+- [x] Add updateDemoSlotTutorReschedule and updateDemoSlotParentRescheduleResponse db helpers
+- [x] Add demoSlot.suggestReschedule procedure (tutor proposes new date/time; parent notified)
+- [x] Add demoSlot.parentRespondReschedule procedure (parent accepts or keeps original time)
+- [x] TutorDashboard: fix tutorConfirmedComing guard to treat 'pending' as actionable
+- [x] TutorDashboard: "Are you available?" card with "Yes, I'm Available" and "Suggest New Time" buttons
+- [x] TutorDashboard: inline date/time picker for tutor to suggest a new demo time
+- [x] TutorDashboard: show parent's response to reschedule suggestion (accepted/declined/waiting)
+- [x] TutorDashboard: replace raw address text with Google Maps navigation link (uses lat/lng if available, falls back to address string)
+- [x] StudentPortal: replace static 'contact EduNest' message with reschedule suggestion UI
+- [x] StudentPortal: show tutor's suggested date/time with Accept New Time / Keep Original buttons
+- [x] StudentPortal: add parentRespondReschedule mutation
+- [x] email.ts: add studentFullAddress, studentLat, studentLng to sendContactRevealToTutor; include Google Maps navigation button in email
+- [x] 15/15 tests passing, 0 TypeScript errors
