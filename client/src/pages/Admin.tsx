@@ -47,7 +47,7 @@ function formatDate(date: Date | string) {
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs" | "cancellations">("inquiries");
   const [tutorForm, setTutorForm] = useState<typeof EMPTY_TUTOR>(EMPTY_TUTOR);
   const [editingTutorId, setEditingTutorId] = useState<number | null>(null);
   const [showTutorForm, setShowTutorForm] = useState(false);
@@ -169,6 +169,14 @@ export default function Admin() {
   const resetPaymentMutation = trpc.sessionLog.resetPayment.useMutation({
     onSuccess: () => { refetchSessionLogs(); toast.success('Status reset to Sheet Uploaded.'); },
     onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to reset status'),
+  });
+
+  // Cancellation Requests
+  const { data: cancellationRequests, isLoading: loadingCancellations, refetch: refetchCancellations } =
+    trpc.confirmedMatch.listCancellationRequests.useQuery(undefined, { enabled: isAdmin });
+  const approveCancellationMutation = trpc.confirmedMatch.adminApproveCancellation.useMutation({
+    onSuccess: () => { refetchCancellations(); refetchMatches(); toast.success('Class cancelled. Both parties have been notified.'); },
+    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to approve cancellation'),
   });
 
   if (loading) {
@@ -293,7 +301,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["inquiries", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs"] as const).map(tab => (
+          {(["inquiries", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs", "cancellations"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -318,6 +326,8 @@ export default function Admin() {
                 <span className="flex items-center gap-2"><CheckCircle2 size={15} /> Confirmed Matches <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "confirmedMatches" ? "bg-white/30" : "bg-gray-100 text-gray-600"}`}>{confirmedMatchesList?.length ?? 0}</span></span>
               ) : tab === "sessionLogs" ? (
                 <span className="flex items-center gap-2"><CreditCard size={15} /> Session Payments {pendingPayments > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "sessionLogs" ? "bg-white/30" : "bg-orange-100 text-orange-700"}`}>{pendingPayments} pending</span>}</span>
+              ) : tab === "cancellations" ? (
+                <span className="flex items-center gap-2">🚫 Cancellation Requests {(cancellationRequests?.length ?? 0) > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "cancellations" ? "bg-white/30" : "bg-red-100 text-red-700"}`}>{cancellationRequests?.length}</span>}</span>
               ) : (
                 <span className="flex items-center gap-2"><UserCheck size={15} /> Manage Tutors <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
               )}
@@ -1277,6 +1287,54 @@ export default function Admin() {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Cancellation Requests ── */}
+        {activeTab === "cancellations" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>Cancellation Requests</h2>
+              <button onClick={() => refetchCancellations()} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"><RefreshCw size={14} /> Refresh</button>
+            </div>
+            {loadingCancellations ? (
+              <div className="text-center py-12"><div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto" /></div>
+            ) : !cancellationRequests?.length ? (
+              <div className="bg-white rounded-2xl shadow-sm border p-10 text-center" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                <p className="text-gray-400 text-sm">No cancellation requests at this time.</p>
+              </div>
+            ) : (
+              cancellationRequests.map((req: any) => (
+                <div key={req.id} className="bg-white rounded-2xl shadow-sm border p-6" style={{ borderColor: "#fca5a5" }}>
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-base" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
+                          {req.tutorName ?? 'Tutor'} ↔ {req.studentName ?? 'Student'}
+                        </span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">⏳ Cancellation Requested</span>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        Requested by: <strong>{req.cancellationRequestedBy === 'tutor' ? 'Tutor' : 'Parent'}</strong>
+                        {req.cancellationRequestedAt && <> on {new Date(req.cancellationRequestedAt).toLocaleDateString()}</>}
+                      </p>
+                      {req.cancellationNote && (
+                        <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2 mt-1">
+                          💬 Reason: {req.cancellationNote}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => approveCancellationMutation.mutate({ matchId: req.id })}
+                      disabled={approveCancellationMutation.isPending}
+                      className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-60"
+                    >
+                      {approveCancellationMutation.isPending ? 'Processing...' : '❌ Approve Cancellation'}
+                    </button>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         )}

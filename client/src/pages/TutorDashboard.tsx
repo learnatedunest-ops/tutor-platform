@@ -117,8 +117,20 @@ function DemoSlotAvailabilityCard({ slot, onDone }: { slot: any; onDone: () => v
 }
 
 /** Sub-component: My Classes card for a single confirmed match (completed demo) */
-function MyClassCard({ slot, mySessionLogs, onRefreshLogs }: { slot: any; mySessionLogs: any[]; onRefreshLogs: () => void }) {
+function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: { slot: any; mySessionLogs: any[]; onRefreshLogs: () => void; onRefreshMatches?: () => void }) {
   const [isUploading, setIsUploading] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [cancelNote, setCancelNote] = useState("");
+
+  const requestCancellation = trpc.confirmedMatch.requestCancellation.useMutation({
+    onSuccess: () => {
+      toast.success("Cancellation request submitted. EduNest will review and process it.");
+      setCancelConfirmOpen(false);
+      setCancelNote("");
+      onRefreshMatches?.();
+    },
+    onError: (err) => toast.error(err.message || "Failed to submit cancellation request."),
+  });
 
   const uploadSheetFile = trpc.sessionLog.uploadSheetFile.useMutation({
     onSuccess: (data) => {
@@ -223,9 +235,21 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs }: { slot: any; mySess
               )}
             </div>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 flex items-center gap-1 shrink-0">
-            <CheckCircle2 size={11} /> Got a Class
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            {slot.classStatus === 'cancellation_requested' ? (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 flex items-center gap-1">
+                ⏳ Cancellation Under Review
+              </span>
+            ) : slot.classStatus === 'cancelled' ? (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700 flex items-center gap-1">
+                🚫 Class Stopped
+              </span>
+            ) : (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 flex items-center gap-1">
+                <CheckCircle2 size={11} /> Got a Class
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -363,6 +387,46 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs }: { slot: any; mySess
             </p>
           )}
         </div>
+
+        {/* Cancel Class section */}
+        {slot.classStatus !== 'cancelled' && slot.classStatus !== 'cancellation_requested' && (
+          <div className="border-t pt-4" style={{ borderColor: "oklch(0.93 0.005 80)" }}>
+            {cancelConfirmOpen ? (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-red-600">Are you sure you want to request cancellation?</p>
+                <textarea
+                  value={cancelNote}
+                  onChange={e => setCancelNote(e.target.value)}
+                  placeholder="Reason for cancellation (optional)"
+                  className="w-full border rounded-xl px-3 py-2 text-sm resize-none"
+                  rows={2}
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => matchId && requestCancellation.mutate({ matchId, requestedBy: 'tutor', note: cancelNote })}
+                    disabled={requestCancellation.isPending || !matchId}
+                    className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-60"
+                  >
+                    {requestCancellation.isPending ? 'Submitting...' : 'Yes, Request Cancellation'}
+                  </button>
+                  <button
+                    onClick={() => { setCancelConfirmOpen(false); setCancelNote(''); }}
+                    className="px-4 py-2 rounded-xl text-sm font-bold border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    No, Keep Class
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setCancelConfirmOpen(true)}
+                className="text-xs font-semibold text-red-500 hover:text-red-700 border border-red-200 px-3 py-1.5 rounded-xl transition-colors"
+              >
+                Request Cancellation
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -432,6 +496,13 @@ export default function TutorDashboard() {
       { latitude: location?.lat ?? 0, longitude: location?.lng ?? 0, radiusKm },
       { enabled: !!location && myProfile?.status === "approved" }
     );
+
+  // Get active student IDs (students already in active class with this tutor — hide from Find Students)
+  const { data: activeStudentIds } = trpc.confirmedMatch.getActiveStudentIds.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+  const activeStudentIdSet = new Set<number>(activeStudentIds ?? []);
 
   // Load existing interests from DB so state persists across refreshes
   const { data: myInterests } = trpc.tutorInterest.getMyInterests.useQuery(
@@ -925,6 +996,7 @@ export default function TutorDashboard() {
                     slot={match}
                     mySessionLogs={mySessionLogs ?? []}
                     onRefreshLogs={refetchSessionLogs}
+                    onRefreshMatches={refetchConfirmedMatches}
                   />
                 ))}
               </div>
@@ -1085,12 +1157,22 @@ export default function TutorDashboard() {
                     <p className="font-semibold text-sm mb-1" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.35 0.02 270)" }}>No students found nearby</p>
                     <p className="text-xs text-gray-400">Try increasing the search radius or check back later.</p>
                   </div>
-                ) : (
+) : (
                   <div className="space-y-3">
+                    {(() => {
+                      const filteredStudents = (nearbyStudents ?? []).filter((s: any) => !activeStudentIdSet.has(s.id));
+                      if (!filteredStudents.length) return (
+                        <div className="bg-white rounded-2xl shadow-sm border p-8 text-center" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                          <MapPin size={40} className="mx-auto mb-3 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
+                          <p className="font-semibold text-sm mb-1" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.35 0.02 270)" }}>No new students available</p>
+                          <p className="text-xs text-gray-400">Students already in your active classes are hidden. Try increasing the radius or check back later.</p>
+                        </div>
+                      );
+                      return (<>
                     <p className="text-sm font-semibold" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>
-                      {nearbyStudents.length} student{nearbyStudents.length !== 1 ? "s" : ""} within {radiusKm} km
+                      {filteredStudents.length} new student{filteredStudents.length !== 1 ? "s" : ""} within {radiusKm} km
                     </p>
-                    {nearbyStudents.map((student: any) => {
+                    {filteredStudents.map((student: any) => {
                       const status = interestStatusMap.get(student.id);
                       return (
                         <div key={student.id} className="bg-white rounded-2xl shadow-sm border p-4" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
@@ -1157,6 +1239,8 @@ export default function TutorDashboard() {
                         </div>
                       );
                     })}
+                  </>);
+                    })()}
                   </div>
                 )}
               </div>

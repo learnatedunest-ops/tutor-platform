@@ -337,3 +337,19 @@
 - [x] Email: parent gets pay-now email when tutor uploads sheet (with EduNest UPI + amount)
 - [x] Email: tutor gets fee-paid email when admin approves (with their UPI ID + amount)
 - [x] 15/15 tests passing, 0 TypeScript errors
+
+## Round 30 — Portal Cleanup + Cancel Class Flow
+- [x] DB: add cancellationRequestedBy, cancellationRequestedAt, cancellationNote to confirmedMatches; run db:push
+- [x] Backend: confirmedMatch.requestCancellation procedure (tutor or parent can request)
+- [x] Backend: confirmedMatch.adminApproveCancellation procedure (sets classStatus=cancelled, notifies both parties)
+- [x] Backend: update getNearbyStudents to exclude students already in active class with requesting tutor
+- [x] Backend: update getNearbyTutors to exclude tutors already in active class with requesting parent
+- [x] StudentPortal: remove "My Demo Bookings" tab
+- [x] Remove /my-classes standalone route from App.tsx and Navbar
+- [x] TutorDashboard Find Students: hide students with active confirmed class with this tutor
+- [x] NearbyTutors: block browsing new tutors if parent has active class; show active class card with Cancel option
+- [x] NearbyTutors: Cancel Class button → confirmation dialog → Under Review state
+- [x] TutorDashboard My Classes: Cancel Class button → confirmation dialog → Under Review state
+- [x] Both sides: show "Class Stopped" badge when admin cancels; unlock find-tutor/find-student
+- [x] Admin panel: show cancellation requests with Approve Cancellation button
+- [x] 15/15 tests passing, 0 TypeScript errors

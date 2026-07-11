@@ -270,6 +270,36 @@ export default function NearbyTutors() {
       { enabled: !!location }
     );
 
+  // Get active tutor IDs (tutors already in active class with this parent — hide from browsing)
+  const { data: activeTutorIds, refetch: refetchActiveTutors } = trpc.confirmedMatch.getActiveTutorIds.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+  const activeTutorIdSet = new Set<number>(activeTutorIds ?? []);
+  const hasActiveClass = (activeTutorIds ?? []).length > 0;
+
+  // Get confirmed matches for the student (to show active class cards with cancel option)
+  const { data: myConfirmedMatches, refetch: refetchMatches } = trpc.confirmedMatch.getMineForStudent.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+  const activeMatches = (myConfirmedMatches ?? []).filter((m: any) => m.classStatus !== 'cancelled');
+
+  // Cancel class state
+  const [cancelConfirmId, setCancelConfirmId] = useState<number | null>(null);
+  const [cancelNote, setCancelNote] = useState("");
+
+  const requestCancellation = trpc.confirmedMatch.requestCancellation.useMutation({
+    onSuccess: () => {
+      toast.success("Cancellation request submitted. EduNest will review and process it.");
+      setCancelConfirmId(null);
+      setCancelNote("");
+      refetchMatches();
+      refetchActiveTutors();
+    },
+    onError: (err) => toast.error(err.message || "Failed to submit cancellation request."),
+  });
+
   const getLocation = () => {
     if (!navigator.geolocation) {
       setLocError("Geolocation is not supported by your browser.");
@@ -540,12 +570,96 @@ export default function NearbyTutors() {
           </div>
         )}
 
-        {location && nearbyTutors && nearbyTutors.length > 0 && (
+        {/* Active Class Cards — shown above the tutor list */}
+        {activeMatches.length > 0 && (
+          <div className="space-y-3 mb-4">
+            <p className="text-sm font-semibold" style={{ color: "oklch(0.35 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>Your Active Classes</p>
+            {activeMatches.map((match: any) => {
+              const isCancellationRequested = match.classStatus === 'cancellation_requested';
+              const isCancelled = match.classStatus === 'cancelled';
+              return (
+                <div key={match.id} className="bg-white rounded-2xl shadow-sm border p-5" style={{ borderColor: isCancellationRequested ? "#f59e0b" : isCancelled ? "#ef4444" : "oklch(0.88 0.02 50)" }}>
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-base font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>{match.tutorName}</span>
+                        {isCancellationRequested ? (
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">⏳ Cancellation Under Review</span>
+                        ) : isCancelled ? (
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">🚫 Class Stopped</span>
+                        ) : (
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">✅ Active Class</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500">{match.tutorSubjects ?? match.tutorQualification ?? ''} • Since {match.matchedAt ? new Date(match.matchedAt).toLocaleDateString() : ''}</p>
+                    </div>
+                    {!isCancellationRequested && !isCancelled && (
+                      cancelConfirmId === match.id ? (
+                        <div className="flex flex-col gap-2 w-full mt-3">
+                          <p className="text-sm font-semibold text-red-600">Are you sure you want to request cancellation?</p>
+                          <textarea
+                            value={cancelNote}
+                            onChange={e => setCancelNote(e.target.value)}
+                            placeholder="Reason for cancellation (optional)"
+                            className="w-full border rounded-xl px-3 py-2 text-sm resize-none"
+                            rows={2}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => requestCancellation.mutate({ matchId: match.id, requestedBy: 'parent', note: cancelNote })}
+                              disabled={requestCancellation.isPending}
+                              className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-60"
+                            >
+                              {requestCancellation.isPending ? 'Submitting...' : 'Yes, Request Cancellation'}
+                            </button>
+                            <button
+                              onClick={() => { setCancelConfirmId(null); setCancelNote(''); }}
+                              className="px-4 py-2 rounded-xl text-sm font-bold border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                              No, Keep Class
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setCancelConfirmId(match.id)}
+                          className="text-xs font-semibold text-red-500 hover:text-red-700 border border-red-200 px-3 py-1.5 rounded-xl transition-colors"
+                        >
+                          Request Cancellation
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Block browsing if active class exists */}
+        {hasActiveClass && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center mb-4">
+            <p className="text-base font-bold text-amber-800 mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>You already have an active class</p>
+            <p className="text-sm text-amber-700">You can only browse new tutors once your current class is cancelled by EduNest. If you'd like to change tutors, request a cancellation above.</p>
+          </div>
+        )}
+
+        {location && nearbyTutors && nearbyTutors.length > 0 && !hasActiveClass && (
           <div className="space-y-4">
+            {(() => {
+              const filteredTutors = nearbyTutors.filter((t: any) => !activeTutorIdSet.has(t.id));
+              if (!filteredTutors.length) return (
+                <div className="text-center py-8">
+                  <MapPin size={40} className="mx-auto mb-3 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
+                  <p className="text-sm font-semibold" style={{ color: "oklch(0.35 0.02 270)" }}>No new tutors available</p>
+                  <p className="text-xs text-gray-400 mt-1">Try expanding the radius or check back later.</p>
+                </div>
+              );
+              return (<>
             <p className="text-sm font-semibold" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>
-              {nearbyTutors.length} tutor{nearbyTutors.length !== 1 ? "s" : ""} found within {radiusKm} km
+              {filteredTutors.length} tutor{filteredTutors.length !== 1 ? "s" : ""} found within {radiusKm} km
             </p>
-            {nearbyTutors.map((tutor) => (
+            {filteredTutors.map((tutor: any) => (
               <div
                 key={tutor.id}
                 className="bg-white rounded-2xl shadow-sm border transition-all hover:shadow-md"
@@ -637,6 +751,8 @@ export default function NearbyTutors() {
                 </div>
               </div>
             ))}
+            </>);
+              })()}
           </div>
         )}
       </div>

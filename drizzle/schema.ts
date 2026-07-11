@@ -367,7 +367,12 @@ export const confirmedMatches = mysqlTable("confirmed_matches", {
   // Payment amount from student's registered budget (shown to parent on payment request)
   paymentAmount: varchar("paymentAmount", { length: 64 }),
   // Admin sets this to 'got_a_class' once both parties confirmed and class is arranged
+  // classStatus values: matched | got_a_class | cancellation_requested | cancelled
   classStatus: varchar("classStatus", { length: 32 }).default("matched"),
+  // Cancellation request fields
+  cancellationRequestedBy: mysqlEnum("cancellationRequestedBy", ["tutor", "parent"]),
+  cancellationRequestedAt: timestamp("cancellationRequestedAt"),
+  cancellationNote: text("cancellationNote"),
   matchedAt: timestamp("matchedAt").defaultNow().notNull(),
 });
 

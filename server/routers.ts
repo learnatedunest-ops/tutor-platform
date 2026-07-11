@@ -79,6 +79,11 @@ import {
   updateConfirmedMatchClassStatus,
   getConfirmedMatchesByTutor,
   getConfirmedMatchesByStudent,
+  requestMatchCancellation,
+  approveMatchCancellation,
+  getActiveStudentIdsForTutor,
+  getActiveTutorIdsForStudent,
+  getCancellationRequests,
   // Session logs
   getOrCreateSessionLog,
   getSessionLogByMatchId,
@@ -1164,6 +1169,47 @@ export const appRouter = router({
       const profile = await getStudentProfileByUserId(ctx.user.id);
       if (!profile) return [];
       return getConfirmedMatchesByStudent(profile.id);
+    }),
+
+    /** Tutor or parent: request cancellation of a confirmed match */
+    requestCancellation: protectedProcedure
+      .input(z.object({
+        matchId: z.number().int().positive(),
+        requestedBy: z.enum(['tutor', 'parent']),
+        note: z.string().max(512).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await requestMatchCancellation(input.matchId, input.requestedBy, input.note);
+        await notifyOwner({
+          title: `⚠️ Class Cancellation Requested`,
+          content: `A ${input.requestedBy} has requested cancellation for Match #${input.matchId}. Note: ${input.note ?? 'No reason given'}. Please review and approve in Admin → Cancellation Requests.`,
+        }).catch(() => {});
+        return { success: true };
+      }),
+
+    /** Admin: approve cancellation — sets classStatus to 'cancelled' */
+    adminApproveCancellation: adminProcedure
+      .input(z.object({ matchId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        await approveMatchCancellation(input.matchId);
+        return { success: true };
+      }),
+
+    /** Admin: list all cancellation requests */
+    listCancellationRequests: adminProcedure.query(async () => getCancellationRequests()),
+
+    /** Tutor: get active student IDs (to exclude from find-students) */
+    getActiveStudentIds: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await getTutorProfileByUserId(ctx.user.id);
+      if (!profile) return [];
+      return getActiveStudentIdsForTutor(profile.id);
+    }),
+
+    /** Student/parent: get active tutor IDs (to block browsing) */
+    getActiveTutorIds: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await getStudentProfileByUserId(ctx.user.id);
+      if (!profile) return [];
+      return getActiveTutorIdsForStudent(profile.id);
     }),
   }),
 

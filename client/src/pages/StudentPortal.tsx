@@ -34,7 +34,7 @@ const BOOKING_STATUS_CONFIG = {
 
 export default function StudentPortal() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"bookings" | "demos" | "interests" | "classes" | "requirement" | "profile">("bookings");
+  const [activeTab, setActiveTab] = useState<"demos" | "interests" | "classes" | "requirement" | "profile">("demos");
   const [editingReq, setEditingReq] = useState(false);
   const [reqForm, setReqForm] = useState<Record<string, string>>({});
   // Demo slot scheduling state
@@ -249,9 +249,6 @@ export default function StudentPortal() {
               </div>
               {/* Header buttons */}
               <div className="flex items-center gap-2">
-                <Link href="/my-classes" className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm font-semibold transition-all backdrop-blur-sm">
-                  📚 My Classes
-                </Link>
                 <Link href="/" className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm font-semibold transition-all backdrop-blur-sm">
                   <Home size={16} /> Home
                 </Link>
@@ -283,19 +280,14 @@ export default function StudentPortal() {
 
           {/* Tabs */}
           <div className="flex gap-2 mb-6 flex-wrap">
-                        {(["bookings", "demos", "interests", "classes", "requirement", "profile"] as const).map(tab => (
+                        {(["demos", "interests", "classes", "requirement", "profile"] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === tab ? "text-white shadow-sm" : "bg-white text-gray-500 hover:text-gray-700"}`}
                 style={activeTab === tab ? { backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" } : { fontFamily: "'Poppins', sans-serif" }}
               >
-                {tab === "bookings" ? (
-                  <span className="flex items-center gap-2">
-                    <BookOpen size={15} /> My Demo Bookings
-                    {pendingCount > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingCount}</span>}
-                  </span>
-                ) : tab === "demos" ? (
+                {tab === "demos" ? (
                   <span className="flex items-center gap-2">
                     <CalendarCheck size={15} /> Schedule Demo
                     {pendingDemoCount > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingDemoCount}</span>}
@@ -332,77 +324,6 @@ export default function StudentPortal() {
               <RefreshCw size={15} /> Refresh
             </button>
           </div>
-
-          {/* Bookings Tab */}
-          {activeTab === "bookings" && (
-            <div className="space-y-4">
-              {loadingBookings ? (
-                <div className="bg-white rounded-2xl shadow-sm p-12 text-center text-gray-400">
-                  <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                  Loading your bookings...
-                </div>
-              ) : !myBookings?.length ? (
-                <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-                  <BookOpen size={48} className="mx-auto mb-4 opacity-20" style={{ color: "oklch(0.68 0.18 50)" }} />
-                  <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No bookings yet</h3>
-                  <p className="text-gray-400 mb-6">You haven't booked any demo classes yet. Once EduNest matches you with a tutor, your demo class will appear here.</p>
-                  <Link href="/nearby-tutors" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
-                    <MapPin size={18} /> Find Tutors Near Me
-                  </Link>
-                </div>
-              ) : (
-                myBookings.map(bk => {
-                  const cfg = BOOKING_STATUS_CONFIG[bk.status] ?? BOOKING_STATUS_CONFIG.pending;
-                  const StatusIcon = cfg.icon;
-                  return (
-                    <div key={bk.id} className="bg-white rounded-2xl shadow-sm p-6 flex flex-col sm:flex-row gap-5 items-start">
-                      <div className="w-14 h-14 rounded-xl flex items-center justify-center text-white text-xl font-bold flex-shrink-0" style={{ backgroundColor: "oklch(0.68 0.18 50)" }}>
-                        {bk.tutorName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-3 flex-wrap">
-                          <div>
-                            <h3 className="font-bold text-gray-800 text-lg" style={{ fontFamily: "'Poppins', sans-serif" }}>{bk.tutorName}</h3>
-                            <div className="flex items-center gap-3 flex-wrap mt-1">
-                              <span className="flex items-center gap-1 text-sm text-gray-500"><BookOpen size={13} /> {bk.subject}</span>
-                              <span className="flex items-center gap-1 text-sm text-gray-500"><GraduationCap size={13} /> {bk.grade}</span>
-                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full capitalize">{bk.mode.replace("_", " ")}</span>
-                            </div>
-                          </div>
-                          <span className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                            <StatusIcon size={12} /> {cfg.label}
-                          </span>
-                        </div>
-                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Calendar size={14} className="text-orange-400 flex-shrink-0" />
-                            <span><strong>Date:</strong> {bk.preferredDate}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Clock size={14} className="text-orange-400 flex-shrink-0" />
-                            <span><strong>Time:</strong> {bk.preferredTime}</span>
-                          </div>
-                          {bk.message && (
-                            <div className="sm:col-span-2 text-sm text-gray-500 italic">"{bk.message}"</div>
-                          )}
-                        </div>
-                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
-                          <span className="text-xs text-gray-400">Booked on {formatDate(bk.createdAt)}</span>
-                          {bk.status === "pending" && (
-                            <a href={`https://wa.me/918618635627?text=Hi%2C%20I%20booked%20a%20demo%20with%20${encodeURIComponent(bk.tutorName)}%20on%20${encodeURIComponent(bk.preferredDate)}.%20Booking%20ID%3A%20${bk.id}`}
-                              target="_blank" rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 text-xs font-semibold text-green-600 hover:text-green-700 transition-colors">
-                              <Phone size={12} /> Follow up on WhatsApp
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          )}
 
           {/* Demo Scheduling Tab */}
           {activeTab === "demos" && (

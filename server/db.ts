@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne, notInArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile, StudentDemoInterest, studentDemoInterests, OtpVerification, otpVerifications, DemoSlot, demoSlots, ConfirmedMatch, confirmedMatches, SessionLog, sessionLogs } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -888,6 +888,9 @@ export async function getConfirmedMatchesByTutor(tutorProfileId: number) {
       scheduledDate: demoSlots.scheduledDate,
       scheduledTime: demoSlots.scheduledTime,
       demoMode: demoSlots.mode,
+      // cancellation info
+      cancellationRequestedBy: confirmedMatches.cancellationRequestedBy,
+      cancellationNote: confirmedMatches.cancellationNote,
       // session log info (per match)
       sessionLogId: sessionLogs.id,
       paymentStatus: sessionLogs.paymentStatus,
@@ -907,6 +910,89 @@ export async function updateConfirmedMatchClassStatus(matchId: number, classStat
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(confirmedMatches).set({ classStatus }).where(eq(confirmedMatches.id, matchId));
+}
+
+/** Request cancellation of a confirmed match (tutor or parent) */
+export async function requestMatchCancellation(
+  matchId: number,
+  requestedBy: 'tutor' | 'parent',
+  note?: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(confirmedMatches)
+    .set({
+      classStatus: 'cancellation_requested',
+      cancellationRequestedBy: requestedBy,
+      cancellationRequestedAt: new Date(),
+      cancellationNote: note ?? null,
+    })
+    .where(eq(confirmedMatches.id, matchId));
+}
+
+/** Admin: approve cancellation — sets classStatus to cancelled */
+export async function approveMatchCancellation(matchId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(confirmedMatches)
+    .set({ classStatus: 'cancelled' })
+    .where(eq(confirmedMatches.id, matchId));
+}
+
+/** Check if a student has any active (non-cancelled) confirmed match with a given tutor */
+export async function hasActiveMatchBetween(tutorProfileId: number, studentProfileId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const rows = await db.select({ id: confirmedMatches.id })
+    .from(confirmedMatches)
+    .where(
+      and(
+        eq(confirmedMatches.tutorProfileId, tutorProfileId),
+        eq(confirmedMatches.studentProfileId, studentProfileId),
+        ne(confirmedMatches.classStatus, 'cancelled')
+      )
+    )
+    .limit(1);
+  return rows.length > 0;
+}
+
+/** Get all active confirmed match student IDs for a tutor (to exclude from find-students) */
+export async function getActiveStudentIdsForTutor(tutorProfileId: number): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({ studentProfileId: confirmedMatches.studentProfileId })
+    .from(confirmedMatches)
+    .where(
+      and(
+        eq(confirmedMatches.tutorProfileId, tutorProfileId),
+        ne(confirmedMatches.classStatus, 'cancelled')
+      )
+    );
+  return rows.map(r => r.studentProfileId);
+}
+
+/** Get all active confirmed match tutor IDs for a student/parent (to block browsing) */
+export async function getActiveTutorIdsForStudent(studentProfileId: number): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({ tutorProfileId: confirmedMatches.tutorProfileId })
+    .from(confirmedMatches)
+    .where(
+      and(
+        eq(confirmedMatches.studentProfileId, studentProfileId),
+        ne(confirmedMatches.classStatus, 'cancelled')
+      )
+    );
+  return rows.map(r => r.tutorProfileId);
+}
+
+/** Get all confirmed matches with cancellation_requested status (admin) */
+export async function getCancellationRequests() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(confirmedMatches)
+    .where(eq(confirmedMatches.classStatus, 'cancellation_requested'))
+    .orderBy(desc(confirmedMatches.cancellationRequestedAt));
 }
 
 /** Get confirmed matches for a specific student profile — enriched with tutor profile + session log */
@@ -937,6 +1023,9 @@ export async function getConfirmedMatchesByStudent(studentProfileId: number) {
       scheduledDate: demoSlots.scheduledDate,
       scheduledTime: demoSlots.scheduledTime,
       demoMode: demoSlots.mode,
+      // cancellation info
+      cancellationRequestedBy: confirmedMatches.cancellationRequestedBy,
+      cancellationNote: confirmedMatches.cancellationNote,
       // session log info
       sessionLogId: sessionLogs.id,
       paymentStatus: sessionLogs.paymentStatus,
