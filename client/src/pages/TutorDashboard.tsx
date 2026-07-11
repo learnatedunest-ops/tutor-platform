@@ -132,8 +132,17 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs }: { slot: any; mySess
     },
   });
 
-  const matchId = (slot as any).confirmedMatchId as number | null;
-  const log = matchId ? mySessionLogs?.find((l: any) => l.matchId === matchId) : null;
+  // Support both old demo-slot shape (confirmedMatchId) and new enriched confirmed-match shape (id)
+  const matchId: number | null = (slot as any).confirmedMatchId ?? (slot as any).id ?? null;
+
+  // Session log: prefer inline fields from enriched match query, fall back to mySessionLogs lookup
+  const inlineLog = (slot as any).sessionLogId != null ? {
+    id: (slot as any).sessionLogId as number,
+    matchId: matchId,
+    paymentStatus: (slot as any).paymentStatus as string | null,
+    uploadedSheetUrl: (slot as any).uploadedSheetUrl as string | null,
+  } : null;
+  const log = inlineLog ?? (matchId ? mySessionLogs?.find((l: any) => l.matchId === matchId) : null);
 
   const parentName = (slot as any).studentName as string | undefined;
   const childName = (slot as any).studentChildName as string | undefined;
@@ -143,12 +152,13 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs }: { slot: any; mySess
 
   const grade = (slot as any).studentGrade as string | undefined;
   const subjects = (slot as any).studentSubjects as string | undefined;
-  const budget = (slot as any).studentBudget as string | undefined;
+  const budget = (slot as any).studentBudget ?? (slot as any).paymentAmount as string | undefined;
   const area = (slot as any).studentArea as string | undefined;
   const phone = (slot as any).studentPhone as string | undefined;
   const addr = (slot as any).studentAddress as string | undefined;
-  const lat = (slot as any).studentLat as number | undefined;
-  const lng = (slot as any).studentLng as number | undefined;
+  // Support both studentLat/studentLng (old) and studentLatitude/studentLongitude (new enriched)
+  const lat = (slot as any).studentLat ?? (slot as any).studentLatitude as number | undefined;
+  const lng = (slot as any).studentLng ?? (slot as any).studentLongitude as number | undefined;
   const mapsUrl = lat && lng
     ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
     : addr
@@ -886,12 +896,12 @@ export default function TutorDashboard() {
         {/* ── Tab: My Classes ───────────────────────────────────────────── */}
         {activeTab === 'classes' && (
           <div>
-            {slotsLoading ? (
+            {!myConfirmedMatches ? (
               <div className="bg-white rounded-2xl shadow-sm border p-8 text-center" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
                 <Loader2 size={24} className="animate-spin mx-auto mb-2" style={{ color: "oklch(0.68 0.18 50)" }} />
                 <p className="text-sm text-gray-500">Loading your classes...</p>
               </div>
-            ) : myClassSlots.length === 0 ? (
+            ) : myConfirmedMatches.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-sm border p-8 text-center" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
                 <BookMarked size={40} className="mx-auto mb-3 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
                 <p className="font-semibold text-sm mb-1" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.35 0.02 270)" }}>No confirmed classes yet</p>
@@ -907,12 +917,12 @@ export default function TutorDashboard() {
             ) : (
               <div className="space-y-4">
                 <p className="text-sm font-semibold" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>
-                  {myClassSlots.length} confirmed class{myClassSlots.length !== 1 ? "es" : ""}
+                  {myConfirmedMatches.length} confirmed class{myConfirmedMatches.length !== 1 ? "es" : ""}
                 </p>
-                {myClassSlots.map((slot: any) => (
+                {myConfirmedMatches.map((match: any) => (
                   <MyClassCard
-                    key={slot.id}
-                    slot={slot}
+                    key={match.id}
+                    slot={match}
                     mySessionLogs={mySessionLogs ?? []}
                     onRefreshLogs={refetchSessionLogs}
                   />

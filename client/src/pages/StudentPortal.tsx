@@ -892,7 +892,7 @@ export default function StudentPortal() {
                             }`}>
                               <CreditCard size={12} />
                               {match.paymentStatus === 'payment_processed'
-                                ? '✅ Payment Processed — EduNest has paid your tutor'
+                                ? '✅ Payment Processed'
                                 : match.paymentStatus === 'parent_paid'
                                 ? '🔍 Payment Under Review by EduNest Team'
                                 : match.paymentStatus === 'sheet_uploaded'
@@ -958,7 +958,7 @@ export default function StudentPortal() {
                           {match.paymentStatus === 'payment_processed' && (
                             <div className="rounded-xl border p-4" style={{ borderColor: 'oklch(0.85 0.12 145)', backgroundColor: 'oklch(0.97 0.03 145)' }}>
                               <p className="text-sm font-semibold" style={{ color: 'oklch(0.35 0.12 145)' }}>
-                                🎉 Payment confirmed! EduNest has processed the fee to your tutor. Enjoy your classes!
+                                🎉 Payment confirmed! Enjoy your classes!
                               </p>
                             </div>
                           )}

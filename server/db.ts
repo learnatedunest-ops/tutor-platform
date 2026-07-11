@@ -859,12 +859,47 @@ export async function getAllConfirmedMatches(): Promise<ConfirmedMatch[]> {
 }
 
 /** Get confirmed matches for a specific tutor profile */
-export async function getConfirmedMatchesByTutor(tutorProfileId: number): Promise<ConfirmedMatch[]> {
+export async function getConfirmedMatchesByTutor(tutorProfileId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(confirmedMatches)
+  const rows = await db
+    .select({
+      // confirmed match fields
+      id: confirmedMatches.id,
+      demoSlotId: confirmedMatches.demoSlotId,
+      tutorProfileId: confirmedMatches.tutorProfileId,
+      studentProfileId: confirmedMatches.studentProfileId,
+      tutorName: confirmedMatches.tutorName,
+      studentName: confirmedMatches.studentName,
+      matchedAt: confirmedMatches.matchedAt,
+      classStatus: confirmedMatches.classStatus,
+      paymentAmount: confirmedMatches.paymentAmount,
+      // student profile info
+      studentPhone: studentProfiles.phone,
+      studentEmail: studentProfiles.email,
+      studentGrade: studentProfiles.grade,
+      studentSubjects: studentProfiles.subjects,
+      studentArea: studentProfiles.area,
+      studentBudget: studentProfiles.budget,
+      studentAddress: studentProfiles.fullAddress,
+      studentLatitude: studentProfiles.latitude,
+      studentLongitude: studentProfiles.longitude,
+      // demo slot schedule info
+      scheduledDate: demoSlots.scheduledDate,
+      scheduledTime: demoSlots.scheduledTime,
+      demoMode: demoSlots.mode,
+      // session log info (per match)
+      sessionLogId: sessionLogs.id,
+      paymentStatus: sessionLogs.paymentStatus,
+      uploadedSheetUrl: sessionLogs.uploadedSheetUrl,
+    })
+    .from(confirmedMatches)
+    .leftJoin(studentProfiles, eq(studentProfiles.id, confirmedMatches.studentProfileId))
+    .leftJoin(demoSlots, eq(demoSlots.id, confirmedMatches.demoSlotId))
+    .leftJoin(sessionLogs, eq(sessionLogs.matchId, confirmedMatches.id))
     .where(eq(confirmedMatches.tutorProfileId, tutorProfileId))
     .orderBy(desc(confirmedMatches.matchedAt));
+  return rows;
 }
 
 /** Update classStatus of a confirmed match (admin) */
