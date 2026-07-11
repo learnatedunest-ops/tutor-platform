@@ -283,12 +283,12 @@
 - [x] 15/15 tests passing, 0 TypeScript errors
 
 ## Round 25 — Tutor Availability Confirmation & Google Maps Link
-- [ ] TutorDashboard: on scheduled demo slots, add "I'm Available / Coming" button and "Unavailable — Suggest New Time" button with a time picker
-- [ ] Backend: add demoSlot.suggestReschedule procedure — tutor proposes a new date/time; parent sees it and can accept or keep original
-- [ ] StudentPortal: show tutor's suggested reschedule time with Accept/Keep Original buttons
-- [ ] Replace student lat/lng coordinates in contact reveal email with a Google Maps navigation link (https://maps.google.com/?q=lat,lng or address)
-- [ ] Replace student lat/lng in TutorDashboard demo slot card with a clickable Google Maps link
-- [ ] 15/15 tests passing, 0 TypeScript errors
+- [x] TutorDashboard: on scheduled demo slots, add "I'm Available / Coming" button and "Unavailable — Suggest New Time" button with a time picker
+- [x] Backend: add demoSlot.suggestReschedule procedure — tutor proposes a new date/time; parent sees it and can accept or keep original
+- [x] StudentPortal: show tutor's suggested reschedule time with Accept/Keep Original buttons
+- [x] Replace student lat/lng coordinates in contact reveal email with a Google Maps navigation link (https://maps.google.com/?q=lat,lng or address)
+- [x] Replace student lat/lng in TutorDashboard demo slot card with a clickable Google Maps link
+- [x] 15/15 tests passing, 0 TypeScript errors
 
 ## Round 25 — Tutor Availability Confirmation + Google Maps Navigation
 - [x] Add tutorSuggestedDate and tutorSuggestedTime columns to demo_slots schema; run db:push
@@ -304,4 +304,9 @@
 - [x] StudentPortal: show tutor's suggested date/time with Accept New Time / Keep Original buttons
 - [x] StudentPortal: add parentRespondReschedule mutation
 - [x] email.ts: add studentFullAddress, studentLat, studentLng to sendContactRevealToTutor; include Google Maps navigation button in email
+- [x] 15/15 tests passing, 0 TypeScript errors
+
+## Round 26 — Fix React #310 Error + Demo Schedule in Tutor Interests Card
+- [x] Fix React error #310: extract IIFE with useState (showReschedule, suggestDate, suggestTime) inside demo slot map in TutorDashboard into a proper DemoSlotAvailabilityCard sub-component
+- [x] Add demo schedule date/time to accepted Tutor Interests card in StudentPortal (show "Demo scheduled for [date] at [time]" once parent has scheduled)
 - [x] 15/15 tests passing, 0 TypeScript errors

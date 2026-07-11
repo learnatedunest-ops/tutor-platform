@@ -729,11 +729,27 @@ export default function StudentPortal() {
                           </button>
                         </div>
                       ) : (
-                        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${
-                          interest.status === 'accepted' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
-                        }`}>
-                          {interest.status === 'accepted' ? '✔ Accepted — Schedule your demo below' : '✕ Declined'}
-                        </span>
+                        <div className="flex flex-col items-end gap-1.5">
+                          <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${
+                            interest.status === 'accepted' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                          }`}>
+                            {interest.status === 'accepted' ? '✔ Accepted' : '✕ Declined'}
+                          </span>
+                          {interest.status === 'accepted' && (() => {
+                            const relatedSlot = myDemoSlots?.find((s: any) => s.studentDemoInterestId === interest.id);
+                            if (!relatedSlot) return null;
+                            if (relatedSlot.scheduledDate && relatedSlot.scheduledTime) {
+                              return (
+                                <span className="text-xs font-medium px-2 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 flex items-center gap-1">
+                                  <Calendar size={10} /> {relatedSlot.scheduledDate} at {relatedSlot.scheduledTime}
+                                </span>
+                              );
+                            }
+                            return (
+                              <span className="text-xs text-orange-600 font-medium">⏳ Schedule your demo below</span>
+                            );
+                          })()}
+                        </div>
                       )}
                     </div>
                   </div>

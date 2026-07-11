@@ -28,6 +28,94 @@ function ModeLabel({ mode }: { mode: string }) {
   return <span>{map[mode] ?? mode}</span>;
 }
 
+/** Sub-component: availability confirmation + reschedule suggestion for a single demo slot */
+function DemoSlotAvailabilityCard({ slot, onDone }: { slot: any; onDone: () => void }) {
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [suggestDate, setSuggestDate] = useState("");
+  const [suggestTime, setSuggestTime] = useState("");
+
+  const tutorConfirmComing = trpc.demoSlot.tutorConfirmComing.useMutation({
+    onSuccess: () => { onDone(); toast.success("Confirmed! The student will be notified."); },
+    onError: (err) => toast.error(err.message ?? "Failed to confirm"),
+  });
+  const suggestReschedule = trpc.demoSlot.suggestReschedule.useMutation({
+    onSuccess: () => { setShowReschedule(false); onDone(); toast.success("Reschedule suggestion sent to parent!"); },
+    onError: (err) => toast.error(err.message ?? "Failed to send suggestion"),
+  });
+
+  return (
+    <div className="mt-3 p-3 rounded-xl border-2" style={{ borderColor: "oklch(0.88 0.12 145)", backgroundColor: "oklch(0.97 0.03 145)" }}>
+      <p className="text-sm font-semibold mb-1" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+        🚗 Are you available for this demo?
+      </p>
+      <p className="text-xs mb-3" style={{ color: "oklch(0.55 0.01 270)" }}>Confirm so the parent knows to expect you, or suggest a new time if you can't make it.</p>
+      {!showReschedule ? (
+        <div className="flex gap-2">
+          <button
+            onClick={() => tutorConfirmComing.mutate({ slotId: slot.id, response: 'yes' })}
+            disabled={tutorConfirmComing.isPending}
+            className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+            style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
+          >
+            {tutorConfirmComing.isPending ? <span className="animate-pulse">...</span> : "✔ Yes, I'm Available"}
+          </button>
+          <button
+            onClick={() => setShowReschedule(true)}
+            className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold border transition-all hover:bg-orange-50"
+            style={{ borderColor: "oklch(0.88 0.12 50)", color: "oklch(0.55 0.18 50)" }}
+          >
+            🔄 Suggest New Time
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs font-semibold" style={{ color: "oklch(0.14 0.02 270)" }}>Suggest a time that works for you:</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-medium block mb-1" style={{ color: "oklch(0.45 0.01 270)" }}>Date</label>
+              <input
+                type="date"
+                value={suggestDate}
+                onChange={e => setSuggestDate(e.target.value)}
+                className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                style={{ borderColor: "oklch(0.88 0.05 50)" }}
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium block mb-1" style={{ color: "oklch(0.45 0.01 270)" }}>Time</label>
+              <input
+                type="time"
+                value={suggestTime}
+                onChange={e => setSuggestTime(e.target.value)}
+                className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                style={{ borderColor: "oklch(0.88 0.05 50)" }}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => suggestReschedule.mutate({ slotId: slot.id, suggestedDate: suggestDate, suggestedTime: suggestTime })}
+              disabled={!suggestDate || !suggestTime || suggestReschedule.isPending}
+              className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+              style={{ backgroundColor: "oklch(0.68 0.18 50)" }}
+            >
+              {suggestReschedule.isPending ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Send Suggestion to Parent"}
+            </button>
+            <button
+              onClick={() => setShowReschedule(false)}
+              className="px-3 py-2 rounded-lg text-sm border"
+              style={{ borderColor: "oklch(0.88 0.05 50)", color: "oklch(0.55 0.01 270)" }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TutorDashboard() {
   const [, navigate] = useLocation();
   const { user, loading, isAuthenticated } = useAuth();
@@ -57,11 +145,6 @@ export default function TutorDashboard() {
   const respondToStudentInterest = trpc.studentDemoInterest.respondToInterest.useMutation({
     onSuccess: () => { refetchApprovedInterests(); refetchSlots(); toast.success("Response recorded!"); },
     onError: (err) => toast.error(err.message ?? "Failed to respond"),
-  });
-
-  const tutorConfirmComing = trpc.demoSlot.tutorConfirmComing.useMutation({
-    onSuccess: () => { refetchSlots(); toast.success("Confirmed! The student will be notified."); },
-    onError: (err) => toast.error(err.message ?? "Failed to confirm"),
   });
 
   // Session logs for this tutor
@@ -440,86 +523,9 @@ export default function TutorDashboard() {
                         })()}
 
                         {/* Tutor: Confirm Coming for Demo */}
-                        {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'pending' && (() => {
-                          const [showReschedule, setShowReschedule] = useState(false);
-                          const [suggestDate, setSuggestDate] = useState("");
-                          const [suggestTime, setSuggestTime] = useState("");
-                          const suggestReschedule = trpc.demoSlot.suggestReschedule.useMutation({
-                            onSuccess: () => { setShowReschedule(false); refetchSlots(); toast.success("Reschedule suggestion sent to parent!"); },
-                            onError: (err) => toast.error(err.message ?? "Failed to send suggestion"),
-                          });
-                          return (
-                            <div className="mt-3 p-3 rounded-xl border-2" style={{ borderColor: "oklch(0.88 0.12 145)", backgroundColor: "oklch(0.97 0.03 145)" }}>
-                              <p className="text-sm font-semibold mb-1" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
-                                🚗 Are you available for this demo?
-                              </p>
-                              <p className="text-xs mb-3" style={{ color: "oklch(0.55 0.01 270)" }}>Confirm so the parent knows to expect you, or suggest a new time if you can't make it.</p>
-                              {!showReschedule ? (
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => tutorConfirmComing.mutate({ slotId: slot.id, response: 'yes' })}
-                                    disabled={tutorConfirmComing.isPending}
-                                    className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-                                    style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
-                                  >
-                                    {tutorConfirmComing.isPending ? <span className="animate-pulse">...</span> : "✔ Yes, I'm Available"}
-                                  </button>
-                                  <button
-                                    onClick={() => setShowReschedule(true)}
-                                    className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold border transition-all hover:bg-orange-50"
-                                    style={{ borderColor: "oklch(0.88 0.12 50)", color: "oklch(0.55 0.18 50)" }}
-                                  >
-                                    🔄 Suggest New Time
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="space-y-3">
-                                  <p className="text-xs font-semibold" style={{ color: "oklch(0.14 0.02 270)" }}>Suggest a time that works for you:</p>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                      <label className="text-xs font-medium block mb-1" style={{ color: "oklch(0.45 0.01 270)" }}>Date</label>
-                                      <input
-                                        type="date"
-                                        value={suggestDate}
-                                        onChange={e => setSuggestDate(e.target.value)}
-                                        className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                                        style={{ borderColor: "oklch(0.88 0.05 50)" }}
-                                        min={new Date().toISOString().split('T')[0]}
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-xs font-medium block mb-1" style={{ color: "oklch(0.45 0.01 270)" }}>Time</label>
-                                      <input
-                                        type="time"
-                                        value={suggestTime}
-                                        onChange={e => setSuggestTime(e.target.value)}
-                                        className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                                        style={{ borderColor: "oklch(0.88 0.05 50)" }}
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <button
-                                      onClick={() => suggestReschedule.mutate({ slotId: slot.id, suggestedDate: suggestDate, suggestedTime: suggestTime })}
-                                      disabled={!suggestDate || !suggestTime || suggestReschedule.isPending}
-                                      className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-                                      style={{ backgroundColor: "oklch(0.68 0.18 50)" }}
-                                    >
-                                      {suggestReschedule.isPending ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Send Suggestion to Parent"}
-                                    </button>
-                                    <button
-                                      onClick={() => setShowReschedule(false)}
-                                      className="px-3 py-2 rounded-lg text-sm border"
-                                      style={{ borderColor: "oklch(0.88 0.05 50)", color: "oklch(0.55 0.01 270)" }}
-                                    >
-                                      Cancel
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })()}
+                        {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'pending' && (
+                          <DemoSlotAvailabilityCard slot={slot} onDone={refetchSlots} />
+                        )}
                         {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'yes' && (
                           <div className="mt-3 p-2 rounded-lg bg-green-50 border border-green-200">
                             <p className="text-xs font-semibold text-green-700">✔ You confirmed you're available. The parent has been notified.</p>
