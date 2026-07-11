@@ -89,6 +89,12 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function updateUserRole(openId: string, role: 'admin' | 'user'): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(users).set({ role }).where(eq(users.openId, openId));
+}
+
 // ─── Inquiries ────────────────────────────────────────────────────────────────
 
 export async function createInquiry(data: InsertInquiry) {

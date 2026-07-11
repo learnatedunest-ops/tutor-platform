@@ -54,6 +54,19 @@ export default function Admin() {
 
   const isAdmin = isAuthenticated && user?.role === "admin";
 
+  // One-time bootstrap: promotes the owner account to admin if they aren't one yet
+  const ensureOwnerAdmin = trpc.auth.ensureOwnerAdmin.useMutation({
+    onSuccess: (data) => {
+      if (data.promoted) {
+        toast.success("Admin access granted! Refreshing...");
+        setTimeout(() => window.location.reload(), 1200);
+      } else {
+        toast.error(`Could not grant admin: ${data.reason}`);
+      }
+    },
+    onError: (err) => toast.error(`Error: ${err.message}`),
+  });
+
   // Fetch data
   const { data: adminTutors, isLoading: loadingTutors, refetch: refetchTutors } =
     trpc.tutor.listAdmin.useQuery(undefined, { enabled: isAdmin });
@@ -185,13 +198,24 @@ export default function Admin() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
         <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center">
-          <XCircle size={48} className="mx-auto mb-4 text-red-500" />
+          <ShieldAlert size={48} className="mx-auto mb-4 text-orange-500" />
           <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
-            Access Denied
+            Admin Access Required
           </h1>
-          <p className="text-gray-500 mb-6" style={{ fontFamily: "'Nunito', sans-serif" }}>
-            Your account does not have admin privileges. Please contact the site owner.
+          <p className="text-gray-500 mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
+            Your account does not have admin privileges yet.
           </p>
+          <p className="text-sm text-gray-400 mb-6" style={{ fontFamily: "'Nunito', sans-serif" }}>
+            If you are the site owner, click the button below to grant yourself admin access.
+          </p>
+          <button
+            onClick={() => ensureOwnerAdmin.mutate()}
+            disabled={ensureOwnerAdmin.isPending}
+            className="w-full py-3 rounded-xl font-bold text-white mb-3 transition-all disabled:opacity-60"
+            style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
+          >
+            {ensureOwnerAdmin.isPending ? "Granting access..." : "🔑 Grant Admin Access (Owner Only)"}
+          </button>
           <button onClick={() => logout()} className="w-full py-3 rounded-xl font-bold text-white bg-gray-700 transition-all hover:bg-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
             Log Out
           </button>

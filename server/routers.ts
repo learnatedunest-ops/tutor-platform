@@ -78,6 +78,7 @@ import {
   getAllSessionLogs,
   getSessionLogsByTutor,
   getSessionLogsByStudent,
+  updateUserRole,
 } from "./db";
 import { z } from "zod";
 
@@ -160,6 +161,23 @@ export const appRouter = router({
         await setUserRole(ctx.user.id, input.userRole);
         return { success: true, userRole: input.userRole };
       }),
+
+    // Called once after first login to ensure the owner account has admin role.
+    // Safe to call multiple times — idempotent.
+    ensureOwnerAdmin: protectedProcedure.mutation(async ({ ctx }) => {
+      const ownerOpenId = process.env.OWNER_OPEN_ID ?? '';
+      if (!ownerOpenId) {
+        return { promoted: false, reason: 'OWNER_OPEN_ID not configured' };
+      }
+      if (ctx.user.openId !== ownerOpenId) {
+        return { promoted: false, reason: 'Not the owner account' };
+      }
+      if (ctx.user.role === 'admin') {
+        return { promoted: false, reason: 'Already admin' };
+      }
+      await updateUserRole(ctx.user.openId, 'admin');
+      return { promoted: true };
+    }),
 
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
