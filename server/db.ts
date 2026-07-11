@@ -767,13 +767,46 @@ export async function updateConfirmedMatchClassStatus(matchId: number, classStat
   await db.update(confirmedMatches).set({ classStatus }).where(eq(confirmedMatches.id, matchId));
 }
 
-/** Get confirmed matches for a specific student profile */
-export async function getConfirmedMatchesByStudent(studentProfileId: number): Promise<ConfirmedMatch[]> {
+/** Get confirmed matches for a specific student profile — enriched with tutor profile + session log */
+export async function getConfirmedMatchesByStudent(studentProfileId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(confirmedMatches)
+  const rows = await db
+    .select({
+      // confirmed match fields
+      id: confirmedMatches.id,
+      demoSlotId: confirmedMatches.demoSlotId,
+      tutorProfileId: confirmedMatches.tutorProfileId,
+      studentProfileId: confirmedMatches.studentProfileId,
+      tutorName: confirmedMatches.tutorName,
+      studentName: confirmedMatches.studentName,
+      matchedAt: confirmedMatches.matchedAt,
+      classStatus: confirmedMatches.classStatus,
+      paymentAmount: confirmedMatches.paymentAmount,
+      // tutor profile info (no contact details)
+      tutorQualification: tutorProfiles.qualification,
+      tutorSubjects: tutorProfiles.subjects,
+      tutorExperience: tutorProfiles.experience,
+      tutorMode: tutorProfiles.mode,
+      tutorArea: tutorProfiles.area,
+      tutorEducation: tutorProfiles.education,
+      tutorPhoto: tutorProfiles.photo,
+      // demo slot schedule info
+      scheduledDate: demoSlots.scheduledDate,
+      scheduledTime: demoSlots.scheduledTime,
+      demoMode: demoSlots.mode,
+      // session log info
+      sessionLogId: sessionLogs.id,
+      paymentStatus: sessionLogs.paymentStatus,
+      uploadedSheetUrl: sessionLogs.uploadedSheetUrl,
+    })
+    .from(confirmedMatches)
+    .leftJoin(tutorProfiles, eq(tutorProfiles.id, confirmedMatches.tutorProfileId))
+    .leftJoin(demoSlots, eq(demoSlots.id, confirmedMatches.demoSlotId))
+    .leftJoin(sessionLogs, eq(sessionLogs.matchId, confirmedMatches.id))
     .where(eq(confirmedMatches.studentProfileId, studentProfileId))
     .orderBy(desc(confirmedMatches.matchedAt));
+  return rows;
 }
 
 // ─── Session Logs ────────────────────────────────────────────────────────────

@@ -259,3 +259,10 @@
 - [x] StudentPortal: "Got a Class!" status once admin marks completed; show payment amount from registered budget
 - [x] NearbyTutors: tutor profile modal — hide work experience and contact details; show id, experience years, subjects, mode, qualification
 - [x] 15/15 tests passing, 0 TypeScript errors
+
+## Round 23 — My Classes + Site Audit
+- [x] Add getMineForStudent confirmed matches procedure with tutor profile join (name, subjects, experience, mode, area, qualification)
+- [x] Add My Classes tab to StudentPortal showing confirmed class summary cards (tutor name, subjects, schedule, monthly fee, session log status)
+- [x] Full site audit: browser console errors, network errors, TypeScript errors, broken links
+- [x] Fix all errors found: bad oklch value (5018 → 50), 7 nested Link > a patterns in StudentPortal
+- [x] 15/15 tests passing, 0 TypeScript errors

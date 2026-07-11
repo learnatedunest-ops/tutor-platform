@@ -34,7 +34,7 @@ const BOOKING_STATUS_CONFIG = {
 
 export default function StudentPortal() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"bookings" | "demos" | "interests" | "requirement" | "profile">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "demos" | "interests" | "classes" | "requirement" | "profile">("bookings");
   const [editingReq, setEditingReq] = useState(false);
   const [reqForm, setReqForm] = useState<Record<string, string>>({});
   // Demo slot scheduling state
@@ -176,7 +176,7 @@ export default function StudentPortal() {
         <Navbar />
         <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
           <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ backgroundColor: "oklch(0.68 0.18 5018)" }}>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ backgroundColor: "oklch(0.68 0.18 50)" }}>
               <LogIn size={32} style={{ color: "oklch(0.68 0.18 50)" }} />
             </div>
             <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
@@ -192,10 +192,8 @@ export default function StudentPortal() {
             >
               Log In to Your Portal
             </button>
-            <Link href="/">
-              <a className="block text-sm text-gray-400 hover:text-gray-600 transition-colors">
-                ← Back to Home
-              </a>
+            <Link href="/" className="block text-sm text-gray-400 hover:text-gray-600 transition-colors">
+              ← Back to Home
             </Link>
           </div>
         </div>
@@ -229,15 +227,11 @@ export default function StudentPortal() {
               </div>
               {/* Header buttons */}
               <div className="flex items-center gap-2">
-                <Link href="/my-classes">
-                  <a className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm font-semibold transition-all backdrop-blur-sm">
-                    📚 My Classes
-                  </a>
+                <Link href="/my-classes" className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm font-semibold transition-all backdrop-blur-sm">
+                  📚 My Classes
                 </Link>
-                <Link href="/">
-                  <a className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm font-semibold transition-all backdrop-blur-sm">
-                    <Home size={16} /> Home
-                  </a>
+                <Link href="/" className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm font-semibold transition-all backdrop-blur-sm">
+                  <Home size={16} /> Home
                 </Link>
               </div>
             </div>
@@ -267,7 +261,7 @@ export default function StudentPortal() {
 
           {/* Tabs */}
           <div className="flex gap-2 mb-6 flex-wrap">
-            {(["bookings", "demos", "interests", "requirement", "profile"] as const).map(tab => (
+                        {(["bookings", "demos", "interests", "classes", "requirement", "profile"] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -290,6 +284,15 @@ export default function StudentPortal() {
                     {approvedTutorInterests?.filter((i: any) => i.status === 'pending').length ? (
                       <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">
                         {approvedTutorInterests.filter((i: any) => i.status === 'pending').length}
+                      </span>
+                    ) : null}
+                  </span>
+                ) : tab === "classes" ? (
+                  <span className="flex items-center gap-2">
+                    <GraduationCap size={15} /> My Classes
+                    {myConfirmedMatches?.filter((m: any) => m.classStatus === 'got_a_class').length ? (
+                      <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                        {myConfirmedMatches.filter((m: any) => m.classStatus === 'got_a_class').length}
                       </span>
                     ) : null}
                   </span>
@@ -321,10 +324,8 @@ export default function StudentPortal() {
                   <BookOpen size={48} className="mx-auto mb-4 opacity-20" style={{ color: "oklch(0.68 0.18 50)" }} />
                   <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No bookings yet</h3>
                   <p className="text-gray-400 mb-6">You haven't booked any demo classes yet. Once EduNest matches you with a tutor, your demo class will appear here.</p>
-                  <Link href="/nearby-tutors">
-                    <a className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
-                      <MapPin size={18} /> Find Tutors Near Me
-                    </a>
+                  <Link href="/nearby-tutors" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+                    <MapPin size={18} /> Find Tutors Near Me
                   </Link>
                 </div>
               ) : (
@@ -687,6 +688,152 @@ export default function StudentPortal() {
             </div>
           )}
 
+          {/* My Classes Tab */}
+          {activeTab === "classes" && (
+            <div className="space-y-4">
+              {!myConfirmedMatches?.length ? (
+                <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                  <GraduationCap size={48} className="mx-auto mb-4 opacity-20" style={{ color: "oklch(0.68 0.18 50)" }} />
+                  <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No confirmed classes yet</h3>
+                  <p className="text-gray-400">Once both you and your tutor agree to proceed after a demo class, your confirmed class will appear here.</p>
+                </div>
+              ) : (
+                myConfirmedMatches.map((match: any) => {
+                  const isGotAClass = match.classStatus === 'got_a_class';
+                  return (
+                    <div key={match.id} className={`rounded-2xl shadow-sm border p-6 transition-all ${
+                      isGotAClass
+                        ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200'
+                        : 'bg-white border-gray-100'
+                    }`}>
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div className="flex items-center gap-3">
+                          {match.tutorPhoto ? (
+                            <img src={match.tutorPhoto} alt={match.tutorName} className="w-12 h-12 rounded-full object-cover border-2 border-orange-100" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: "oklch(0.68 0.18 50)" }}>
+                              {(match.tutorName ?? 'T').charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                              {match.tutorName ?? `Tutor #${match.tutorProfileId}`}
+                            </h3>
+                            <p className="text-xs text-gray-500">Tutor ID #{match.tutorProfileId}</p>
+                          </div>
+                        </div>
+                        <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${
+                          isGotAClass
+                            ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                            : 'bg-blue-50 text-blue-700 border-blue-200'
+                        }`}>
+                          {isGotAClass ? '🎓 Got a Class!' : '⏳ Awaiting Confirmation'}
+                        </span>
+                      </div>
+
+                      {/* Details grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                        {match.tutorSubjects && (
+                          <div className="flex items-start gap-2">
+                            <BookOpen size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Subjects</p>
+                              <p className="text-sm font-semibold text-gray-800">{match.tutorSubjects}</p>
+                            </div>
+                          </div>
+                        )}
+                        {match.tutorExperience && (
+                          <div className="flex items-start gap-2">
+                            <Clock size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Experience</p>
+                              <p className="text-sm font-semibold text-gray-800">{match.tutorExperience}</p>
+                            </div>
+                          </div>
+                        )}
+                        {match.tutorQualification && (
+                          <div className="flex items-start gap-2">
+                            <GraduationCap size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Qualification</p>
+                              <p className="text-sm font-semibold text-gray-800">{match.tutorQualification}</p>
+                            </div>
+                          </div>
+                        )}
+                        {(match.scheduledDate || match.demoMode) && (
+                          <div className="flex items-start gap-2">
+                            <Calendar size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Demo Class</p>
+                              <p className="text-sm font-semibold text-gray-800">
+                                {match.scheduledDate ? `${match.scheduledDate}${match.scheduledTime ? ` at ${match.scheduledTime}` : ''}` : 'Scheduled'}
+                                {match.demoMode && <span className="ml-1 text-xs text-gray-500">({match.demoMode === 'online' ? 'Online' : match.demoMode === 'home_tuition' ? 'Home Tuition' : 'Home + Online'})</span>}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {match.tutorArea && (
+                          <div className="flex items-start gap-2">
+                            <MapPin size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Location</p>
+                              <p className="text-sm font-semibold text-gray-800">{match.tutorArea}</p>
+                            </div>
+                          </div>
+                        )}
+                        {match.paymentAmount && (
+                          <div className="flex items-start gap-2">
+                            <CreditCard size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Monthly Fee</p>
+                              <p className="text-sm font-bold" style={{ color: "oklch(0.55 0.18 145)" }}>₹{match.paymentAmount}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Session log / payment status */}
+                      {match.sessionLogId && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                              match.paymentStatus === 'payment_processed'
+                                ? 'bg-green-100 text-green-700'
+                                : match.paymentStatus === 'sheet_uploaded'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              <CreditCard size={12} />
+                              {match.paymentStatus === 'payment_processed' ? '✅ Payment Processed' :
+                               match.paymentStatus === 'sheet_uploaded' ? '⏳ Session Sheet Submitted — Payment Pending' :
+                               '⏳ Awaiting Session Sheet from Tutor'}
+                            </span>
+                            {match.uploadedSheetUrl && (
+                              <a
+                                href={match.uploadedSheetUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                              >
+                                <ExternalLink size={12} /> View Session Sheet
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Matched date */}
+                      <p className="text-xs text-gray-400 mt-3">
+                        Matched on {new Date(match.matchedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+
           {/* My Requirement Tab */}
           {activeTab === "requirement" && (
             <div className="bg-white rounded-2xl shadow-sm p-8">
@@ -708,10 +855,8 @@ export default function StudentPortal() {
                   <FileText size={48} className="mx-auto mb-4 opacity-20" style={{ color: "oklch(0.68 0.18 50)" }} />
                   <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No requirement submitted yet</h3>
                   <p className="text-gray-400 mb-6">Complete your student profile to get matched with the right tutor near you.</p>
-                  <Link href="/student-setup">
-                    <a className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
-                      <GraduationCap size={18} /> Complete My Profile
-                    </a>
+                  <Link href="/student-setup" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+                    <GraduationCap size={18} /> Complete My Profile
                   </Link>
                 </div>
               ) : editingReq ? (
@@ -867,15 +1012,11 @@ export default function StudentPortal() {
               </div>
 
               <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
-                <Link href="/">
-                  <a className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
-                    <Home size={16} /> Go to Home
-                  </a>
+                <Link href="/" className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+                  <Home size={16} /> Go to Home
                 </Link>
-                <Link href="/contact">
-                  <a className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
-                    <Mail size={16} /> Contact EduNest Support
-                  </a>
+                <Link href="/contact" className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+                  <Mail size={16} /> Contact EduNest Support
                 </Link>
                 <button
                   onClick={() => logout()}
