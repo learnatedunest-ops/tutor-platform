@@ -399,6 +399,47 @@ export async function updateTutorInterestStatus(
   await db.update(tutorInterests).set({ status }).where(eq(tutorInterests.id, id));
 }
 
+export async function updateTutorInterestAdminStatus(
+  id: number,
+  adminApprovalStatus: "pending_admin" | "admin_approved" | "admin_rejected"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(tutorInterests).set({ adminApprovalStatus }).where(eq(tutorInterests.id, id));
+}
+
+/** Get tutor interests that admin has approved — visible to the student */
+export async function getAdminApprovedTutorInterestsByStudent(studentProfileId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: tutorInterests.id,
+      tutorProfileId: tutorInterests.tutorProfileId,
+      studentProfileId: tutorInterests.studentProfileId,
+      message: tutorInterests.message,
+      adminApprovalStatus: tutorInterests.adminApprovalStatus,
+      status: tutorInterests.status,
+      createdAt: tutorInterests.createdAt,
+      // Tutor profile info (no contact details)
+      tutorName: tutorProfiles.name,
+      tutorQualification: tutorProfiles.qualification,
+      tutorSubjects: tutorProfiles.subjects,
+      tutorExperience: tutorProfiles.experience,
+      tutorMode: tutorProfiles.mode,
+      tutorArea: tutorProfiles.area,
+      tutorEducation: tutorProfiles.education,
+    })
+    .from(tutorInterests)
+    .leftJoin(tutorProfiles, eq(tutorProfiles.id, tutorInterests.tutorProfileId))
+    .where(and(
+      eq(tutorInterests.studentProfileId, studentProfileId),
+      eq(tutorInterests.adminApprovalStatus, "admin_approved")
+    ))
+    .orderBy(desc(tutorInterests.createdAt));
+  return rows;
+}
+
 export async function getAllStudentProfiles(): Promise<StudentProfile[]> {
   const db = await getDb();
   if (!db) return [];
@@ -453,6 +494,27 @@ export async function updateStudentDemoInterestStatus(
   await db.update(studentDemoInterests).set({ status }).where(eq(studentDemoInterests.id, id));
 }
 
+export async function updateStudentDemoInterestAdminStatus(
+  id: number,
+  adminApprovalStatus: "pending_admin" | "admin_approved" | "admin_rejected"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(studentDemoInterests).set({ adminApprovalStatus }).where(eq(studentDemoInterests.id, id));
+}
+
+/** Get student demo interests that admin has approved — visible to the tutor */
+export async function getAdminApprovedDemoInterestsByTutor(tutorProfileId: number): Promise<StudentDemoInterest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(studentDemoInterests)
+    .where(and(
+      eq(studentDemoInterests.tutorProfileId, tutorProfileId),
+      eq(studentDemoInterests.adminApprovalStatus, "admin_approved")
+    ))
+    .orderBy(desc(studentDemoInterests.createdAt));
+}
+
 // ─── OTP Verifications ─────────────────────────────────────────────────────────
 export async function createOtp(phone: string, code: string, expiresAt: Date): Promise<void> {
   const db = await getDb();
@@ -493,21 +555,36 @@ export async function createDemoSlot(
   studentDemoInterestId: number,
   studentProfileId: number,
   tutorProfileId: number,
-  mode: "home_tuition" | "online"
+  mode: "home_tuition" | "online" | "both",
+  interestDirection: "tutor_to_student" | "student_to_tutor" = "student_to_tutor"
 ): Promise<DemoSlot> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  // For student-initiated, parentAccepted is 'yes' (they already initiated)
+  // For tutor-initiated, parentAccepted starts as 'pending' (parent must accept first)
+  const parentAccepted = interestDirection === "student_to_tutor" ? "yes" : "pending";
   await db.insert(demoSlots).values({
     studentDemoInterestId,
     studentProfileId,
     tutorProfileId,
     mode,
     status: "pending_schedule",
+    interestDirection,
+    parentAccepted,
   });
   const rows = await db.select().from(demoSlots)
     .where(eq(demoSlots.studentDemoInterestId, studentDemoInterestId))
     .limit(1);
   return rows[0]!;
+}
+
+export async function updateDemoSlotParentAccepted(
+  id: number,
+  parentAccepted: "yes" | "no"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(demoSlots).set({ parentAccepted }).where(eq(demoSlots.id, id));
 }
 
 export async function getDemoSlotByInterestId(studentDemoInterestId: number): Promise<DemoSlot | null> {
@@ -519,7 +596,7 @@ export async function getDemoSlotByInterestId(studentDemoInterestId: number): Pr
   return rows[0] ?? null;
 }
 
-export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(DemoSlot & { confirmedMatchId: number | null })[]> {
+export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(DemoSlot & { confirmedMatchId: number | null; studentAddress: string | null; studentPhone: string | null })[]> {
   const db = await getDb();
   if (!db) return [];
   const rows = await db
@@ -533,17 +610,22 @@ export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(Demo
       notes: demoSlots.notes,
       status: demoSlots.status,
       mode: demoSlots.mode,
+      interestDirection: demoSlots.interestDirection,
+      parentAccepted: demoSlots.parentAccepted,
       tutorProceedIntent: demoSlots.tutorProceedIntent,
       studentProceedIntent: demoSlots.studentProceedIntent,
       createdAt: demoSlots.createdAt,
       updatedAt: demoSlots.updatedAt,
       confirmedMatchId: confirmedMatches.id,
+      studentAddress: studentProfiles.fullAddress,
+      studentPhone: studentProfiles.phone,
     })
     .from(demoSlots)
     .leftJoin(confirmedMatches, eq(confirmedMatches.demoSlotId, demoSlots.id))
+    .leftJoin(studentProfiles, eq(studentProfiles.id, demoSlots.studentProfileId))
     .where(eq(demoSlots.tutorProfileId, tutorProfileId))
     .orderBy(desc(demoSlots.createdAt));
-  return rows.map(r => ({ ...r, confirmedMatchId: r.confirmedMatchId ?? null }));
+  return rows.map(r => ({ ...r, confirmedMatchId: r.confirmedMatchId ?? null, studentAddress: r.studentAddress ?? null, studentPhone: r.studentPhone ?? null }));
 }
 
 export async function getDemoSlotsByStudent(studentProfileId: number): Promise<(DemoSlot & { confirmedMatchId: number | null })[]> {
@@ -560,6 +642,8 @@ export async function getDemoSlotsByStudent(studentProfileId: number): Promise<(
       notes: demoSlots.notes,
       status: demoSlots.status,
       mode: demoSlots.mode,
+      interestDirection: demoSlots.interestDirection,
+      parentAccepted: demoSlots.parentAccepted,
       tutorProceedIntent: demoSlots.tutorProceedIntent,
       studentProceedIntent: demoSlots.studentProceedIntent,
       createdAt: demoSlots.createdAt,
@@ -653,6 +737,7 @@ export async function createConfirmedMatch(data: {
   studentArea?: string | null;
   studentGrade?: string | null;
   studentSubjects?: string | null;
+  paymentAmount?: string | null;
 }): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -673,6 +758,13 @@ export async function getConfirmedMatchesByTutor(tutorProfileId: number): Promis
   return db.select().from(confirmedMatches)
     .where(eq(confirmedMatches.tutorProfileId, tutorProfileId))
     .orderBy(desc(confirmedMatches.matchedAt));
+}
+
+/** Update classStatus of a confirmed match (admin) */
+export async function updateConfirmedMatchClassStatus(matchId: number, classStatus: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(confirmedMatches).set({ classStatus }).where(eq(confirmedMatches.id, matchId));
 }
 
 /** Get confirmed matches for a specific student profile */

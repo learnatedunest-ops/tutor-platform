@@ -92,6 +92,20 @@
       "when": 1783750121147,
       "tag": "0012_plain_amazoness",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1783766602699,
+      "tag": "0013_strange_king_cobra",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1783767561690,
+      "tag": "0014_charming_ozymandias",
+      "breakpoints": true
     }
   ]
 }

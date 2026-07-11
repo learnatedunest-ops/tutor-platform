@@ -1,0 +1,1 @@
+ALTER TABLE `confirmed_matches` ADD `classStatus` varchar(32) DEFAULT 'matched';

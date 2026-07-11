@@ -42,11 +42,16 @@ import {
   getAllTutorInterests,
   getTutorInterestsByTutor,
   updateTutorInterestStatus,
+  updateTutorInterestAdminStatus,
+  getAdminApprovedTutorInterestsByStudent,
   createStudentDemoInterest,
   getStudentDemoInterestsByStudent,
   getStudentDemoInterestByPair,
   getAllStudentDemoInterests,
   updateStudentDemoInterestStatus,
+  updateStudentDemoInterestAdminStatus,
+  getAdminApprovedDemoInterestsByTutor,
+  updateDemoSlotParentAccepted,
   // OTP
   createOtp,
   getLatestOtp,
@@ -67,6 +72,7 @@ import {
   getConfirmedMatchBySlotId,
   createConfirmedMatch,
   getAllConfirmedMatches,
+  updateConfirmedMatchClassStatus,
   getConfirmedMatchesByTutor,
   getConfirmedMatchesByStudent,
   // Session logs
@@ -509,7 +515,7 @@ export const appRouter = router({
 
   // --- Tutor Interests ---
   tutorInterest: router({
-    // Tutor expresses interest in a student requirement
+    // Tutor expresses interest in a student requirement — goes to admin first
     express: protectedProcedure
       .input(z.object({
         studentProfileId: z.number(),
@@ -522,8 +528,8 @@ export const appRouter = router({
         }
         const interest = await createTutorInterest(myProfile.id, input.studentProfileId, input.message);
         await notifyOwner({
-          title: `New Tutor Interest: ${myProfile.name}`,
-          content: `**Tutor:** ${myProfile.name} (${myProfile.phone})\n**Student Profile ID:** ${input.studentProfileId}\n**Message:** ${input.message ?? 'No message'}\n\nReview at https://edu-nest.manus.space/admin`,
+          title: `🎯 New Tutor Interest (Pending Admin Approval): ${myProfile.name}`,
+          content: `**Tutor:** ${myProfile.name} (${myProfile.phone})\n**Student Profile ID:** ${input.studentProfileId}\n**Message:** ${input.message ?? 'No message'}\n\nPlease review and approve/reject at https://edu-nest.manus.space/admin`,
         }).catch(() => {});
         return { success: true, interest };
       }),
@@ -535,10 +541,65 @@ export const appRouter = router({
       return getTutorInterestsByTutor(myProfile.id);
     }),
 
+    // Student: get admin-approved tutor interests for their profile
+    getApprovedForMe: protectedProcedure.query(async ({ ctx }) => {
+      const myProfile = await getStudentProfileByUserId(ctx.user.id);
+      if (!myProfile) return [];
+      return getAdminApprovedTutorInterestsByStudent(myProfile.id);
+    }),
+
+    // Student: accept or decline an admin-approved tutor interest
+    // When accepted, a demo slot is created and the tutor is notified
+    respondToInterest: protectedProcedure
+      .input(z.object({
+        interestId: z.number(),
+        response: z.enum(["accepted", "declined"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const myProfile = await getStudentProfileByUserId(ctx.user.id);
+        if (!myProfile) throw new Error("Student profile not found.");
+        // Verify the interest belongs to this student
+        const approved = await getAdminApprovedTutorInterestsByStudent(myProfile.id);
+        const interest = approved.find(i => i.id === input.interestId);
+        if (!interest) throw new Error("Interest not found or not approved by admin.");
+        await updateTutorInterestStatus(input.interestId, input.response);
+        if (input.response === "accepted") {
+          // Create a demo slot — parent will set the timing
+          // Use the student's preferred mode
+          const mode = (myProfile.mode as "home_tuition" | "online" | "both") ?? "online";
+          const existing = await getDemoSlotByInterestId(input.interestId);
+          if (!existing) {
+            await createDemoSlot(
+              input.interestId,
+              myProfile.id,
+              interest.tutorProfileId,
+              mode,
+              "tutor_to_student"
+            );
+          }
+          await notifyOwner({
+            title: `✅ Student Accepted Tutor Interest`,
+            content: `Student Profile #${myProfile.id} accepted tutor interest #${input.interestId}. A demo slot has been created. Parent will set the timing.`,
+          }).catch(() => {});
+        }
+        return { success: true };
+      }),
+
     // Admin: list all tutor interests
     list: adminProcedure.query(async () => getAllTutorInterests()),
 
-    // Admin: update interest status
+    // Admin: approve or reject a tutor interest (before student sees it)
+    adminApprove: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        adminApprovalStatus: z.enum(["admin_approved", "admin_rejected"]),
+      }))
+      .mutation(async ({ input }) => {
+        await updateTutorInterestAdminStatus(input.id, input.adminApprovalStatus);
+        return { success: true };
+      }),
+
+    // Admin: update student-facing status (legacy, kept for compatibility)
     updateStatus: adminProcedure
       .input(z.object({
         id: z.number(),
@@ -589,7 +650,7 @@ export const appRouter = router({
 
   // ─── Student Demo Interests ──────────────────────────────────────────────────
   studentDemoInterest: router({
-    // Student books a free demo class with a nearby tutor
+    // Student/parent shows interest in a nearby tutor — goes to admin first
     bookDemo: protectedProcedure
       .input(z.object({
         tutorProfileId: z.number(),
@@ -603,8 +664,8 @@ export const appRouter = router({
         if (existing) return { success: true, status: existing.status, alreadyExists: true };
         await createStudentDemoInterest(studentProfile.id, input.tutorProfileId, input.message);
         await notifyOwner({
-          title: `📚 New Demo Class Request`,
-          content: `Student **${studentProfile.name}** (${studentProfile.email}) has requested a free demo class.\n\nTutor Profile ID: ${input.tutorProfileId}\n\nManage at https://edu-nest.manus.space/admin`,
+          title: `📚 New Student Interest (Pending Admin Approval)`,
+          content: `Student **${studentProfile.name}** (${studentProfile.email}) has shown interest in a tutor.\n\nTutor Profile ID: ${input.tutorProfileId}\n\nPlease review and approve/reject at https://edu-nest.manus.space/admin`,
         }).catch(() => {/* non-blocking */});
         return { success: true, status: "pending", alreadyExists: false };
       }),
@@ -626,10 +687,67 @@ export const appRouter = router({
       return getStudentDemoInterestsByStudent(studentProfile.id);
     }),
 
-    // Admin: list all demo interests
+    // Tutor: get admin-approved student interests for their profile
+    getApprovedForMe: protectedProcedure.query(async ({ ctx }) => {
+      const myProfile = await getTutorProfileByUserId(ctx.user.id);
+      if (!myProfile) return [];
+      return getAdminApprovedDemoInterestsByTutor(myProfile.id);
+    }),
+
+    // Tutor: accept or decline an admin-approved student interest
+    // When accepted, a demo slot is created; parent will then set the timing
+    respondToInterest: protectedProcedure
+      .input(z.object({
+        interestId: z.number(),
+        response: z.enum(["confirmed", "cancelled"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const myProfile = await getTutorProfileByUserId(ctx.user.id);
+        if (!myProfile) throw new Error("Tutor profile not found.");
+        // Verify the interest belongs to this tutor
+        const approved = await getAdminApprovedDemoInterestsByTutor(myProfile.id);
+        const interest = approved.find(i => i.id === input.interestId);
+        if (!interest) throw new Error("Interest not found or not approved by admin.");
+        await updateStudentDemoInterestStatus(input.interestId, input.response);
+        if (input.response === "confirmed") {
+          // Create a demo slot — parent will set the timing
+          // Use the student's preferred mode
+          const allStudents = await getAllStudentProfiles();
+          const sProfile = allStudents.find(s => s.id === interest.studentProfileId);
+          const mode = (sProfile?.mode as "home_tuition" | "online" | "both") ?? "online";
+          const existing = await getDemoSlotByInterestId(input.interestId);
+          if (!existing) {
+            await createDemoSlot(
+              input.interestId,
+              interest.studentProfileId,
+              myProfile.id,
+              mode,
+              "student_to_tutor"
+            );
+          }
+          await notifyOwner({
+            title: `✅ Tutor Accepted Student Interest`,
+            content: `Tutor Profile #${myProfile.id} accepted student interest #${input.interestId}. A demo slot has been created. Parent will set the timing.`,
+          }).catch(() => {});
+        }
+        return { success: true };
+      }),
+
+    // Admin: list all student interests
     listAll: adminProcedure.query(async () => getAllStudentDemoInterests()),
 
-    // Admin: update status — also creates a demo slot when confirming
+    // Admin: approve or reject a student interest (before tutor sees it)
+    adminApprove: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        adminApprovalStatus: z.enum(["admin_approved", "admin_rejected"]),
+      }))
+      .mutation(async ({ input }) => {
+        await updateStudentDemoInterestAdminStatus(input.id, input.adminApprovalStatus);
+        return { success: true };
+      }),
+
+    // Admin: legacy status update (kept for compatibility)
     updateStatus: adminProcedure
       .input(z.object({
         id: z.number(),
@@ -637,28 +755,6 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await updateStudentDemoInterestStatus(input.id, input.status);
-        if (input.status === "confirmed") {
-          // Fetch the interest to get profile IDs
-          const all = await getAllStudentDemoInterests();
-          const interest = all.find(i => i.id === input.id);
-          if (interest) {
-            // Create a demo slot if one doesn't already exist
-            const existing = await getDemoSlotByInterestId(input.id);
-            if (!existing) {
-              await createDemoSlot(
-                input.id,
-                interest.studentProfileId,
-                interest.tutorProfileId,
-                "online"
-              );
-            }
-            // Notify the tutor via owner notification (best-effort)
-            await notifyOwner({
-              title: `🎉 Demo Class Confirmed — Tutor Profile #${interest.tutorProfileId}`,
-              content: `A student has confirmed a free demo class with you!\n\nStudent Profile ID: ${interest.studentProfileId}\nTutor Profile ID: ${interest.tutorProfileId}\n\nLog in to EduNest to view the schedule: https://edu-nest.manus.space/tutor-dashboard`,
-            }).catch(() => {});
-          }
-        }
         return { success: true };
       }),
   }),
@@ -761,7 +857,32 @@ export const appRouter = router({
       return getDemoSlotsByTutor(profile.id);
     }),
 
-    // Student: schedule a confirmed demo slot
+    // Parent: accept a tutor-initiated interest slot (unlocks scheduling)
+    parentAccept: protectedProcedure
+      .input(z.object({
+        slotId: z.number(),
+        response: z.enum(["yes", "no"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const profile = await getStudentProfileByUserId(ctx.user.id);
+        if (!profile) throw new Error("Student profile not found.");
+        const slots = await getDemoSlotsByStudent(profile.id);
+        const slot = slots.find(s => s.id === input.slotId);
+        if (!slot) throw new Error("Demo slot not found or access denied.");
+        if (slot.interestDirection !== "tutor_to_student") {
+          throw new Error("This slot does not require parent acceptance.");
+        }
+        await updateDemoSlotParentAccepted(input.slotId, input.response);
+        if (input.response === "yes") {
+          await notifyOwner({
+            title: `✅ Parent Accepted Tutor Interest`,
+            content: `Student Profile #${profile.id} accepted the tutor's interest. They can now schedule the demo.`,
+          }).catch(() => {});
+        }
+        return { success: true };
+      }),
+
+    // Parent/Student: schedule a confirmed demo slot (only parent sets timing)
     schedule: protectedProcedure
       .input(z.object({
         slotId: z.number(),
@@ -770,13 +891,37 @@ export const appRouter = router({
         notes: z.string().max(500).trim().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        // Verify the student owns this slot
+        // Verify the student/parent owns this slot
         const profile = await getStudentProfileByUserId(ctx.user.id);
         if (!profile) throw new Error("Student profile not found.");
         const slots = await getDemoSlotsByStudent(profile.id);
         const slot = slots.find(s => s.id === input.slotId);
         if (!slot) throw new Error("Demo slot not found or access denied.");
+        // For tutor-initiated slots, parent must have accepted first
+        if (slot.interestDirection === "tutor_to_student" && slot.parentAccepted !== "yes") {
+          throw new Error("Please accept the tutor's interest before scheduling.");
+        }
         await updateDemoSlotSchedule(input.slotId, input.scheduledDate, input.scheduledTime, input.notes);
+        // After scheduling, send the tutor the student's full contact details (address + phone)
+        const allTutors = await getAllTutorProfiles();
+        const tProfile = allTutors.find(t => t.id === slot.tutorProfileId);
+        const tutorUser = tProfile ? await getUserById(tProfile.userId) : null;
+        if (tutorUser?.email && tProfile) {
+          const studentAddress = profile.fullAddress ?? profile.area ?? "Not provided";
+          const studentPhone = profile.phone;
+          const studentName = profile.studentName ?? profile.name;
+          // Send email to tutor with full student contact details for demo visit
+          sendContactRevealToTutor({
+            tutorEmail: tutorUser.email,
+            tutorName: tProfile.name ?? "Tutor",
+            studentName,
+            studentEmail: "",  // not revealed yet
+            studentPhone,
+            studentArea: studentAddress,
+            studentGrade: profile.grade,
+            studentSubjects: profile.subjects,
+          }).catch(() => {});
+        }
         // Notify owner
         await notifyOwner({
           title: `📅 Demo Slot Scheduled`,
@@ -866,6 +1011,7 @@ export const appRouter = router({
               studentArea: sProfile?.area ?? null,
               studentGrade: sProfile?.grade ?? null,
               studentSubjects: sProfile?.subjects ?? null,
+              paymentAmount: sProfile?.budget ?? null,
             });
 
             // Send contact reveal emails to both parties
@@ -899,7 +1045,7 @@ export const appRouter = router({
             // Notify owner
             await notifyOwner({
               title: `🎉 New Confirmed Match!`,
-              content: `Tutor Profile #${updatedSlot.tutorProfileId} and Student Profile #${updatedSlot.studentProfileId} have both agreed to proceed after their demo class. Contact details have been shared via email.`,
+              content: `Tutor Profile #${updatedSlot.tutorProfileId} and Student Profile #${updatedSlot.studentProfileId} have both agreed to continue after their demo class. Admin can now mark this as a confirmed class.`,
             }).catch(() => {});
 
             return { success: true, matched: true };
@@ -913,6 +1059,22 @@ export const appRouter = router({
   // ─── Confirmed Matches (Admin) ───────────────────────────────────────────────
   confirmedMatch: router({
     listAll: adminProcedure.query(async () => getAllConfirmedMatches()),
+
+    /** Admin: mark a confirmed match as 'got_a_class' */
+    markGotAClass: adminProcedure
+      .input(z.object({ matchId: z.number() }))
+      .mutation(async ({ input }) => {
+        await updateConfirmedMatchClassStatus(input.matchId, 'got_a_class');
+        return { success: true };
+      }),
+
+    /** Admin: reset class status back to 'matched' */
+    resetClassStatus: adminProcedure
+      .input(z.object({ matchId: z.number() }))
+      .mutation(async ({ input }) => {
+        await updateConfirmedMatchClassStatus(input.matchId, 'matched');
+        return { success: true };
+      }),
 
     /** Tutor: get confirmed matches for their own profile */
     getMineForTutor: protectedProcedure.query(async ({ ctx }) => {

@@ -34,7 +34,7 @@ const BOOKING_STATUS_CONFIG = {
 
 export default function StudentPortal() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"bookings" | "demos" | "requirement" | "profile">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "demos" | "interests" | "requirement" | "profile">("bookings");
   const [editingReq, setEditingReq] = useState(false);
   const [reqForm, setReqForm] = useState<Record<string, string>>({});
   // Demo slot scheduling state
@@ -74,17 +74,36 @@ export default function StudentPortal() {
     undefined, { enabled: isAuthenticated }
   );
 
+  // Confirmed matches for this student (to show Got a Class status)
+  const { data: myConfirmedMatches, refetch: refetchConfirmedMatches } = trpc.confirmedMatch.getMineForStudent.useQuery(
+    undefined, { enabled: isAuthenticated }
+  );
+
   // Post-demo proceed intent
   const setProceedIntent = trpc.demoSlot.setProceedIntent.useMutation({
     onSuccess: (data) => {
       utils.demoSlot.mySlots.invalidate();
+      refetchConfirmedMatches();
       if (data.matched) {
-        toast.success("🎉 It's a match! Both parties agreed. Tutor contact details have been sent to your email.");
+        toast.success("🎉 Great news! Both parties agreed. You've got a class!");
       } else {
         toast.success("Your response has been recorded.");
       }
     },
     onError: (err: { message?: string }) => toast.error(err.message ?? "Failed to record response"),
+  });
+
+  // Admin-approved tutor interests for this student/parent to respond to
+  const { data: approvedTutorInterests, refetch: refetchApprovedInterests } = trpc.tutorInterest.getApprovedForMe.useQuery(
+    undefined, { enabled: isAuthenticated }
+  );
+  const respondToTutorInterest = trpc.tutorInterest.respondToInterest.useMutation({
+    onSuccess: () => {
+      refetchApprovedInterests();
+      utils.demoSlot.mySlots.invalidate();
+      toast.success("Response recorded!");
+    },
+    onError: (err: { message?: string }) => toast.error(err.message ?? "Failed to respond"),
   });
 
   const updateProfileMutation = trpc.studentProfile.save.useMutation({
@@ -248,7 +267,7 @@ export default function StudentPortal() {
 
           {/* Tabs */}
           <div className="flex gap-2 mb-6 flex-wrap">
-            {(["bookings", "demos", "requirement", "profile"] as const).map(tab => (
+            {(["bookings", "demos", "interests", "requirement", "profile"] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -264,6 +283,15 @@ export default function StudentPortal() {
                   <span className="flex items-center gap-2">
                     <CalendarCheck size={15} /> Schedule Demo
                     {pendingDemoCount > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingDemoCount}</span>}
+                  </span>
+                ) : tab === "interests" ? (
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 size={15} /> Tutor Interests
+                    {approvedTutorInterests?.filter((i: any) => i.status === 'pending').length ? (
+                      <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                        {approvedTutorInterests.filter((i: any) => i.status === 'pending').length}
+                      </span>
+                    ) : null}
                   </span>
                 ) : tab === "requirement" ? (
                   <span className="flex items-center gap-2"><FileText size={15} /> My Requirement</span>
@@ -469,7 +497,7 @@ export default function StudentPortal() {
                           🎓 Would you like to continue with this tutor?
                         </p>
                         <p className="text-xs mb-3 text-gray-500">
-                          If both you and the tutor agree, EduNest will share each other's full contact details so you can start regular classes.
+                          Let us know if you'd like to start regular classes with this tutor.
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -496,9 +524,17 @@ export default function StudentPortal() {
                         <p className="text-xs font-semibold text-blue-700">⏳ You said Yes! Waiting for the tutor to respond...</p>
                       </div>
                     )}
-                    {slot.status === "completed" && (slot as any).studentProceedIntent === "yes" && (slot as any).tutorProceedIntent === "yes" && (
-                      <div className="mt-4 p-3 rounded-xl bg-green-50 border border-green-200">
-                        <p className="text-xs font-semibold text-green-700">🎉 Matched! Tutor's contact details have been sent to your email. Check your inbox!</p>
+                    {slot.status === "completed" && (slot as any).studentProceedIntent === "yes" && (slot as any).tutorProceedIntent === "yes" && (() => {
+                      const confirmedMatch = myConfirmedMatches?.find((m: any) => m.demoSlotId === slot.id);
+                      const isGotAClass = confirmedMatch?.classStatus === 'got_a_class';
+                      return (
+                      <div className={`mt-4 p-3 rounded-xl border ${isGotAClass ? 'bg-emerald-50 border-emerald-300' : 'bg-green-50 border-green-200'}`}>
+                        <p className={`text-xs font-semibold ${isGotAClass ? 'text-emerald-700' : 'text-green-700'}`}>
+                          {isGotAClass ? '🎓 Got a Class! EduNest has confirmed your class arrangement.' : '🎉 Great news! Both parties agreed. You\'ve got a class!'}
+                        </p>
+                        {isGotAClass && confirmedMatch?.paymentAmount && (
+                          <p className="text-xs text-emerald-700 mt-1 font-semibold">💰 Monthly Fee: ₹{confirmedMatch.paymentAmount}</p>
+                        )}
                         {/* Payment Status Icon */}
                         {(() => {
                           const log = mySessionLogs?.find((l: any) => l.studentProfileId === (slot as any).studentProfileId);
@@ -536,19 +572,115 @@ export default function StudentPortal() {
                               )}
                             </div>
                           );
-                        })()}
+                            })()}
                       </div>
-                    )}
+                      );
+                    })()}
                     {slot.status === "completed" && (slot as any).studentProceedIntent === "no" && (
                       <div className="mt-4 p-3 rounded-xl bg-gray-50 border border-gray-200">
-                        <p className="text-xs font-semibold text-gray-500">You chose not to proceed. You can find another tutor in Find a Tutor.</p>
+                        <p className="text-xs font-semibold text-gray-500">You chose not to continue. You can find another tutor in Find a Tutor.</p>
                       </div>
                     )}
                     {slot.status === "completed" && (slot as any).studentProceedIntent === "yes" && (slot as any).tutorProceedIntent === "no" && (
                       <div className="mt-4 p-3 rounded-xl bg-gray-50 border border-gray-200">
-                        <p className="text-xs font-semibold text-gray-500">The tutor chose not to proceed. EduNest will help you find another tutor.</p>
+                        <p className="text-xs font-semibold text-gray-500">The tutor chose not to continue. EduNest will help you find another tutor.</p>
                       </div>
                     )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Tutor Interests Tab */}
+          {activeTab === "interests" && (
+            <div className="space-y-4">
+              {!approvedTutorInterests?.length ? (
+                <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                  <CheckCircle2 size={48} className="mx-auto mb-4 opacity-20" style={{ color: "oklch(0.68 0.18 50)" }} />
+                  <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No tutor interests yet</h3>
+                  <p className="text-gray-400">When a tutor expresses interest in your requirement and EduNest approves it, you'll see it here to accept or decline.</p>
+                </div>
+              ) : (
+                approvedTutorInterests.map((interest: any) => (
+                  <div key={interest.id} className="bg-white rounded-2xl shadow-sm border p-6" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+                            Tutor Interest
+                          </span>
+                          {interest.adminApprovalStatus === 'admin_approved' && (
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+                              ✔ EduNest Approved
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-base font-bold mb-1" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
+                          {interest.tutorName ?? `Tutor #${interest.tutorProfileId}`}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {interest.tutorQualification && (
+                            <span className="inline-flex items-center gap-1 text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full border border-orange-100">
+                              <GraduationCap size={10} /> {interest.tutorQualification}
+                            </span>
+                          )}
+                          {interest.tutorExperience && (
+                            <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">
+                              <Clock size={10} /> {interest.tutorExperience}
+                            </span>
+                          )}
+                          {interest.tutorMode && (
+                            <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-100">
+                              {interest.tutorMode === 'online' ? '💻 Online' : interest.tutorMode === 'home_tuition' ? '🏠 Home Tuition' : '🏠💻 Both'}
+                            </span>
+                          )}
+                          {interest.tutorArea && (
+                            <span className="inline-flex items-center gap-1 text-xs bg-gray-50 text-gray-600 px-2 py-0.5 rounded-full border border-gray-100">
+                              <MapPin size={10} /> {interest.tutorArea}
+                            </span>
+                          )}
+                        </div>
+                        {interest.tutorSubjects && (
+                          <p className="text-xs text-gray-600 mb-1"><span className="font-semibold">Subjects:</span> {interest.tutorSubjects}</p>
+                        )}
+                        {interest.tutorEducation && (
+                          <p className="text-xs text-gray-500 mb-1"><span className="font-semibold">Education:</span> {interest.tutorEducation.split('\n')[0]}</p>
+                        )}
+                        {interest.message && (
+                          <p className="text-sm text-gray-500 mb-1 italic">"{interest.message}"</p>
+                        )}
+                        <p className="text-xs text-gray-400">
+                          Received: {new Date(interest.createdAt).toLocaleDateString('en-IN')}
+                        </p>
+                      </div>
+                      {interest.status === 'pending' ? (
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={() => respondToTutorInterest.mutate({ interestId: interest.id, response: 'accepted' })}
+                            disabled={respondToTutorInterest.isPending}
+                            className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                            style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
+                          >
+                            ✔ Accept
+                          </button>
+                          <button
+                            onClick={() => respondToTutorInterest.mutate({ interestId: interest.id, response: 'declined' })}
+                            disabled={respondToTutorInterest.isPending}
+                            className="px-4 py-2 rounded-xl text-sm font-bold border transition-all hover:bg-red-50"
+                            style={{ borderColor: "#fca5a5", color: "#dc2626" }}
+                          >
+                            ✕ Decline
+                          </button>
+                        </div>
+                      ) : (
+                        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${
+                          interest.status === 'accepted' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                        }`}>
+                          {interest.status === 'accepted' ? '✔ Accepted — Demo being scheduled' : '✕ Declined'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))
               )}

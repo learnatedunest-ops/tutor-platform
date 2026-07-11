@@ -218,6 +218,9 @@ export const tutorInterests = mysqlTable("tutor_interests", {
   tutorProfileId: int("tutorProfileId").notNull(),    // FK → tutor_profiles.id
   studentProfileId: int("studentProfileId").notNull(), // FK → student_profiles.id
   message: text("message"),
+  // Admin first reviews and approves/rejects before the student sees it
+  adminApprovalStatus: mysqlEnum("adminApprovalStatus", ["pending_admin", "admin_approved", "admin_rejected"]).default("pending_admin").notNull(),
+  // After admin approves, student accepts or declines
   status: mysqlEnum("status", ["pending", "accepted", "declined"]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -278,6 +281,9 @@ export const studentDemoInterests = mysqlTable("student_demo_interests", {
   studentProfileId: int("studentProfileId").notNull(),  // FK → student_profiles.id
   tutorProfileId: int("tutorProfileId").notNull(),       // FK → tutor_profiles.id
   message: text("message"),
+  // Admin first reviews and approves/rejects before the tutor sees it
+  adminApprovalStatus: mysqlEnum("adminApprovalStatus", ["pending_admin", "admin_approved", "admin_rejected"]).default("pending_admin").notNull(),
+  // After admin approves, tutor accepts or declines
   status: mysqlEnum("status", ["pending", "confirmed", "cancelled"]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -314,9 +320,14 @@ export const demoSlots = mysqlTable("demo_slots", {
   tutorProfileId: int("tutorProfileId").notNull(),        // FK → tutor_profiles.id
   scheduledDate: varchar("scheduledDate", { length: 32 }),  // e.g. "2024-08-15"
   scheduledTime: varchar("scheduledTime", { length: 32 }),  // e.g. "10:00 AM"
-  mode: mysqlEnum("mode", ["home_tuition", "online"]).default("online").notNull(),
+  // Mode comes from the student's registered preference (home_tuition / online / both)
+  mode: mysqlEnum("mode", ["home_tuition", "online", "both"]).default("online").notNull(),
   notes: text("notes"),
   status: mysqlEnum("status", ["pending_schedule", "scheduled", "completed", "cancelled"]).default("pending_schedule").notNull(),
+  // Which party initiated: tutor_to_student (tutor interest) or student_to_tutor (student demo interest)
+  interestDirection: mysqlEnum("interestDirection", ["tutor_to_student", "student_to_tutor"]).default("student_to_tutor").notNull(),
+  // For tutor-initiated: parent must accept before scheduling is unlocked
+  parentAccepted: mysqlEnum("parentAccepted", ["yes", "no", "pending"]).default("pending").notNull(),
   // Post-demo proceed intent: both parties express yes/no to continue
   tutorProceedIntent: mysqlEnum("tutorProceedIntent", ["yes", "no"]),
   studentProceedIntent: mysqlEnum("studentProceedIntent", ["yes", "no"]),
@@ -346,6 +357,10 @@ export const confirmedMatches = mysqlTable("confirmed_matches", {
   studentArea: varchar("studentArea", { length: 128 }),
   studentGrade: varchar("studentGrade", { length: 64 }),
   studentSubjects: text("studentSubjects"),
+  // Payment amount from student's registered budget (shown to parent on payment request)
+  paymentAmount: varchar("paymentAmount", { length: 64 }),
+  // Admin sets this to 'got_a_class' once both parties confirmed and class is arranged
+  classStatus: varchar("classStatus", { length: 32 }).default("matched"),
   matchedAt: timestamp("matchedAt").defaultNow().notNull(),
 });
 

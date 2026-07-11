@@ -233,3 +233,29 @@
 - [x] Fix Budget (per month) input in StudentSetup to number-only (type=number, min=0, strip non-digits)
 - [x] Update email.test.ts to validate GMAIL_APP_PASSWORD env and all email functions
 - [x] 15/15 tests passing, 0 TypeScript errors
+## Round 22 — Full Workflow Redesign
+- [x] Fix StudentSetup "View Nearby Tutors" button to navigate to /nearby-tutors (not /student-portal)
+- [x] Admin: rename "Demo Requests" tab to "Student Interests"; remove old Demo Bookings tab
+- [x] DB schema: add adminApprovalStatus to tutorInterests and studentDemoInterests (pending_admin/admin_approved/admin_rejected)
+- [x] DB schema: add interestDirection to demoSlots (tutor_to_student / student_to_tutor) and store parent's mode preference
+- [x] DB schema: add parentAccepted field to demoSlots (for tutor-initiated interest, parent must accept before scheduling)
+- [x] DB schema: add paymentAmount to confirmedMatches (copied from student budget at match time)
+- [x] DB: run db:push for schema changes
+- [x] Backend: tutorInterest.express now sets adminApprovalStatus=pending_admin; admin approves → student sees it in dashboard
+- [x] Backend: studentDemoInterest.bookDemo now sets adminApprovalStatus=pending_admin; admin approves → tutor sees it in dashboard
+- [x] Backend: student/parent can accept or reject admin-approved tutor interest
+- [x] Backend: tutor can accept or reject admin-approved student demo interest
+- [x] Backend: after acceptance, only parent sets demo date/time; tutor receives full contact details (address + phone) on scheduling
+- [x] Backend: demo mode comes from student's registered preference (not hardcoded "online")
+- [x] Backend: post-demo question — both parties see "Would you like to continue?" (no mention of contact sharing)
+- [x] Backend: admin marks demo as completed; both parties see "Got a Class!" status
+- [x] Backend: confirmed match stores paymentAmount from student's registered budget
+- [x] TutorDashboard: show admin-approved student interests (accept/reject); show correct demo mode from student profile
+- [x] TutorDashboard: after accepting student interest, show demo details with student full address + phone
+- [x] TutorDashboard: post-demo "Would you like to continue with this student?" (no contact-sharing mention)
+- [x] StudentPortal: show admin-approved tutor interests (accept/reject); show tutor info (id, experience, qualification, subjects, mode) but NOT contact/work details
+- [x] StudentPortal: after accepting tutor interest, parent sets demo date/time
+- [x] StudentPortal: post-demo "Would you like to continue with this tutor?" (no contact-sharing mention)
+- [x] StudentPortal: "Got a Class!" status once admin marks completed; show payment amount from registered budget
+- [x] NearbyTutors: tutor profile modal — hide work experience and contact details; show id, experience years, subjects, mode, qualification
+- [x] 15/15 tests passing, 0 TypeScript errors

@@ -47,7 +47,7 @@ function formatDate(date: Date | string) {
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "bookings" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs">("inquiries");
   const [tutorForm, setTutorForm] = useState<typeof EMPTY_TUTOR>(EMPTY_TUTOR);
   const [editingTutorId, setEditingTutorId] = useState<number | null>(null);
   const [showTutorForm, setShowTutorForm] = useState(false);
@@ -126,13 +126,21 @@ export default function Admin() {
     onSuccess: () => { refetchInterests(); toast.success("Interest status updated"); },
     onError: () => toast.error("Failed to update interest status"),
   });
+  const adminApproveTutorInterest = trpc.tutorInterest.adminApprove.useMutation({
+    onSuccess: () => { refetchInterests(); toast.success("Tutor interest admin status updated"); },
+    onError: () => toast.error("Failed to update admin approval status"),
+  });
 
   // Student Demo Interests — must be before early returns
   const { data: studentDemoInterestsList, isLoading: loadingDemoInterests, refetch: refetchDemoInterests } =
     trpc.studentDemoInterest.listAll.useQuery(undefined, { enabled: isAdmin });
   const updateDemoInterestStatus = trpc.studentDemoInterest.updateStatus.useMutation({
-    onSuccess: () => { refetchDemoInterests(); toast.success("Demo interest status updated"); },
-    onError: () => toast.error("Failed to update demo interest status"),
+    onSuccess: () => { refetchDemoInterests(); toast.success("Student interest status updated"); },
+    onError: () => toast.error("Failed to update student interest status"),
+  });
+  const adminApproveStudentInterest = trpc.studentDemoInterest.adminApprove.useMutation({
+    onSuccess: () => { refetchDemoInterests(); toast.success("Student interest admin status updated"); },
+    onError: () => toast.error("Failed to update admin approval status"),
   });
 
   // Demo Slots (scheduled demo classes) — must be before early returns
@@ -146,6 +154,15 @@ export default function Admin() {
   // Confirmed Matches — must be before early returns
   const { data: confirmedMatchesList, isLoading: loadingMatches, refetch: refetchMatches } =
     trpc.confirmedMatch.listAll.useQuery(undefined, { enabled: isAdmin });
+
+  const markGotAClassMutation = trpc.confirmedMatch.markGotAClass.useMutation({
+    onSuccess: () => { refetchMatches(); toast.success('✅ Marked as Got a Class!'); },
+    onError: () => toast.error('Failed to update class status'),
+  });
+  const resetClassStatusMutation = trpc.confirmedMatch.resetClassStatus.useMutation({
+    onSuccess: () => { refetchMatches(); toast.success('Status reset to Matched.'); },
+    onError: () => toast.error('Failed to reset class status'),
+  });
 
   const { data: sessionLogsList, isLoading: loadingSessionLogs, refetch: refetchSessionLogs } =
     trpc.sessionLog.listAll.useQuery(undefined, { enabled: isAdmin });
@@ -282,7 +299,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["inquiries", "bookings", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs"] as const).map(tab => (
+          {(["inquiries", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -291,8 +308,6 @@ export default function Admin() {
             >
               {tab === "inquiries" ? (
                 <span className="flex items-center gap-2"><MessageSquare size={15} /> Contact Inquiries {newInquiries > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{newInquiries}</span>}</span>
-              ) : tab === "bookings" ? (
-                <span className="flex items-center gap-2"><BookOpen size={15} /> Demo Bookings {pendingBookings > 0 && <span className="bg-white text-green-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingBookings}</span>}</span>
               ) : tab === "referrals" ? (
                 <span className="flex items-center gap-2"><Gift size={15} /> Referrals {pendingReferrals > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingReferrals}</span>}</span>
               ) : tab === "tutorProfiles" ? (
@@ -302,7 +317,7 @@ export default function Admin() {
               ) : tab === "interests" ? (
                 <span className="flex items-center gap-2"><CheckCircle2 size={15} /> Tutor Interests {pendingInterests > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingInterests}</span>}</span>
               ) : tab === "demoInterests" ? (
-                <span className="flex items-center gap-2"><BookOpen size={15} /> Demo Requests {pendingDemoInterests > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingDemoInterests}</span>}</span>
+                <span className="flex items-center gap-2"><BookOpen size={15} /> Student Interests {pendingDemoInterests > 0 && <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingDemoInterests}</span>}</span>
               ) : tab === "demoSlots" ? (
                 <span className="flex items-center gap-2"><Clock size={15} /> Demo Slots {pendingDemoSlots > 0 && <span className="bg-white text-blue-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{pendingDemoSlots}</span>}</span>
               ) : tab === "confirmedMatches" ? (
@@ -315,7 +330,7 @@ export default function Admin() {
             </button>
           ))}
           <button
-            onClick={() => { refetchInquiries(); refetchBookings(); refetchTutors(); refetchReferrals(); refetchTutorProfiles(); refetchStudentProfiles(); refetchInterests(); refetchDemoInterests(); refetchDemoSlots(); refetchMatches(); }}
+            onClick={() => { refetchInquiries(); refetchTutors(); refetchReferrals(); refetchTutorProfiles(); refetchStudentProfiles(); refetchInterests(); refetchDemoInterests(); refetchDemoSlots(); refetchMatches(); }}
             className="ml-auto flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             <RefreshCw size={15} /> Refresh
@@ -578,85 +593,6 @@ export default function Admin() {
                             <option value="new">New</option>
                             <option value="contacted">Contacted</option>
                             <option value="resolved">Resolved</option>
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── Demo Bookings ── */}
-        {activeTab === "bookings" && (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>Demo Class Bookings ({bookings?.length ?? 0})</h2>
-            </div>
-            {loadingBookings ? (
-              <div className="p-12 text-center text-gray-400">
-                <div className="w-8 h-8 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                Loading bookings...
-              </div>
-            ) : !bookings?.length ? (
-              <div className="p-12 text-center text-gray-400">
-                <BookOpen size={40} className="mx-auto mb-3 opacity-30" />
-                <p>No demo bookings yet.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 text-left">
-                      {["#", "Student", "Contact", "Tutor", "Subject / Grade", "Schedule", "Mode", "Status", "Actions"].map(h => (
-                        <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {bookings.map(bk => (
-                      <tr key={bk.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-4 text-gray-400 font-mono text-xs">{bk.id}</td>
-                        <td className="px-4 py-4 font-semibold text-gray-800 whitespace-nowrap">{bk.studentName}</td>
-                        <td className="px-4 py-4">
-                          <div className="flex flex-col gap-0.5">
-                            <a href={`mailto:${bk.studentEmail}`} className="flex items-center gap-1 text-blue-600 hover:underline text-xs"><Mail size={11} /> {bk.studentEmail}</a>
-                            <a href={`tel:${bk.studentPhone}`} className="flex items-center gap-1 text-green-600 hover:underline text-xs"><Phone size={11} /> {bk.studentPhone}</a>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-xs text-gray-700 font-medium whitespace-nowrap">{bk.tutorName}</td>
-                        <td className="px-4 py-4 text-xs text-gray-600">
-                          <div className="flex items-center gap-1"><BookOpen size={11} /> {bk.subject}</div>
-                          <div className="text-gray-400 mt-0.5">{bk.grade}</div>
-                        </td>
-                        <td className="px-4 py-4 text-xs text-gray-700">
-                          <div className="font-semibold">{bk.preferredDate}</div>
-                          <div className="text-gray-400 flex items-center gap-1"><Clock size={10} /> {bk.preferredTime}</div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full capitalize">{bk.mode.replace("_", " ")}</span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${
-                            bk.status === "pending" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
-                            bk.status === "confirmed" ? "bg-blue-100 text-blue-700 border-blue-200" :
-                            bk.status === "completed" ? "bg-green-100 text-green-700 border-green-200" :
-                            "bg-red-100 text-red-700 border-red-200"
-                          }`}>{bk.status}</span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <select
-                            value={bk.status}
-                            onChange={e => updateBookingStatus.mutate({ id: bk.id, status: e.target.value as BookingStatus })}
-                            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 cursor-pointer hover:border-green-400 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300"
-                            disabled={updateBookingStatus.isPending}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
                           </select>
                         </td>
                       </tr>
@@ -935,7 +871,7 @@ export default function Admin() {
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>Tutor Interests ({tutorInterestsList?.length ?? 0})</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Approved tutors who expressed interest in student requirements. Accept to connect them.</p>
+              <p className="text-xs text-gray-400 mt-0.5">Tutors who expressed interest in a student. Approve to forward to the student, or reject to dismiss.</p>
             </div>
             {loadingInterests ? (
               <div className="p-12 text-center text-gray-400">
@@ -952,7 +888,7 @@ export default function Admin() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 text-left">
-                      {["#", "Tutor Profile ID", "Student Profile ID", "Message", "Status", "Submitted", "Actions"].map(h => (
+                      {["#", "Tutor Profile", "Student Profile", "Message", "Admin Status", "Student Response", "Submitted", "Actions"].map(h => (
                         <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -960,11 +896,11 @@ export default function Admin() {
                   <tbody className="divide-y divide-gray-50">
                     {tutorInterestsList.map((interest: {
                       id: number; tutorProfileId: number; studentProfileId: number;
-                      message?: string | null; status: string; createdAt: Date | string;
+                      message?: string | null; status: string; adminApprovalStatus?: string; createdAt: Date | string;
                     }) => (
                       <tr key={interest.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-4 text-gray-400 font-mono text-xs">{interest.id}</td>
-                        <td className="px-4 py-4 font-semibold text-gray-800">
+                        <td className="px-4 py-4">
                           <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-lg font-mono">Tutor #{interest.tutorProfileId}</span>
                         </td>
                         <td className="px-4 py-4">
@@ -974,24 +910,44 @@ export default function Admin() {
                           {interest.message ? <p className="line-clamp-2">{interest.message}</p> : <span className="text-gray-300">No message</span>}
                         </td>
                         <td className="px-4 py-4">
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                            interest.adminApprovalStatus === "admin_approved" ? "bg-green-50 text-green-700 border-green-200" :
+                            interest.adminApprovalStatus === "admin_rejected" ? "bg-red-50 text-red-700 border-red-200" :
+                            "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          }`}>
+                            {interest.adminApprovalStatus === "admin_approved" ? "Approved" :
+                             interest.adminApprovalStatus === "admin_rejected" ? "Rejected" : "Pending Review"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
                           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${
                             interest.status === "accepted" ? "bg-green-50 text-green-700 border-green-200" :
                             interest.status === "declined" ? "bg-red-50 text-red-700 border-red-200" :
-                            "bg-yellow-50 text-yellow-700 border-yellow-200"
-                          }`}>{interest.status}</span>
+                            "bg-gray-50 text-gray-500 border-gray-200"
+                          }`}>{interest.status === "pending" ? "Awaiting student" : interest.status}</span>
                         </td>
                         <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">{new Date(interest.createdAt).toLocaleDateString()}</td>
                         <td className="px-4 py-4">
-                          <select
-                            value={interest.status}
-                            onChange={e => updateInterestStatus.mutate({ id: interest.id, status: e.target.value as "pending" | "accepted" | "declined" })}
-                            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 cursor-pointer hover:border-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-300"
-                            disabled={updateInterestStatus.isPending}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="accepted">Accepted</option>
-                            <option value="declined">Declined</option>
-                          </select>
+                          <div className="flex gap-2">
+                            {interest.adminApprovalStatus !== "admin_approved" && (
+                              <button
+                                onClick={() => adminApproveTutorInterest.mutate({ id: interest.id, adminApprovalStatus: "admin_approved" })}
+                                disabled={adminApproveTutorInterest.isPending}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-500 text-white hover:bg-green-600 transition-colors disabled:opacity-50"
+                              >
+                                Approve
+                              </button>
+                            )}
+                            {interest.adminApprovalStatus !== "admin_rejected" && (
+                              <button
+                                onClick={() => adminApproveTutorInterest.mutate({ id: interest.id, adminApprovalStatus: "admin_rejected" })}
+                                disabled={adminApproveTutorInterest.isPending}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50"
+                              >
+                                Reject
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1018,7 +974,7 @@ export default function Admin() {
               <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                 <Clock size={40} className="mx-auto mb-3 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
                 <p className="text-gray-500 font-medium">No demo slots yet</p>
-                <p className="text-sm text-gray-400 mt-1">Confirm a demo request in the "Demo Requests" tab to create a slot</p>
+                <p className="text-sm text-gray-400 mt-1">Confirm a student interest in the "Student Interests" tab to create a slot</p>
               </div>
             ) : (
               <div className="overflow-x-auto bg-white rounded-2xl shadow-sm">
@@ -1092,13 +1048,16 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── Student Demo Interests Tab ── */}
+        {/* ── Student Interests Tab ── */}
         {activeTab === "demoInterests" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                Student Demo Requests ({studentDemoInterestsList?.length ?? 0})
-              </h2>
+              <div>
+                <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                  Student Interests ({studentDemoInterestsList?.length ?? 0})
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">Students/parents who showed interest in a tutor. Approve to forward to the tutor, or reject to dismiss.</p>
+              </div>
             </div>
             {loadingDemoInterests ? (
               <div className="flex items-center justify-center py-16">
@@ -1107,47 +1066,74 @@ export default function Admin() {
             ) : !studentDemoInterestsList || studentDemoInterestsList.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                 <BookOpen size={40} className="mx-auto mb-3 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
-                <p className="text-gray-500 font-medium">No demo requests yet</p>
-                <p className="text-sm text-gray-400 mt-1">Students who click "Book Free Demo Class" will appear here</p>
+                <p className="text-gray-500 font-medium">No student interests yet</p>
+                <p className="text-sm text-gray-400 mt-1">Students who click "Show Interest" on a tutor's profile will appear here</p>
               </div>
             ) : (
               <div className="overflow-x-auto bg-white rounded-2xl shadow-sm">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Student Profile ID</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tutor Profile ID</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Student Profile</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tutor Profile</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Message</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Admin Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tutor Response</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Update</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: "oklch(0.95 0.005 80)" }}>
-                    {studentDemoInterestsList.map((demo: { id: number; studentProfileId: number; tutorProfileId: number; message?: string | null; status: string; createdAt: Date | number }) => (
+                    {studentDemoInterestsList.map((demo: { id: number; studentProfileId: number; tutorProfileId: number; message?: string | null; status: string; adminApprovalStatus?: string; createdAt: Date | number }) => (
                       <tr key={demo.id} className="hover:bg-orange-50/30 transition-colors">
-                        <td className="px-4 py-4 font-semibold text-gray-800">#{demo.studentProfileId}</td>
-                        <td className="px-4 py-4 text-gray-600">#{demo.tutorProfileId}</td>
-                        <td className="px-4 py-4 text-gray-600 max-w-xs truncate">{demo.message || <span className="text-gray-400 italic">No message</span>}</td>
+                        <td className="px-4 py-4 text-gray-400 font-mono text-xs">{demo.id}</td>
+                        <td className="px-4 py-4">
+                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-lg font-mono">Student #{demo.studentProfileId}</span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-lg font-mono">Tutor #{demo.tutorProfileId}</span>
+                        </td>
+                        <td className="px-4 py-4 text-gray-600 max-w-xs truncate text-xs">{demo.message || <span className="text-gray-400 italic">No message</span>}</td>
                         <td className="px-4 py-4">
                           <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold border ${
+                            demo.adminApprovalStatus === "admin_approved" ? "bg-green-50 text-green-700 border-green-200" :
+                            demo.adminApprovalStatus === "admin_rejected" ? "bg-red-50 text-red-700 border-red-200" :
+                            "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          }`}>
+                            {demo.adminApprovalStatus === "admin_approved" ? "Approved" :
+                             demo.adminApprovalStatus === "admin_rejected" ? "Rejected" : "Pending Review"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold border capitalize ${
                             demo.status === "confirmed" ? "bg-green-50 text-green-700 border-green-200" :
                             demo.status === "cancelled" ? "bg-red-50 text-red-700 border-red-200" :
-                            "bg-yellow-50 text-yellow-700 border-yellow-200"
-                          }`}>{demo.status}</span>
+                            "bg-gray-50 text-gray-500 border-gray-200"
+                          }`}>{demo.status === "pending" ? "Awaiting tutor" : demo.status}</span>
                         </td>
                         <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">{new Date(demo.createdAt).toLocaleDateString()}</td>
                         <td className="px-4 py-4">
-                          <select
-                            value={demo.status}
-                            onChange={e => updateDemoInterestStatus.mutate({ id: demo.id, status: e.target.value as "pending" | "confirmed" | "cancelled" })}
-                            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 cursor-pointer hover:border-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-300"
-                            disabled={updateDemoInterestStatus.isPending}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="cancelled">Cancelled</option>
-                          </select>
+                          <div className="flex gap-2">
+                            {demo.adminApprovalStatus !== "admin_approved" && (
+                              <button
+                                onClick={() => adminApproveStudentInterest.mutate({ id: demo.id, adminApprovalStatus: "admin_approved" })}
+                                disabled={adminApproveStudentInterest.isPending}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-500 text-white hover:bg-green-600 transition-colors disabled:opacity-50"
+                              >
+                                Approve
+                              </button>
+                            )}
+                            {demo.adminApprovalStatus !== "admin_rejected" && (
+                              <button
+                                onClick={() => adminApproveStudentInterest.mutate({ id: demo.id, adminApprovalStatus: "admin_rejected" })}
+                                disabled={adminApproveStudentInterest.isPending}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50"
+                              >
+                                Reject
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1164,7 +1150,7 @@ export default function Admin() {
               <h2 className="font-bold text-gray-800" style={{ fontFamily: "'Poppins', sans-serif" }}>
                 Confirmed Matches ({confirmedMatchesList?.length ?? 0})
               </h2>
-              <p className="text-sm text-gray-500">Both tutor and student/parent agreed to proceed. Contact details have been shared via email.</p>
+              <p className="text-sm text-gray-500">Both tutor and student/parent agreed to proceed. Mark as "Got a Class" once the class arrangement is confirmed.</p>
             </div>
             {loadingMatches ? (
               <div className="flex items-center justify-center py-16">
@@ -1179,10 +1165,15 @@ export default function Admin() {
             ) : (
               <div className="space-y-4">
                 {confirmedMatchesList.map((match: any) => (
-                  <div key={match.id} className="bg-white rounded-2xl shadow-sm border p-6" style={{ borderColor: "oklch(0.88 0.12 145)" }}>
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">🎉 Confirmed Match #{match.id}</span>
-                      <span className="text-xs text-gray-400">{new Date(match.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                  <div key={match.id} className="bg-white rounded-2xl shadow-sm border p-6" style={{ borderColor: match.classStatus === 'got_a_class' ? 'oklch(0.75 0.18 145)' : 'oklch(0.88 0.12 145)' }}>
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">🎉 Match #{match.id}</span>
+                      {match.classStatus === 'got_a_class' ? (
+                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-300">🎓 Got a Class!</span>
+                      ) : (
+                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">⏳ Matched</span>
+                      )}
+                      <span className="text-xs text-gray-400">{new Date(match.matchedAt).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                       <span className="text-xs text-gray-400 ml-auto">Demo Slot #{match.demoSlotId}</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1207,8 +1198,32 @@ export default function Admin() {
                           {match.studentArea && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Area</span><span>{match.studentArea}</span></div>}
                           {match.studentGrade && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Grade</span><span>{match.studentGrade}</span></div>}
                           {match.studentSubjects && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Subjects</span><span>{match.studentSubjects}</span></div>}
+                          {match.paymentAmount && <div className="flex gap-2"><span className="text-gray-500 w-20 shrink-0">Budget</span><span className="font-semibold text-orange-700">₹{match.paymentAmount}</span></div>}
                         </div>
                       </div>
+                    </div>
+                    {/* Admin action: Mark Got a Class */}
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3">
+                      {match.classStatus !== 'got_a_class' ? (
+                        <button
+                          onClick={() => markGotAClassMutation.mutate({ matchId: match.id })}
+                          disabled={markGotAClassMutation.isPending}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                          style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
+                        >
+                          {markGotAClassMutation.isPending ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={14} />}
+                          Mark as Got a Class
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => resetClassStatusMutation.mutate({ matchId: match.id })}
+                          disabled={resetClassStatusMutation.isPending}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all hover:bg-gray-50"
+                          style={{ borderColor: "#d1d5db", color: "#6b7280" }}
+                        >
+                          <XCircle size={14} /> Undo
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

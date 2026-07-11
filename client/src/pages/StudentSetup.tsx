@@ -285,7 +285,7 @@ export default function StudentSetup() {
           )}
           <div className="flex gap-3">
             <button
-              onClick={() => navigate("/student-portal")}
+              onClick={() => navigate("/nearby-tutors")}
               className="flex-1 py-3 rounded-xl font-bold text-white transition-all hover:opacity-90 active:scale-95"
               style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
             >

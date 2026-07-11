@@ -162,7 +162,7 @@ export default function Navbar() {
                     Find Tutors
                   </Link>
                   <Link href="/portal" className="btn-outline text-sm py-2 px-5">
-                    My Bookings
+                    My Portal
                   </Link>
                 </>
               )}
@@ -234,7 +234,7 @@ export default function Navbar() {
                       Find Tutors Near Me
                     </Link>
                     <Link href="/portal" className="btn-outline text-sm text-center" onClick={() => setMobileOpen(false)}>
-                      My Bookings
+                      My Portal
                     </Link>
                   </>
                 )}

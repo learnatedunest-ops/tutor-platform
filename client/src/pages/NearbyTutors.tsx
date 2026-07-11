@@ -230,24 +230,11 @@ function TutorProfileModal({
               </div>
             )}
 
-            {/* Work Experience */}
-            {tutor.workExperience && (
-              <div className="rounded-xl p-4" style={{ backgroundColor: "oklch(0.97 0.005 80)", border: "1px solid oklch(0.92 0.005 80)" }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Briefcase size={15} style={{ color: "oklch(0.68 0.18 50)" }} />
-                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
-                    Work Experience
-                  </p>
-                </div>
-                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
-                  {tutor.workExperience}
-                </pre>
-              </div>
-            )}
+
 
             {/* Contact hint */}
             <div className="rounded-xl p-3 text-xs text-center" style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8" }}>
-              Book a free demo class below — EduNest will share full contact details after confirmation.
+              Express your interest below — EduNest will review and facilitate a free demo class.
             </div>
 
             {/* Book Demo CTA */}
@@ -404,7 +391,7 @@ export default function NearbyTutors() {
               className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
               style={{ border: "1px solid oklch(0.88 0.005 80)", color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}
             >
-              My Bookings
+              My Portal
             </button>
             <Link href="/">
               <button

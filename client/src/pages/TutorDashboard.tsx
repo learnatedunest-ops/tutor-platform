@@ -49,6 +49,16 @@ export default function TutorDashboard() {
     { enabled: isAuthenticated && myProfile?.status === "approved" }
   );
 
+  // Admin-approved student interests for this tutor to respond to
+  const { data: approvedStudentInterests, refetch: refetchApprovedInterests } = trpc.studentDemoInterest.getApprovedForMe.useQuery(
+    undefined,
+    { enabled: isAuthenticated && myProfile?.status === "approved" }
+  );
+  const respondToStudentInterest = trpc.studentDemoInterest.respondToInterest.useMutation({
+    onSuccess: () => { refetchApprovedInterests(); refetchSlots(); toast.success("Response recorded!"); },
+    onError: (err) => toast.error(err.message ?? "Failed to respond"),
+  });
+
   // Session logs for this tutor
   const { data: mySessionLogs, refetch: refetchSessionLogs } = trpc.sessionLog.myLogs.useQuery(
     undefined,
@@ -74,14 +84,21 @@ export default function TutorDashboard() {
   const setProceedIntent = trpc.demoSlot.setProceedIntent.useMutation({
     onSuccess: (data) => {
       refetchSlots();
+      refetchConfirmedMatches();
       if (data.matched) {
-        toast.success("🎉 It's a match! Both parties agreed. Contact details have been shared via email.");
+        toast.success("🎉 Great news! Both parties agreed. You've got a class!");
       } else {
         toast.success("Your response has been recorded.");
       }
     },
     onError: (err) => toast.error(err.message ?? "Failed to record response"),
   });
+
+  // Confirmed matches for this tutor (to show Got a Class status)
+  const { data: myConfirmedMatches, refetch: refetchConfirmedMatches } = trpc.confirmedMatch.getMineForTutor.useQuery(
+    undefined,
+    { enabled: isAuthenticated && myProfile?.status === "approved" }
+  );
 
   // Get nearby students (only runs once location is available)
   const { data: nearbyStudents, isLoading: studentsLoading, refetch } =
@@ -381,17 +398,29 @@ export default function TutorDashboard() {
                           <p className="text-xs mt-1" style={{ color: "oklch(0.45 0.01 270)" }}>Note: {slot.notes}</p>
                         )}
                         <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)" }}>
-                          Mode: {slot.mode === "online" ? "Online" : slot.mode === "home_tuition" ? "Home Tuition" : "Both"}
+                          Mode: {slot.mode === "online" ? "Online" : slot.mode === "home_tuition" ? "Home Tuition" : "Home + Online"}
                         </p>
+                        {/* Show student contact details once demo is scheduled — tutor needs address/phone to go there */}
+                        {(slot.status === "scheduled" || slot.status === "completed") && ((slot as any).studentAddress || (slot as any).studentPhone) && (
+                          <div className="mt-2 p-2 rounded-lg bg-blue-50 border border-blue-100">
+                            <p className="text-xs font-bold text-blue-700 mb-1">📍 Student Contact Details</p>
+                            {(slot as any).studentAddress && (
+                              <p className="text-xs text-blue-800">🏠 {(slot as any).studentAddress}</p>
+                            )}
+                            {(slot as any).studentPhone && (
+                              <p className="text-xs text-blue-800">📞 <a href={`tel:${(slot as any).studentPhone}`} className="underline">{(slot as any).studentPhone}</a></p>
+                            )}
+                          </div>
+                        )}
 
                         {/* Post-demo proceed intent UI */}
                         {slot.status === "completed" && !(slot as any).tutorProceedIntent && (
                           <div className="mt-3 p-3 rounded-xl border-2" style={{ borderColor: "oklch(0.88 0.12 50)", backgroundColor: "oklch(0.98 0.03 50)" }}>
                             <p className="text-sm font-semibold mb-2" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
-                              🎓 Would you like to proceed with this student?
+                              🎓 Would you like to continue with this student?
                             </p>
                             <p className="text-xs mb-3" style={{ color: "oklch(0.55 0.01 270)" }}>
-                              If both you and the student/parent agree, EduNest will share each other's contact details.
+                              Let us know if you'd like to take regular classes with this student.
                             </p>
                             <div className="flex gap-2">
                               <button
@@ -418,9 +447,14 @@ export default function TutorDashboard() {
                             <p className="text-xs font-semibold text-blue-700">⏳ You said Yes! Waiting for the student/parent to respond...</p>
                           </div>
                         )}
-                        {slot.status === "completed" && (slot as any).tutorProceedIntent === "yes" && (slot as any).studentProceedIntent === "yes" && (
-                          <div className="mt-3 p-3 rounded-xl bg-green-50 border border-green-200">
-                            <p className="text-xs font-semibold text-green-700">🎉 Matched! Contact details have been shared with the student/parent via email.</p>
+                        {slot.status === "completed" && (slot as any).tutorProceedIntent === "yes" && (slot as any).studentProceedIntent === "yes" && (() => {
+                          const confirmedMatch = myConfirmedMatches?.find((m: any) => m.demoSlotId === slot.id);
+                          const isGotAClass = confirmedMatch?.classStatus === 'got_a_class';
+                          return (
+                          <div className={`mt-3 p-3 rounded-xl border ${isGotAClass ? 'bg-emerald-50 border-emerald-300' : 'bg-green-50 border-green-200'}`}>
+                            <p className={`text-xs font-semibold ${isGotAClass ? 'text-emerald-700' : 'text-green-700'}`}>
+                              {isGotAClass ? '🎓 Got a Class! EduNest has confirmed your class arrangement.' : '🎉 Great news! Both parties agreed. You\'ve got a class!'}
+                            </p>
                             {/* Session Log Sheet & Payment Section */}
                             {(() => {
                               // Find session log for THIS specific confirmed match
@@ -524,15 +558,16 @@ export default function TutorDashboard() {
                               );
                             })()}
                           </div>
-                        )}
+                          );
+                        })()}
                         {slot.status === "completed" && (slot as any).tutorProceedIntent === "no" && (
                           <div className="mt-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
-                            <p className="text-xs font-semibold text-gray-500">You declined to proceed with this student.</p>
+                            <p className="text-xs font-semibold text-gray-500">You chose not to continue with this student.</p>
                           </div>
                         )}
                         {slot.status === "completed" && (slot as any).tutorProceedIntent === "yes" && (slot as any).studentProceedIntent === "no" && (
                           <div className="mt-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
-                            <p className="text-xs font-semibold text-gray-500">The student/parent chose not to proceed. Better luck next time!</p>
+                            <p className="text-xs font-semibold text-gray-500">The student/parent chose not to continue. Better luck next time!</p>
                           </div>
                         )}
                       </div>
@@ -541,6 +576,65 @@ export default function TutorDashboard() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Admin-Approved Student Interests — Tutor must Accept/Reject */}
+        {approvedStudentInterests && approvedStudentInterests.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6" style={{ borderColor: "oklch(0.88 0.12 145)" }}>
+            <div className="flex items-center gap-2 mb-4">
+              <CheckCircle2 size={18} style={{ color: "oklch(0.55 0.18 145)" }} />
+              <h2 className="font-bold text-base" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>Student Interests Awaiting Your Response</h2>
+              <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "oklch(0.95 0.05 145)", color: "oklch(0.35 0.12 145)" }}>
+                {approvedStudentInterests.filter((i: any) => i.status === 'pending').length} pending
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">EduNest has approved these student requests. Accept to schedule a demo class, or decline if you're unavailable.</p>
+            <div className="space-y-3">
+              {approvedStudentInterests.map((interest: any) => (
+                <div key={interest.id} className="rounded-xl p-4 border" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.98 0.005 80)" }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+                        Student Profile #{interest.studentProfileId}
+                      </p>
+                      {interest.message && (
+                        <p className="text-xs mt-1" style={{ color: "oklch(0.45 0.01 270)" }}>Message: {interest.message}</p>
+                      )}
+                      <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)" }}>
+                        Submitted: {new Date(interest.createdAt).toLocaleDateString('en-IN')}
+                      </p>
+                    </div>
+                    {interest.status === 'pending' ? (
+                      <div className="flex gap-2 shrink-0">
+                        <button
+                          onClick={() => respondToStudentInterest.mutate({ interestId: interest.id, response: 'confirmed' })}
+                          disabled={respondToStudentInterest.isPending}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                          style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
+                        >
+                          ✔ Accept
+                        </button>
+                        <button
+                          onClick={() => respondToStudentInterest.mutate({ interestId: interest.id, response: 'cancelled' })}
+                          disabled={respondToStudentInterest.isPending}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all hover:bg-red-50"
+                          style={{ borderColor: "oklch(0.88 0.12 20)", color: "oklch(0.55 0.18 20)" }}
+                        >
+                          ✕ Decline
+                        </button>
+                      </div>
+                    ) : (
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                        interest.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                      }`}>
+                        {interest.status === 'confirmed' ? '✔ Accepted' : '✕ Declined'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
