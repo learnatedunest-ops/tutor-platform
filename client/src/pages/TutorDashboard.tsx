@@ -49,7 +49,7 @@ export default function TutorDashboard() {
     { enabled: isAuthenticated && myProfile?.status === "approved" }
   );
 
-  // Admin-approved student interests for this tutor to respond to
+  // All student interests for this tutor to respond to (no admin gate)
   const { data: approvedStudentInterests, refetch: refetchApprovedInterests } = trpc.studentDemoInterest.getApprovedForMe.useQuery(
     undefined,
     { enabled: isAuthenticated && myProfile?.status === "approved" }
@@ -57,6 +57,11 @@ export default function TutorDashboard() {
   const respondToStudentInterest = trpc.studentDemoInterest.respondToInterest.useMutation({
     onSuccess: () => { refetchApprovedInterests(); refetchSlots(); toast.success("Response recorded!"); },
     onError: (err) => toast.error(err.message ?? "Failed to respond"),
+  });
+
+  const tutorConfirmComing = trpc.demoSlot.tutorConfirmComing.useMutation({
+    onSuccess: () => { refetchSlots(); toast.success("Confirmed! The student will be notified."); },
+    onError: (err) => toast.error(err.message ?? "Failed to confirm"),
   });
 
   // Session logs for this tutor
@@ -413,6 +418,44 @@ export default function TutorDashboard() {
                           </div>
                         )}
 
+                        {/* Tutor: Confirm Coming for Demo */}
+                        {slot.status === "scheduled" && !(slot as any).tutorConfirmedComing && (
+                          <div className="mt-3 p-3 rounded-xl border-2" style={{ borderColor: "oklch(0.88 0.12 145)", backgroundColor: "oklch(0.97 0.03 145)" }}>
+                            <p className="text-sm font-semibold mb-1" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+                              🚗 Are you coming for the demo?
+                            </p>
+                            <p className="text-xs mb-3" style={{ color: "oklch(0.55 0.01 270)" }}>Confirm so the student/parent knows to expect you.</p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => tutorConfirmComing.mutate({ slotId: slot.id, response: 'yes' })}
+                                disabled={tutorConfirmComing.isPending}
+                                className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+                                style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
+                              >
+                                {tutorConfirmComing.isPending ? <span className="animate-pulse">...</span> : "✔ Yes, I'm Coming"}
+                              </button>
+                              <button
+                                onClick={() => tutorConfirmComing.mutate({ slotId: slot.id, response: 'no' })}
+                                disabled={tutorConfirmComing.isPending}
+                                className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold border transition-all hover:bg-red-50"
+                                style={{ borderColor: "oklch(0.88 0.12 20)", color: "oklch(0.55 0.18 20)" }}
+                              >
+                                ✕ Can't Make It
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'yes' && (
+                          <div className="mt-3 p-2 rounded-lg bg-green-50 border border-green-200">
+                            <p className="text-xs font-semibold text-green-700">✔ You confirmed you're coming. The student has been notified.</p>
+                          </div>
+                        )}
+                        {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'no' && (
+                          <div className="mt-3 p-2 rounded-lg bg-red-50 border border-red-200">
+                            <p className="text-xs font-semibold text-red-700">❌ You indicated you can't make it. Please contact EduNest support to reschedule.</p>
+                          </div>
+                        )}
+
                         {/* Post-demo proceed intent UI */}
                         {slot.status === "completed" && !(slot as any).tutorProceedIntent && (
                           <div className="mt-3 p-3 rounded-xl border-2" style={{ borderColor: "oklch(0.88 0.12 50)", backgroundColor: "oklch(0.98 0.03 50)" }}>
@@ -579,30 +622,56 @@ export default function TutorDashboard() {
           </div>
         )}
 
-        {/* Admin-Approved Student Interests — Tutor must Accept/Reject */}
-        {approvedStudentInterests && approvedStudentInterests.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6" style={{ borderColor: "oklch(0.88 0.12 145)" }}>
-            <div className="flex items-center gap-2 mb-4">
-              <CheckCircle2 size={18} style={{ color: "oklch(0.55 0.18 145)" }} />
-              <h2 className="font-bold text-base" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>Student Interests Awaiting Your Response</h2>
+        {/* Student Interests — Tutor must Accept/Reject (no admin gate) */}
+        <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6" style={{ borderColor: "oklch(0.88 0.12 145)" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircle2 size={18} style={{ color: "oklch(0.55 0.18 145)" }} />
+            <h2 className="font-bold text-base" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>Student Interests</h2>
+            {approvedStudentInterests && (
               <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "oklch(0.95 0.05 145)", color: "oklch(0.35 0.12 145)" }}>
                 {approvedStudentInterests.filter((i: any) => i.status === 'pending').length} pending
               </span>
-            </div>
-            <p className="text-xs text-gray-500 mb-4">EduNest has approved these student requests. Accept to schedule a demo class, or decline if you're unavailable.</p>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mb-4">Students who are interested in learning from you. Accept to create a demo slot (parent will set the timing), or decline if unavailable.</p>
+          {!approvedStudentInterests?.length ? (
+            <p className="text-sm text-gray-400 text-center py-6">No student interests yet. Once a student shows interest in you, it will appear here.</p>
+          ) : (
             <div className="space-y-3">
               {approvedStudentInterests.map((interest: any) => (
                 <div key={interest.id} className="rounded-xl p-4 border" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.98 0.005 80)" }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <p className="text-sm font-semibold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
-                        Student Profile #{interest.studentProfileId}
+                        {interest.studentName ?? `Student #${interest.studentProfileId}`}
                       </p>
+                      <div className="flex flex-wrap gap-1.5 mt-1 mb-1">
+                        {interest.studentGrade && (
+                          <span className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full border border-orange-100">
+                            Grade: {interest.studentGrade}
+                          </span>
+                        )}
+                        {interest.studentSubjects && (
+                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">
+                            {interest.studentSubjects}
+                          </span>
+                        )}
+                        {interest.studentMode && (
+                          <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-100">
+                            {interest.studentMode === 'online' ? '💻 Online' : interest.studentMode === 'home_tuition' ? '🏠 Home Tuition' : '🏠💻 Both'}
+                          </span>
+                        )}
+                        {interest.studentArea && (
+                          <span className="text-xs bg-gray-50 text-gray-600 px-2 py-0.5 rounded-full border border-gray-100">
+                            📍 {interest.studentArea}
+                          </span>
+                        )}
+                      </div>
                       {interest.message && (
                         <p className="text-xs mt-1" style={{ color: "oklch(0.45 0.01 270)" }}>Message: {interest.message}</p>
                       )}
                       <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)" }}>
-                        Submitted: {new Date(interest.createdAt).toLocaleDateString('en-IN')}
+                        Received: {new Date(interest.createdAt).toLocaleDateString('en-IN')}
                       </p>
                     </div>
                     {interest.status === 'pending' ? (
@@ -635,8 +704,8 @@ export default function TutorDashboard() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Location & Radius Controls */}
         <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6" style={{ borderColor: "oklch(0.92 0.005 80)" }}>

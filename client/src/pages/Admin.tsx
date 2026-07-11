@@ -126,10 +126,7 @@ export default function Admin() {
     onSuccess: () => { refetchInterests(); toast.success("Interest status updated"); },
     onError: () => toast.error("Failed to update interest status"),
   });
-  const adminApproveTutorInterest = trpc.tutorInterest.adminApprove.useMutation({
-    onSuccess: () => { refetchInterests(); toast.success("Tutor interest admin status updated"); },
-    onError: () => toast.error("Failed to update admin approval status"),
-  });
+  // Admin approval removed — interests go directly to student/tutor
 
   // Student Demo Interests — must be before early returns
   const { data: studentDemoInterestsList, isLoading: loadingDemoInterests, refetch: refetchDemoInterests } =
@@ -138,10 +135,7 @@ export default function Admin() {
     onSuccess: () => { refetchDemoInterests(); toast.success("Student interest status updated"); },
     onError: () => toast.error("Failed to update student interest status"),
   });
-  const adminApproveStudentInterest = trpc.studentDemoInterest.adminApprove.useMutation({
-    onSuccess: () => { refetchDemoInterests(); toast.success("Student interest admin status updated"); },
-    onError: () => toast.error("Failed to update admin approval status"),
-  });
+  // Admin approval removed — interests go directly to tutor
 
   // Demo Slots (scheduled demo classes) — must be before early returns
   const { data: demoSlotsList, isLoading: loadingDemoSlots, refetch: refetchDemoSlots } =
@@ -910,16 +904,6 @@ export default function Admin() {
                           {interest.message ? <p className="line-clamp-2">{interest.message}</p> : <span className="text-gray-300">No message</span>}
                         </td>
                         <td className="px-4 py-4">
-                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-                            interest.adminApprovalStatus === "admin_approved" ? "bg-green-50 text-green-700 border-green-200" :
-                            interest.adminApprovalStatus === "admin_rejected" ? "bg-red-50 text-red-700 border-red-200" :
-                            "bg-yellow-50 text-yellow-700 border-yellow-200"
-                          }`}>
-                            {interest.adminApprovalStatus === "admin_approved" ? "Approved" :
-                             interest.adminApprovalStatus === "admin_rejected" ? "Rejected" : "Pending Review"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4">
                           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${
                             interest.status === "accepted" ? "bg-green-50 text-green-700 border-green-200" :
                             interest.status === "declined" ? "bg-red-50 text-red-700 border-red-200" :
@@ -928,26 +912,7 @@ export default function Admin() {
                         </td>
                         <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">{new Date(interest.createdAt).toLocaleDateString()}</td>
                         <td className="px-4 py-4">
-                          <div className="flex gap-2">
-                            {interest.adminApprovalStatus !== "admin_approved" && (
-                              <button
-                                onClick={() => adminApproveTutorInterest.mutate({ id: interest.id, adminApprovalStatus: "admin_approved" })}
-                                disabled={adminApproveTutorInterest.isPending}
-                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-500 text-white hover:bg-green-600 transition-colors disabled:opacity-50"
-                              >
-                                Approve
-                              </button>
-                            )}
-                            {interest.adminApprovalStatus !== "admin_rejected" && (
-                              <button
-                                onClick={() => adminApproveTutorInterest.mutate({ id: interest.id, adminApprovalStatus: "admin_rejected" })}
-                                disabled={adminApproveTutorInterest.isPending}
-                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50"
-                              >
-                                Reject
-                              </button>
-                            )}
-                          </div>
+                          <span className="text-xs text-gray-400 italic">Direct to student</span>
                         </td>
                       </tr>
                     ))}
@@ -1096,16 +1061,6 @@ export default function Admin() {
                         </td>
                         <td className="px-4 py-4 text-gray-600 max-w-xs truncate text-xs">{demo.message || <span className="text-gray-400 italic">No message</span>}</td>
                         <td className="px-4 py-4">
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold border ${
-                            demo.adminApprovalStatus === "admin_approved" ? "bg-green-50 text-green-700 border-green-200" :
-                            demo.adminApprovalStatus === "admin_rejected" ? "bg-red-50 text-red-700 border-red-200" :
-                            "bg-yellow-50 text-yellow-700 border-yellow-200"
-                          }`}>
-                            {demo.adminApprovalStatus === "admin_approved" ? "Approved" :
-                             demo.adminApprovalStatus === "admin_rejected" ? "Rejected" : "Pending Review"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4">
                           <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold border capitalize ${
                             demo.status === "confirmed" ? "bg-green-50 text-green-700 border-green-200" :
                             demo.status === "cancelled" ? "bg-red-50 text-red-700 border-red-200" :
@@ -1114,26 +1069,7 @@ export default function Admin() {
                         </td>
                         <td className="px-4 py-4 text-xs text-gray-400 whitespace-nowrap">{new Date(demo.createdAt).toLocaleDateString()}</td>
                         <td className="px-4 py-4">
-                          <div className="flex gap-2">
-                            {demo.adminApprovalStatus !== "admin_approved" && (
-                              <button
-                                onClick={() => adminApproveStudentInterest.mutate({ id: demo.id, adminApprovalStatus: "admin_approved" })}
-                                disabled={adminApproveStudentInterest.isPending}
-                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-500 text-white hover:bg-green-600 transition-colors disabled:opacity-50"
-                              >
-                                Approve
-                              </button>
-                            )}
-                            {demo.adminApprovalStatus !== "admin_rejected" && (
-                              <button
-                                onClick={() => adminApproveStudentInterest.mutate({ id: demo.id, adminApprovalStatus: "admin_rejected" })}
-                                disabled={adminApproveStudentInterest.isPending}
-                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50"
-                              >
-                                Reject
-                              </button>
-                            )}
-                          </div>
+                          <span className="text-xs text-gray-400 italic">Direct to tutor</span>
                         </td>
                       </tr>
                     ))}

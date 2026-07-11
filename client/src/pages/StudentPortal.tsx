@@ -93,7 +93,7 @@ export default function StudentPortal() {
     onError: (err: { message?: string }) => toast.error(err.message ?? "Failed to record response"),
   });
 
-  // Admin-approved tutor interests for this student/parent to respond to
+  // All tutor interests for this student/parent to respond to (no admin gate)
   const { data: approvedTutorInterests, refetch: refetchApprovedInterests } = trpc.tutorInterest.getApprovedForMe.useQuery(
     undefined, { enabled: isAuthenticated }
   );
@@ -491,6 +491,20 @@ export default function StudentPortal() {
                       <p className="text-xs text-gray-500 mt-2">Note: {slot.notes}</p>
                     )}
 
+                    {/* Tutor confirmed coming notification */}
+                    {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'yes' && (
+                      <div className="mt-3 p-3 rounded-xl bg-green-50 border border-green-200 flex items-center gap-2">
+                        <span className="text-lg">🚗</span>
+                        <p className="text-xs font-semibold text-green-700">Your tutor has confirmed they are coming for the demo!</p>
+                      </div>
+                    )}
+                    {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'no' && (
+                      <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2">
+                        <span className="text-lg">⚠️</span>
+                        <p className="text-xs font-semibold text-red-700">Your tutor indicated they cannot make it. Please contact EduNest to reschedule.</p>
+                      </div>
+                    )}
+
                     {/* Post-demo proceed intent UI */}
                     {slot.status === "completed" && !(slot as any).studentProceedIntent && (
                       <div className="mt-4 p-4 rounded-xl border-2" style={{ borderColor: "oklch(0.88 0.12 50)", backgroundColor: "oklch(0.98 0.03 50)" }}>
@@ -600,7 +614,7 @@ export default function StudentPortal() {
                 <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                   <CheckCircle2 size={48} className="mx-auto mb-4 opacity-20" style={{ color: "oklch(0.68 0.18 50)" }} />
                   <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No tutor interests yet</h3>
-                  <p className="text-gray-400">When a tutor expresses interest in your requirement and EduNest approves it, you'll see it here to accept or decline.</p>
+                  <p className="text-gray-400">When a tutor expresses interest in your requirement, you'll see it here to accept or decline and schedule a demo.</p>
                 </div>
               ) : (
                 approvedTutorInterests.map((interest: any) => (
@@ -611,11 +625,9 @@ export default function StudentPortal() {
                           <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
                             Tutor Interest
                           </span>
-                          {interest.adminApprovalStatus === 'admin_approved' && (
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
-                              ✔ EduNest Approved
-                            </span>
-                          )}
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                            New Interest
+                          </span>
                         </div>
                         <p className="text-base font-bold mb-1" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
                           {interest.tutorName ?? `Tutor #${interest.tutorProfileId}`}
@@ -678,7 +690,7 @@ export default function StudentPortal() {
                         <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${
                           interest.status === 'accepted' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
                         }`}>
-                          {interest.status === 'accepted' ? '✔ Accepted — Demo being scheduled' : '✕ Declined'}
+                          {interest.status === 'accepted' ? '✔ Accepted — Schedule your demo below' : '✕ Declined'}
                         </span>
                       )}
                     </div>

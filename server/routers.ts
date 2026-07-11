@@ -51,6 +51,8 @@ import {
   updateStudentDemoInterestStatus,
   updateStudentDemoInterestAdminStatus,
   getAdminApprovedDemoInterestsByTutor,
+  getAllDemoInterestsByTutor,
+  updateDemoSlotTutorConfirmedComing,
   updateDemoSlotParentAccepted,
   // OTP
   createOtp,
@@ -515,7 +517,7 @@ export const appRouter = router({
 
   // --- Tutor Interests ---
   tutorInterest: router({
-    // Tutor expresses interest in a student requirement — goes to admin first
+    // Tutor expresses interest in a student requirement — goes DIRECTLY to student (no admin gate)
     express: protectedProcedure
       .input(z.object({
         studentProfileId: z.number(),
@@ -527,9 +529,10 @@ export const appRouter = router({
           throw new Error("Only approved tutors can express interest.");
         }
         const interest = await createTutorInterest(myProfile.id, input.studentProfileId, input.message);
+        // Notify owner for records only (no approval needed)
         await notifyOwner({
-          title: `🎯 New Tutor Interest (Pending Admin Approval): ${myProfile.name}`,
-          content: `**Tutor:** ${myProfile.name} (${myProfile.phone})\n**Student Profile ID:** ${input.studentProfileId}\n**Message:** ${input.message ?? 'No message'}\n\nPlease review and approve/reject at https://edu-nest.manus.space/admin`,
+          title: `🎯 New Tutor Interest: ${myProfile.name}`,
+          content: `**Tutor:** ${myProfile.name} (${myProfile.phone})\n**Student Profile ID:** ${input.studentProfileId}\n**Message:** ${input.message ?? 'No message'}\n\nInterest is now visible to the student directly.`,
         }).catch(() => {});
         return { success: true, interest };
       }),
@@ -541,14 +544,14 @@ export const appRouter = router({
       return getTutorInterestsByTutor(myProfile.id);
     }),
 
-    // Student: get admin-approved tutor interests for their profile
+    // Student: get ALL tutor interests for their profile (no admin gate)
     getApprovedForMe: protectedProcedure.query(async ({ ctx }) => {
       const myProfile = await getStudentProfileByUserId(ctx.user.id);
       if (!myProfile) return [];
       return getAdminApprovedTutorInterestsByStudent(myProfile.id);
     }),
 
-    // Student: accept or decline an admin-approved tutor interest
+    // Student: accept or decline a tutor interest directly
     // When accepted, a demo slot is created and the tutor is notified
     respondToInterest: protectedProcedure
       .input(z.object({
@@ -559,9 +562,9 @@ export const appRouter = router({
         const myProfile = await getStudentProfileByUserId(ctx.user.id);
         if (!myProfile) throw new Error("Student profile not found.");
         // Verify the interest belongs to this student
-        const approved = await getAdminApprovedTutorInterestsByStudent(myProfile.id);
-        const interest = approved.find(i => i.id === input.interestId);
-        if (!interest) throw new Error("Interest not found or not approved by admin.");
+        const allInterests = await getAdminApprovedTutorInterestsByStudent(myProfile.id);
+        const interest = allInterests.find(i => i.id === input.interestId);
+        if (!interest) throw new Error("Interest not found.");
         await updateTutorInterestStatus(input.interestId, input.response);
         if (input.response === "accepted") {
           // Create a demo slot — parent will set the timing
@@ -650,7 +653,7 @@ export const appRouter = router({
 
   // ─── Student Demo Interests ──────────────────────────────────────────────────
   studentDemoInterest: router({
-    // Student/parent shows interest in a nearby tutor — goes to admin first
+    // Student/parent shows interest in a nearby tutor — goes DIRECTLY to tutor (no admin gate)
     bookDemo: protectedProcedure
       .input(z.object({
         tutorProfileId: z.number(),
@@ -663,9 +666,10 @@ export const appRouter = router({
         const existing = await getStudentDemoInterestByPair(studentProfile.id, input.tutorProfileId);
         if (existing) return { success: true, status: existing.status, alreadyExists: true };
         await createStudentDemoInterest(studentProfile.id, input.tutorProfileId, input.message);
+        // Notify owner for records only (no approval needed)
         await notifyOwner({
-          title: `📚 New Student Interest (Pending Admin Approval)`,
-          content: `Student **${studentProfile.name}** (${studentProfile.email}) has shown interest in a tutor.\n\nTutor Profile ID: ${input.tutorProfileId}\n\nPlease review and approve/reject at https://edu-nest.manus.space/admin`,
+          title: `📚 New Student Interest`,
+          content: `Student **${studentProfile.name}** (${studentProfile.email}) has shown interest in Tutor Profile #${input.tutorProfileId}.\n\nInterest is now visible to the tutor directly.`,
         }).catch(() => {/* non-blocking */});
         return { success: true, status: "pending", alreadyExists: false };
       }),
@@ -687,14 +691,14 @@ export const appRouter = router({
       return getStudentDemoInterestsByStudent(studentProfile.id);
     }),
 
-    // Tutor: get admin-approved student interests for their profile
+    // Tutor: get ALL student interests for their profile (no admin gate)
     getApprovedForMe: protectedProcedure.query(async ({ ctx }) => {
       const myProfile = await getTutorProfileByUserId(ctx.user.id);
       if (!myProfile) return [];
-      return getAdminApprovedDemoInterestsByTutor(myProfile.id);
+      return getAllDemoInterestsByTutor(myProfile.id);
     }),
 
-    // Tutor: accept or decline an admin-approved student interest
+    // Tutor: accept or decline a student interest directly (no admin gate)
     // When accepted, a demo slot is created; parent will then set the timing
     respondToInterest: protectedProcedure
       .input(z.object({
@@ -705,9 +709,9 @@ export const appRouter = router({
         const myProfile = await getTutorProfileByUserId(ctx.user.id);
         if (!myProfile) throw new Error("Tutor profile not found.");
         // Verify the interest belongs to this tutor
-        const approved = await getAdminApprovedDemoInterestsByTutor(myProfile.id);
-        const interest = approved.find(i => i.id === input.interestId);
-        if (!interest) throw new Error("Interest not found or not approved by admin.");
+        const allInterests = await getAllDemoInterestsByTutor(myProfile.id);
+        const interest = allInterests.find(i => i.id === input.interestId);
+        if (!interest) throw new Error("Interest not found.");
         await updateStudentDemoInterestStatus(input.interestId, input.response);
         if (input.response === "confirmed") {
           // Create a demo slot — parent will set the timing
@@ -927,6 +931,29 @@ export const appRouter = router({
           title: `📅 Demo Slot Scheduled`,
           content: `Student Profile #${profile.id} scheduled a demo on **${input.scheduledDate}** at **${input.scheduledTime}**.\nTutor Profile ID: ${slot.tutorProfileId}\nNotes: ${input.notes ?? 'None'}`,
         }).catch(() => {});
+        return { success: true };
+      }),
+
+    // Tutor: confirm they are coming for the demo
+    tutorConfirmComing: protectedProcedure
+      .input(z.object({
+        slotId: z.number(),
+        response: z.enum(["yes", "no"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const profile = await getTutorProfileByUserId(ctx.user.id);
+        if (!profile) throw new Error("Tutor profile not found.");
+        const slots = await getDemoSlotsByTutor(profile.id);
+        const slot = slots.find(s => s.id === input.slotId);
+        if (!slot) throw new Error("Demo slot not found or access denied.");
+        await updateDemoSlotTutorConfirmedComing(input.slotId, input.response);
+        if (input.response === "yes") {
+          // Notify owner
+          await notifyOwner({
+            title: `🚗 Tutor Confirmed Coming for Demo`,
+            content: `Tutor Profile #${profile.id} confirmed they are coming for the demo on ${slot.scheduledDate ?? 'TBD'} at ${slot.scheduledTime ?? 'TBD'}.\nStudent Profile ID: ${slot.studentProfileId}`,
+          }).catch(() => {});
+        }
         return { success: true };
       }),
 

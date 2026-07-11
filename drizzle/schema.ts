@@ -218,9 +218,8 @@ export const tutorInterests = mysqlTable("tutor_interests", {
   tutorProfileId: int("tutorProfileId").notNull(),    // FK → tutor_profiles.id
   studentProfileId: int("studentProfileId").notNull(), // FK → student_profiles.id
   message: text("message"),
-  // Admin first reviews and approves/rejects before the student sees it
-  adminApprovalStatus: mysqlEnum("adminApprovalStatus", ["pending_admin", "admin_approved", "admin_rejected"]).default("pending_admin").notNull(),
-  // After admin approves, student accepts or declines
+  // Interest goes directly to student — no admin gate
+  // student accepts or declines directly
   status: mysqlEnum("status", ["pending", "accepted", "declined"]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -281,9 +280,8 @@ export const studentDemoInterests = mysqlTable("student_demo_interests", {
   studentProfileId: int("studentProfileId").notNull(),  // FK → student_profiles.id
   tutorProfileId: int("tutorProfileId").notNull(),       // FK → tutor_profiles.id
   message: text("message"),
-  // Admin first reviews and approves/rejects before the tutor sees it
-  adminApprovalStatus: mysqlEnum("adminApprovalStatus", ["pending_admin", "admin_approved", "admin_rejected"]).default("pending_admin").notNull(),
-  // After admin approves, tutor accepts or declines
+  // Interest goes directly to tutor — no admin gate
+  // tutor accepts or declines directly
   status: mysqlEnum("status", ["pending", "confirmed", "cancelled"]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -328,6 +326,8 @@ export const demoSlots = mysqlTable("demo_slots", {
   interestDirection: mysqlEnum("interestDirection", ["tutor_to_student", "student_to_tutor"]).default("student_to_tutor").notNull(),
   // For tutor-initiated: parent must accept before scheduling is unlocked
   parentAccepted: mysqlEnum("parentAccepted", ["yes", "no", "pending"]).default("pending").notNull(),
+  // Tutor confirms they are coming for the demo
+  tutorConfirmedComing: mysqlEnum("tutorConfirmedComing", ["yes", "no", "pending"]).default("pending").notNull(),
   // Post-demo proceed intent: both parties express yes/no to continue
   tutorProceedIntent: mysqlEnum("tutorProceedIntent", ["yes", "no"]),
   studentProceedIntent: mysqlEnum("studentProceedIntent", ["yes", "no"]),

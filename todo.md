@@ -266,3 +266,18 @@
 - [x] Full site audit: browser console errors, network errors, TypeScript errors, broken links
 - [x] Fix all errors found: bad oklch value (5018 → 50), 7 nested Link > a patterns in StudentPortal
 - [x] 15/15 tests passing, 0 TypeScript errors
+
+## Round 24 — Simplified Direct Interest Workflow (No Admin Gate)
+- [x] DB: add tutorConfirmedComing (varchar) to demo_slots table; run db:push
+- [x] Backend: tutorInterest.express — interest goes directly to student (no adminApprovalStatus gate); student sees it immediately in Tutor Interests tab
+- [x] Backend: studentDemoInterest.bookDemo — interest goes directly to tutor (no adminApprovalStatus gate); tutor sees it immediately in Student Interests tab
+- [x] Backend: getApprovedForMe procedures now return all interests (no admin filter)
+- [x] Backend: demoSlot.schedule — when parent schedules demo, share full student address + phone with tutor via email notification
+- [x] Backend: add demoSlot.tutorConfirmComing procedure — tutor clicks "Coming for Demo"; parent gets notified under their demo tab
+- [x] Admin panel: remove Approve/Reject buttons from Tutor Interests and Student Interests tabs (admin is read-only observer)
+- [x] StudentPortal Tutor Interests tab: show ALL tutor interests directly; accepted interest shows inline demo scheduler
+- [x] TutorDashboard Student Interests tab: show ALL student interests directly; always visible with empty state
+- [x] TutorDashboard Demo Slots: add "I'm Coming for Demo" Yes/No button on scheduled slots
+- [x] StudentPortal Demo tab: show "Tutor has confirmed they are coming" badge when tutor clicks coming
+- [x] Show student profile info (grade, subjects, mode, area) in student interest cards in TutorDashboard
+- [x] 15/15 tests passing, 0 TypeScript errors
