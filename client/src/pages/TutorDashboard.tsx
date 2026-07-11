@@ -489,7 +489,7 @@ export default function TutorDashboard() {
                           Mode: {slot.mode === "online" ? "Online" : slot.mode === "home_tuition" ? "Home Tuition" : "Home + Online"}
                         </p>
                         {/* Show student contact details once demo is scheduled — tutor needs address/phone to go there */}
-                        {(slot.status === "scheduled" || slot.status === "completed") && ((slot as any).studentAddress || (slot as any).studentPhone) && (() => {
+                        {(slot.status === "scheduled" || slot.status === "completed") && (() => {
                           const addr = (slot as any).studentAddress as string | undefined;
                           const lat = (slot as any).studentLat as number | undefined;
                           const lng = (slot as any).studentLng as number | undefined;
@@ -498,14 +498,33 @@ export default function TutorDashboard() {
                             : addr
                             ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`
                             : null;
+                          const parentName = (slot as any).studentName as string | undefined;
+                          const childName = (slot as any).studentChildName as string | undefined;
+                          const role = (slot as any).studentRole as string | undefined;
+                          const displayName = role === 'parent' && childName ? `${childName} (Parent: ${parentName})` : (parentName ?? 'Student');
+                          const grade = (slot as any).studentGrade as string | undefined;
+                          const subjects = (slot as any).studentSubjects as string | undefined;
+                          const budget = (slot as any).studentBudget as string | undefined;
+                          const area = (slot as any).studentArea as string | undefined;
                           return (
-                            <div className="mt-2 p-3 rounded-lg bg-blue-50 border border-blue-100">
-                              <p className="text-xs font-bold text-blue-700 mb-2">📍 Student Contact Details</p>
-                              {addr && (
-                                <p className="text-xs text-blue-800 mb-1">🏠 {addr}</p>
+                            <div className="mt-2 p-3 rounded-xl bg-blue-50 border border-blue-100 space-y-2">
+                              <p className="text-xs font-bold text-blue-800">📋 Student / Parent Details</p>
+                              {/* Name */}
+                              <p className="text-xs text-blue-900 font-semibold">👤 {displayName}</p>
+                              {/* Academic info */}
+                              <div className="flex flex-wrap gap-2">
+                                {grade && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">📚 {grade}</span>}
+                                {subjects && <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">📖 {subjects}</span>}
+                                {area && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">📍 {area}</span>}
+                              </div>
+                              {/* Fees / Budget */}
+                              {budget && (
+                                <p className="text-xs font-semibold" style={{ color: 'oklch(0.45 0.18 50)' }}>💰 Budget: ₹{budget}/month</p>
                               )}
+                              {/* Contact */}
+                              {addr && <p className="text-xs text-blue-800">🏠 {addr}</p>}
                               {(slot as any).studentPhone && (
-                                <p className="text-xs text-blue-800 mb-2">📞 <a href={`tel:${(slot as any).studentPhone}`} className="underline font-medium">{(slot as any).studentPhone}</a></p>
+                                <p className="text-xs text-blue-800">📞 <a href={`tel:${(slot as any).studentPhone}`} className="underline font-medium">{(slot as any).studentPhone}</a></p>
                               )}
                               {mapsUrl && (
                                 <a

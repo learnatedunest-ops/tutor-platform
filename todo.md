@@ -310,3 +310,8 @@
 - [x] Fix React error #310: extract IIFE with useState (showReschedule, suggestDate, suggestTime) inside demo slot map in TutorDashboard into a proper DemoSlotAvailabilityCard sub-component
 - [x] Add demo schedule date/time to accepted Tutor Interests card in StudentPortal (show "Demo scheduled for [date] at [time]" once parent has scheduled)
 - [x] 15/15 tests passing, 0 TypeScript errors
+
+## Round 27 — Session Log Upload Fix + Full Student Details for Tutor
+- [x] Fix session log PDF upload bug — root cause was wrong cookie name ('session=' vs 'app_session_id=') in upload auth check; fixed in server/_core/index.ts
+- [x] Show full student/parent details in tutor demo slot card: name (with child name if parent), grade, subjects, area, budget (fees), phone, address, Google Maps link
+- [x] 15/15 tests passing, 0 TypeScript errors

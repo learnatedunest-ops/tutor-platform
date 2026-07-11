@@ -216,7 +216,8 @@ async function startServer() {
       // Simple token presence check — the tRPC context will do full JWT verification
       const cookieHeader = req.headers.cookie ?? '';
       const bearerToken = (req.headers.authorization ?? '').replace(/^Bearer\s+/, '');
-      const hasCookie = cookieHeader.includes('session=');
+      // Cookie name is 'app_session_id' (defined in shared/const.ts COOKIE_NAME)
+      const hasCookie = cookieHeader.includes('app_session_id=');
       if (!bearerToken && !hasCookie) {
         res.status(401).json({ error: 'Authentication required. Please log in.' });
         return;

@@ -640,13 +640,34 @@ export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(Demo
       studentPhone: studentProfiles.phone,
       studentLat: studentProfiles.latitude,
       studentLng: studentProfiles.longitude,
+      studentName: studentProfiles.name,
+      studentChildName: studentProfiles.studentName,
+      studentGrade: studentProfiles.grade,
+      studentSubjects: studentProfiles.subjects,
+      studentBudget: studentProfiles.budget,
+      studentArea: studentProfiles.area,
+      studentRole: studentProfiles.role,
     })
     .from(demoSlots)
     .leftJoin(confirmedMatches, eq(confirmedMatches.demoSlotId, demoSlots.id))
     .leftJoin(studentProfiles, eq(studentProfiles.id, demoSlots.studentProfileId))
     .where(eq(demoSlots.tutorProfileId, tutorProfileId))
     .orderBy(desc(demoSlots.createdAt));
-  return rows.map(r => ({ ...r, confirmedMatchId: r.confirmedMatchId ?? null, studentAddress: r.studentAddress ?? null, studentPhone: r.studentPhone ?? null, studentLat: r.studentLat ?? null, studentLng: r.studentLng ?? null }));
+  return rows.map(r => ({
+    ...r,
+    confirmedMatchId: r.confirmedMatchId ?? null,
+    studentAddress: r.studentAddress ?? null,
+    studentPhone: r.studentPhone ?? null,
+    studentLat: r.studentLat ?? null,
+    studentLng: r.studentLng ?? null,
+    studentName: r.studentName ?? null,
+    studentChildName: r.studentChildName ?? null,
+    studentGrade: r.studentGrade ?? null,
+    studentSubjects: r.studentSubjects ?? null,
+    studentBudget: r.studentBudget ?? null,
+    studentArea: r.studentArea ?? null,
+    studentRole: r.studentRole ?? null,
+  }));
 }
 
 export async function getDemoSlotsByStudent(studentProfileId: number): Promise<(DemoSlot & { confirmedMatchId: number | null })[]> {
