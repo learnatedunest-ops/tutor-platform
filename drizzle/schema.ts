@@ -342,6 +342,10 @@ export const demoSlots = mysqlTable("demo_slots", {
   // Post-demo proceed intent: both parties express yes/no to continue
   tutorProceedIntent: mysqlEnum("tutorProceedIntent", ["yes", "no"]),
   studentProceedIntent: mysqlEnum("studentProceedIntent", ["yes", "no"]),
+  // Demo cancellation by parent — triggers ₹350 cancellation fee
+  demoCancelledBy: mysqlEnum("demoCancelledBy", ["parent"]),
+  demoCancelledAt: timestamp("demoCancelledAt"),
+  demoCancellationFeeCleared: boolean("demoCancellationFeeCleared").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

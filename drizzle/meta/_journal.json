@@ -141,6 +141,13 @@
       "when": 1783791237212,
       "tag": "0019_bitter_newton_destine",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1783792769764,
+      "tag": "0020_striped_catseye",
+      "breakpoints": true
     }
   ]
 }

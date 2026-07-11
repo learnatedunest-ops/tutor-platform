@@ -97,6 +97,9 @@ import {
   getSessionLogsByTutor,
   getSessionLogsByStudent,
   updateUserRole,
+  cancelDemoByParent,
+  clearDemoCancellationFee,
+  getCancelledDemosWithPendingFee,
 } from "./db";
 import { z } from "zod";
 
@@ -876,6 +879,48 @@ export const appRouter = router({
       const profile = await getStudentProfileByUserId(ctx.user.id);
       if (!profile) return [];
       return getDemoSlotsByStudent(profile.id);
+    }),
+
+    // Student: check if they have a pending demo cancellation fee (blocks re-booking)
+    hasPendingCancellationFee: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await getStudentProfileByUserId(ctx.user.id);
+      if (!profile) return false;
+      const slots = await getDemoSlotsByStudent(profile.id);
+      return slots.some(s => s.demoCancelledBy === 'parent' && !s.demoCancellationFeeCleared);
+    }),
+
+    // Parent: cancel a scheduled demo (triggers ₹350 fee)
+    cancelDemo: protectedProcedure
+      .input(z.object({ slotId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const profile = await getStudentProfileByUserId(ctx.user.id);
+        if (!profile) throw new Error('Student profile not found.');
+        const slots = await getDemoSlotsByStudent(profile.id);
+        const slot = slots.find(s => s.id === input.slotId);
+        if (!slot) throw new Error('Demo slot not found or access denied.');
+        if (slot.status === 'cancelled') throw new Error('Demo is already cancelled.');
+        if (slot.demoCancelledBy) throw new Error('Cancellation already submitted.');
+        // Mark as cancelled with fee pending
+        await cancelDemoByParent(input.slotId);
+        // Notify admin via owner notification
+        await notifyOwner({
+          title: `⚠️ Demo Cancelled by Parent — ₹350 Fee Pending`,
+          content: `**Student:** ${profile.name} (${profile.phone})\n**Slot ID:** ${input.slotId}\n\nParent cancelled the scheduled demo. A ₹350 cancellation fee is pending. Please collect and clear it in Admin → Cancelled Demos.`,
+        }).catch(() => {});
+        return { success: true };
+      }),
+
+    // Admin: clear the ₹350 cancellation fee for a demo slot
+    adminClearCancellationFee: adminProcedure
+      .input(z.object({ slotId: z.number() }))
+      .mutation(async ({ input }) => {
+        await clearDemoCancellationFee(input.slotId);
+        return { success: true };
+      }),
+
+    // Admin: get all cancelled demos with pending fee
+    adminGetCancelledDemos: adminProcedure.query(async () => {
+      return getCancelledDemosWithPendingFee();
     }),
 
     // Tutor: get their demo slots (schedule)

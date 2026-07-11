@@ -379,3 +379,13 @@
 - [x] 15/15 tests passing, 0 TypeScript errors
 
 
+
+## Round 33 — Gender Badge & Demo Cancellation Flow
+- [ ] NearbyTutors: show gender badge (Male/Female) on tutor cards and in full profile modal
+- [ ] DB: add demoCancelledBy, demoCancelledAt, demoCancellationFeeCleared to demo_slots; run db:push
+- [ ] Backend: demoSlot.cancelDemo procedure (parent cancels scheduled demo)
+- [ ] Backend: admin clearCancellationFee procedure (marks fee as cleared)
+- [ ] Backend: getNearbyTutors blocks re-booking if student has pending cancellation fee
+- [ ] StudentPortal: Cancel Demo button on scheduled demo cards → ₹350 fee notice → blocked from re-booking
+- [ ] Admin: Cancelled Demos tab with ₹350 fee pending and Clear Fee button
+- [ ] 15/15 tests passing, 0 TypeScript errors

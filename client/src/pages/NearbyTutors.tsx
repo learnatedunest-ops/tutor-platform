@@ -712,6 +712,11 @@ export default function NearbyTutors() {
                         {tutor.boards}
                       </span>
                     )}
+                    {tutor.gender && (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: tutor.gender === 'female' ? '#FDF2F8' : '#EFF6FF', color: tutor.gender === 'female' ? '#9D174D' : '#1E40AF', fontFamily: "'Poppins', sans-serif" }}>
+                        {tutor.gender === 'male' ? '👨 Male' : tutor.gender === 'female' ? '👩 Female' : tutor.gender}
+                      </span>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs mb-3">

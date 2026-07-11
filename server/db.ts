@@ -647,6 +647,9 @@ export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(Demo
       parentRescheduleResponse: demoSlots.parentRescheduleResponse,
       tutorProceedIntent: demoSlots.tutorProceedIntent,
       studentProceedIntent: demoSlots.studentProceedIntent,
+      demoCancelledBy: demoSlots.demoCancelledBy,
+      demoCancelledAt: demoSlots.demoCancelledAt,
+      demoCancellationFeeCleared: demoSlots.demoCancellationFeeCleared,
       createdAt: demoSlots.createdAt,
       updatedAt: demoSlots.updatedAt,
       confirmedMatchId: confirmedMatches.id,
@@ -706,6 +709,9 @@ export async function getDemoSlotsByStudent(studentProfileId: number): Promise<(
       parentRescheduleResponse: demoSlots.parentRescheduleResponse,
       tutorProceedIntent: demoSlots.tutorProceedIntent,
       studentProceedIntent: demoSlots.studentProceedIntent,
+      demoCancelledBy: demoSlots.demoCancelledBy,
+      demoCancelledAt: demoSlots.demoCancelledAt,
+      demoCancellationFeeCleared: demoSlots.demoCancellationFeeCleared,
       createdAt: demoSlots.createdAt,
       updatedAt: demoSlots.updatedAt,
       confirmedMatchId: confirmedMatches.id,
@@ -1137,4 +1143,36 @@ export async function getAllActiveStudentIds(): Promise<number[]> {
     .from(confirmedMatches)
     .where(ne(confirmedMatches.classStatus, 'cancelled'));
   return Array.from(new Set(rows.map(r => r.studentProfileId)));
+}
+
+/** Parent cancels a scheduled demo — sets demoCancelledBy, demoCancelledAt, status=cancelled */
+export async function cancelDemoByParent(slotId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(demoSlots).set({
+    demoCancelledBy: 'parent',
+    demoCancelledAt: new Date(),
+    demoCancellationFeeCleared: false,
+    status: 'cancelled',
+    updatedAt: new Date(),
+  }).where(eq(demoSlots.id, slotId));
+}
+
+/** Admin clears the ₹350 cancellation fee for a demo slot */
+export async function clearDemoCancellationFee(slotId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(demoSlots).set({
+    demoCancellationFeeCleared: true,
+    updatedAt: new Date(),
+  }).where(eq(demoSlots.id, slotId));
+}
+
+/** Get all demo slots cancelled by parent with fee not yet cleared (for admin) */
+export async function getCancelledDemosWithPendingFee(): Promise<DemoSlot[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(demoSlots)
+    .where(and(eq(demoSlots.demoCancelledBy, 'parent'), eq(demoSlots.demoCancellationFeeCleared, false)))
+    .orderBy(desc(demoSlots.demoCancelledAt));
 }

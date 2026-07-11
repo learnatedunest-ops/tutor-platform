@@ -115,6 +115,21 @@ export default function StudentPortal() {
     onError: (err: { message?: string }) => toast.error(err.message ?? "Failed to respond"),
   });
 
+  // Demo cancellation
+  const { data: hasPendingFee, refetch: refetchPendingFee } = trpc.demoSlot.hasPendingCancellationFee.useQuery(
+    undefined, { enabled: isAuthenticated }
+  );
+  const [cancelDemoConfirmId, setCancelDemoConfirmId] = useState<number | null>(null);
+  const cancelDemoMutation = trpc.demoSlot.cancelDemo.useMutation({
+    onSuccess: () => {
+      utils.demoSlot.mySlots.invalidate();
+      refetchPendingFee();
+      setCancelDemoConfirmId(null);
+      toast.error("Demo cancelled. A ₹350 cancellation fee is applicable as per our Terms & Conditions.");
+    },
+    onError: (err: { message?: string }) => toast.error(err.message ?? "Failed to cancel demo"),
+  });
+
   // Payment state
   const [payingLogId, setPayingLogId] = useState<number | null>(null);
 
@@ -575,6 +590,53 @@ export default function StudentPortal() {
                     {slot.status === "completed" && (slot as any).studentProceedIntent === "yes" && (slot as any).tutorProceedIntent === "no" && (
                       <div className="mt-4 p-3 rounded-xl bg-gray-50 border border-gray-200">
                         <p className="text-xs font-semibold text-gray-500">The tutor chose not to continue. EduNest will help you find another tutor.</p>
+                      </div>
+                    )}
+
+                    {/* Cancel Demo button — only for scheduled demos */}
+                    {slot.status === "scheduled" && (
+                      <div className="mt-4 border-t pt-4" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
+                        {cancelDemoConfirmId === slot.id ? (
+                          <div className="p-4 rounded-xl bg-red-50 border border-red-200">
+                            <p className="text-sm font-bold text-red-700 mb-1">⚠️ Cancel this demo?</p>
+                            <p className="text-xs text-red-600 mb-3">As per our Terms & Conditions, a <strong>₹350 cancellation fee</strong> applies regardless of when you cancel. EduNest will contact you for payment.</p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => cancelDemoMutation.mutate({ slotId: slot.id })}
+                                disabled={cancelDemoMutation.isPending}
+                                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition-all active:scale-95 disabled:opacity-50"
+                              >
+                                {cancelDemoMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : null}
+                                Yes, Cancel Demo
+                              </button>
+                              <button
+                                onClick={() => setCancelDemoConfirmId(null)}
+                                className="px-4 py-2 rounded-lg text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
+                              >
+                                Keep Demo
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setCancelDemoConfirmId(slot.id)}
+                            className="text-xs font-semibold text-red-500 hover:text-red-700 underline transition-colors"
+                          >
+                            Cancel this demo
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Cancelled demo — show fee notice */}
+                    {slot.status === "cancelled" && (slot as any).demoCancelledBy === 'parent' && (
+                      <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200">
+                        <p className="text-xs font-bold text-red-700">❌ Demo Cancelled by You</p>
+                        {(slot as any).demoCancellationFeeCleared ? (
+                          <p className="text-xs text-green-700 mt-1">✅ Cancellation fee of ₹350 has been cleared by EduNest.</p>
+                        ) : (
+                          <p className="text-xs text-red-600 mt-1">⚠️ A ₹350 cancellation fee is pending. EduNest will contact you shortly for payment.</p>
+                        )}
                       </div>
                     )}
                   </div>

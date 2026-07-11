@@ -13,7 +13,7 @@ import {
   Users, BookOpen, Mail, Phone, MapPin, Clock,
   CheckCircle2, XCircle, MessageSquare, GraduationCap,
   RefreshCw, LogOut, ShieldAlert, Plus, Pencil, Trash2, UserCheck, Gift,
-  CreditCard, ExternalLink, Upload,
+  CreditCard, ExternalLink, Upload, Loader2,
 } from "lucide-react";
 
 type InquiryStatus = "new" | "contacted" | "resolved";
@@ -47,7 +47,7 @@ function formatDate(date: Date | string) {
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs" | "cancellations">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs" | "cancellations" | "cancelledDemos">("inquiries");
   const [tutorForm, setTutorForm] = useState<typeof EMPTY_TUTOR>(EMPTY_TUTOR);
   const [editingTutorId, setEditingTutorId] = useState<number | null>(null);
   const [showTutorForm, setShowTutorForm] = useState(false);
@@ -179,6 +179,14 @@ export default function Admin() {
     onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to approve cancellation'),
   });
 
+  // Cancelled Demos (parent-cancelled with pending ₹350 fee)
+  const { data: cancelledDemosList, isLoading: loadingCancelledDemos, refetch: refetchCancelledDemos } =
+    trpc.demoSlot.adminGetCancelledDemos.useQuery(undefined, { enabled: isAdmin });
+  const clearCancellationFeeMutation = trpc.demoSlot.adminClearCancellationFee.useMutation({
+    onSuccess: () => { refetchCancelledDemos(); toast.success('✅ Cancellation fee cleared. Parent has been notified.'); },
+    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to clear fee'),
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
@@ -301,7 +309,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["inquiries", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs", "cancellations"] as const).map(tab => (
+          {(["inquiries", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs", "cancellations", "cancelledDemos"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -328,6 +336,8 @@ export default function Admin() {
                 <span className="flex items-center gap-2"><CreditCard size={15} /> Session Payments {pendingPayments > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "sessionLogs" ? "bg-white/30" : "bg-orange-100 text-orange-700"}`}>{pendingPayments} pending</span>}</span>
               ) : tab === "cancellations" ? (
                 <span className="flex items-center gap-2">🚫 Cancellation Requests {(cancellationRequests?.length ?? 0) > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "cancellations" ? "bg-white/30" : "bg-red-100 text-red-700"}`}>{cancellationRequests?.length}</span>}</span>
+              ) : tab === "cancelledDemos" ? (
+                <span className="flex items-center gap-2">❌ Cancelled Demos {(cancelledDemosList?.length ?? 0) > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "cancelledDemos" ? "bg-white/30" : "bg-red-100 text-red-700"}`}>{cancelledDemosList?.length} pending fee</span>}</span>
               ) : (
                 <span className="flex items-center gap-2"><UserCheck size={15} /> Manage Tutors <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
               )}
@@ -1331,6 +1341,57 @@ export default function Admin() {
                       className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-60"
                     >
                       {approveCancellationMutation.isPending ? 'Processing...' : '❌ Approve Cancellation'}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ── Cancelled Demos (parent-cancelled, ₹350 fee pending) ── */}
+        {activeTab === "cancelledDemos" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>❌ Cancelled Demos — Pending ₹350 Fee</h2>
+              <button onClick={() => refetchCancelledDemos()} className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl text-sm text-gray-500 hover:text-gray-700 transition-colors"><RefreshCw size={14} /> Refresh</button>
+            </div>
+            {loadingCancelledDemos ? (
+              <div className="bg-white rounded-2xl shadow-sm p-12 text-center"><Loader2 size={32} className="animate-spin mx-auto mb-3 text-orange-400" /><p className="text-gray-400">Loading cancelled demos...</p></div>
+            ) : !cancelledDemosList?.length ? (
+              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                <CheckCircle2 size={48} className="mx-auto mb-4 text-green-400 opacity-50" />
+                <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No pending cancellation fees</h3>
+                <p className="text-gray-400">All demo cancellation fees have been cleared.</p>
+              </div>
+            ) : (
+              cancelledDemosList.map((demo: any) => (
+                <div key={demo.id} className="bg-white rounded-2xl shadow-sm border border-red-100 p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-100 text-red-700">❌ Demo Cancelled by Parent</span>
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-100 text-orange-700">⚠️ ₹350 Fee Pending</span>
+                      </div>
+                      <p className="text-base font-bold mb-1" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
+                        Demo Slot #{demo.id} · Student Profile S{String(demo.studentProfileId).padStart(3, '0')}
+                      </p>
+                      <p className="text-sm text-gray-600 mb-1">
+                        Tutor Profile T{String(demo.tutorProfileId).padStart(3, '0')} · {demo.mode === 'online' ? '💻 Online' : '🏠 Home Tuition'}
+                      </p>
+                      {demo.scheduledDate && demo.scheduledTime && (
+                        <p className="text-sm text-gray-500">📅 Was scheduled: {demo.scheduledDate} at {demo.scheduledTime}</p>
+                      )}
+                      {demo.demoCancelledAt && (
+                        <p className="text-xs text-gray-400 mt-1">Cancelled: {new Date(demo.demoCancelledAt).toLocaleString()}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => clearCancellationFeeMutation.mutate({ slotId: demo.id })}
+                      disabled={clearCancellationFeeMutation.isPending}
+                      className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-green-500 hover:bg-green-600 transition-colors disabled:opacity-60 whitespace-nowrap"
+                    >
+                      {clearCancellationFeeMutation.isPending ? 'Processing...' : '✅ Clear Fee'}
                     </button>
                   </div>
                 </div>
