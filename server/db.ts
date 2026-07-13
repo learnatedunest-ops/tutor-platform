@@ -469,9 +469,12 @@ export async function getAllDemoInterestsByTutor(tutorProfileId: number) {
       studentMode: studentProfiles.mode,
       studentArea: studentProfiles.area,
       studentBoard: studentProfiles.board,
+      // Include demoSlotId so tutor can navigate to demo details
+      demoSlotId: demoSlots.id,
     })
     .from(studentDemoInterests)
     .leftJoin(studentProfiles, eq(studentProfiles.id, studentDemoInterests.studentProfileId))
+    .leftJoin(demoSlots, eq(demoSlots.studentDemoInterestId, studentDemoInterests.id))
     .where(eq(studentDemoInterests.tutorProfileId, tutorProfileId))
     .orderBy(desc(studentDemoInterests.createdAt));
   return rows;
@@ -625,7 +628,7 @@ export async function getDemoSlotByInterestId(studentDemoInterestId: number): Pr
   return rows[0] ?? null;
 }
 
-export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(DemoSlot & { confirmedMatchId: number | null; studentAddress: string | null; studentPhone: string | null })[]> {
+export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(DemoSlot & { confirmedMatchId: number | null })[]> {
   const db = await getDb();
   if (!db) return [];
   const rows = await db
@@ -653,8 +656,6 @@ export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(Demo
       createdAt: demoSlots.createdAt,
       updatedAt: demoSlots.updatedAt,
       confirmedMatchId: confirmedMatches.id,
-      studentAddress: studentProfiles.fullAddress,
-      studentPhone: studentProfiles.phone,
       studentLat: studentProfiles.latitude,
       studentLng: studentProfiles.longitude,
       studentName: studentProfiles.name,
@@ -673,8 +674,6 @@ export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(Demo
   return rows.map(r => ({
     ...r,
     confirmedMatchId: r.confirmedMatchId ?? null,
-    studentAddress: r.studentAddress ?? null,
-    studentPhone: r.studentPhone ?? null,
     studentLat: r.studentLat ?? null,
     studentLng: r.studentLng ?? null,
     studentName: r.studentName ?? null,

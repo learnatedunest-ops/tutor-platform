@@ -45,6 +45,41 @@ function formatDate(date: Date | string) {
   });
 }
 
+/** Fetches a presigned S3 URL for the uploaded session sheet and opens it in a new tab.
+ *  This avoids the 404 error caused by the /manus-storage/ path not being accessible in production. */
+function ViewSheetButton({ logId }: { logId: number }) {
+  const [loading, setLoading] = useState(false);
+  const utils = trpc.useUtils();
+
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const result = await utils.sessionLog.getSignedSheetUrl.fetch({ logId });
+      if (result?.url) {
+        window.open(result.url, '_blank', 'noopener,noreferrer');
+      } else {
+        alert('Sheet URL not available.');
+      }
+    } catch (err) {
+      console.error('Failed to get sheet URL:', err);
+      alert('Failed to open sheet. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors disabled:opacity-60"
+    >
+      {loading ? <Loader2 size={13} className="animate-spin" /> : <ExternalLink size={13} />}
+      {loading ? 'Opening...' : 'View Uploaded Sheet'}
+    </button>
+  );
+}
+
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs" | "cancellations" | "cancelledDemos">("inquiries");
@@ -1256,16 +1291,9 @@ export default function Admin() {
                       </div>
                     )}
                     <div className="flex flex-wrap gap-2 items-center">
-                      {/* View uploaded sheet */}
+                      {/* View uploaded sheet — use presigned URL to avoid 404 in production */}
                       {log.uploadedSheetUrl ? (
-                        <a
-                          href={log.uploadedSheetUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
-                        >
-                          <ExternalLink size={13} /> View Uploaded Sheet
-                        </a>
+                        <ViewSheetButton logId={log.id} />
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-400">
                           <Upload size={13} /> No sheet uploaded yet

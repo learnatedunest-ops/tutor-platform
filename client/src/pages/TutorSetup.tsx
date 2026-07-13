@@ -34,6 +34,49 @@ const STEPS = [
   { id: 4, label: "Location" },
 ];
 
+const GRADE_OPTIONS = [
+  "Nursery", "LKG", "UKG",
+  "Class 1", "Class 2", "Class 3", "Class 4", "Class 5",
+  "Class 6", "Class 7", "Class 8", "Class 9", "Class 10",
+  "Class 11", "Class 12", "Undergraduate", "Other",
+];
+
+interface ClassEntry {
+  gradeFrom: string;
+  gradeTo: string;
+  subjects: string;
+  feePerMonth: string;
+}
+
+const EMPTY_CLASS_ENTRY: ClassEntry = { gradeFrom: "Class 6", gradeTo: "Class 8", subjects: "", feePerMonth: "" };
+
+function serializeClassEntries(entries: ClassEntry[]): string {
+  return entries
+    .filter(e => e.subjects.trim())
+    .map(e => {
+      const grade = e.gradeFrom === e.gradeTo ? e.gradeFrom : `${e.gradeFrom}–${e.gradeTo}`;
+      const fee = e.feePerMonth ? ` (₹${e.feePerMonth}/mo)` : "";
+      return `${grade}: ${e.subjects.trim()}${fee}`;
+    })
+    .join(" | ");
+}
+
+function parseClassEntries(subjects: string): ClassEntry[] {
+  if (!subjects || !subjects.includes(":")) return [];
+  return subjects.split(" | ").map(part => {
+    const colonIdx = part.indexOf(":");
+    const gradeRaw = part.slice(0, colonIdx).trim();
+    const rest = part.slice(colonIdx + 1).trim();
+    const feeMatch = rest.match(/\(₹([\d,]+)\/mo\)$/);
+    const subj = feeMatch ? rest.slice(0, rest.lastIndexOf("(")).trim() : rest;
+    const fee = feeMatch ? feeMatch[1].replace(/,/g, "") : "";
+    const dashIdx = gradeRaw.indexOf("–");
+    const gradeFrom = dashIdx >= 0 ? gradeRaw.slice(0, dashIdx).trim() : gradeRaw;
+    const gradeTo = dashIdx >= 0 ? gradeRaw.slice(dashIdx + 1).trim() : gradeRaw;
+    return { gradeFrom, gradeTo, subjects: subj, feePerMonth: fee };
+  });
+}
+
 interface FormData {
   name: string;
   email: string;
@@ -152,6 +195,7 @@ export default function TutorSetup() {
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showTutorTerms, setShowTutorTerms] = useState(false);
+  const [classEntries, setClassEntries] = useState<ClassEntry[]>([{ ...EMPTY_CLASS_ENTRY }]);
   // Initialize editMode from ?edit=true query param so TutorDashboard can link directly to edit
   const [editMode, setEditMode] = useState(() => new URLSearchParams(search).get("edit") === "true");
 
@@ -175,6 +219,11 @@ export default function TutorSetup() {
     if (existingProfile) {
       // If already verified, mark as verified
       if (existingProfile.phoneVerified === "yes") setPhoneVerified(true);
+      // Parse class entries from subjects field
+      const parsed = parseClassEntries(existingProfile.subjects);
+      if (parsed.length > 0) {
+        setClassEntries(parsed);
+      }
       // Pre-fill form with existing data
       setForm(prev => ({
         ...prev,
@@ -200,10 +249,18 @@ export default function TutorSetup() {
     }
   }, [existingProfile]);
 
+  const utils = trpc.useUtils();
+  const setRoleMutation = trpc.auth.setRole.useMutation({
+    onSuccess: () => { utils.auth.getRole.invalidate(); },
+  });
   const saveMutation = trpc.tutorProfile.save.useMutation({
     onSuccess: () => {
       setSubmitted(true);
       toast.success("Profile submitted for review!");
+      // Ensure userRole is set to 'tutor' so AuthGate doesn't redirect to /role-select
+      if (userRole === null) {
+        setRoleMutation.mutate({ userRole: "tutor" });
+      }
     },
     onError: (err) => {
       toast.error(err.message || "Failed to save profile. Please try again.");
@@ -214,7 +271,13 @@ export default function TutorSetup() {
     setForm(prev => ({ ...prev, [key]: value }));
 
   const handleSubmit = () => {
-    if (!form.name || !form.phone || !form.qualification || !form.subjects || !form.experience) {
+    // Serialize class entries into subjects field
+    const serializedSubjects = serializeClassEntries(classEntries);
+    if (!serializedSubjects) {
+      toast.error("Please add at least one class entry with subjects.");
+      return;
+    }
+    if (!form.name || !form.phone || !form.qualification || !form.experience) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -232,6 +295,7 @@ export default function TutorSetup() {
     }
     saveMutation.mutate({
       ...form,
+      subjects: serializedSubjects,
       latitude: form.latitude ?? undefined,
       longitude: form.longitude ?? undefined,
       gender: form.gender || undefined,
@@ -464,10 +528,83 @@ export default function TutorSetup() {
                 <BookOpen size={18} className="inline mr-2" style={{ color: "oklch(0.68 0.18 50)" }} />
                 Teaching Details
               </h2>
+              {/* Dynamic class entries */}
               <div>
-                <label className={labelCls} style={labelStyle}>Subjects You Teach *</label>
-                <input className={inputCls} style={inputStyle} value={form.subjects} onChange={e => set("subjects", e.target.value)} placeholder="e.g. Mathematics, Physics, Chemistry" />
-                <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>Separate multiple subjects with commas</p>
+                <div className="flex items-center justify-between mb-2">
+                  <label className={labelCls} style={labelStyle}>Classes You Teach *</label>
+                  <button
+                    type="button"
+                    onClick={() => setClassEntries(prev => [...prev, { ...EMPTY_CLASS_ENTRY }])}
+                    className="text-xs font-bold px-3 py-1 rounded-lg transition-all hover:opacity-80 active:scale-95"
+                    style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)", border: "1px solid oklch(0.88 0.08 50)", fontFamily: "'Poppins', sans-serif" }}
+                  >
+                    + Add Class
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {classEntries.map((entry, idx) => (
+                    <div key={idx} className="rounded-xl border p-4 relative" style={{ borderColor: "oklch(0.88 0.005 80)", backgroundColor: "oklch(0.99 0.005 80)" }}>
+                      {classEntries.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setClassEntries(prev => prev.filter((_, i) => i !== idx))}
+                          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold transition-all hover:bg-red-100"
+                          style={{ color: "#DC2626" }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <label className="block text-xs font-semibold mb-1" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>From Grade</label>
+                          <select
+                            className={inputCls}
+                            style={inputStyle}
+                            value={entry.gradeFrom}
+                            onChange={e => setClassEntries(prev => prev.map((c, i) => i === idx ? { ...c, gradeFrom: e.target.value } : c))}
+                          >
+                            {GRADE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold mb-1" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>To Grade</label>
+                          <select
+                            className={inputCls}
+                            style={inputStyle}
+                            value={entry.gradeTo}
+                            onChange={e => setClassEntries(prev => prev.map((c, i) => i === idx ? { ...c, gradeTo: e.target.value } : c))}
+                          >
+                            {GRADE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold mb-1" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>Subjects *</label>
+                          <input
+                            className={inputCls}
+                            style={inputStyle}
+                            value={entry.subjects}
+                            onChange={e => setClassEntries(prev => prev.map((c, i) => i === idx ? { ...c, subjects: e.target.value } : c))}
+                            placeholder="e.g. Maths, Science"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold mb-1" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>Fee / Month (₹)</label>
+                          <input
+                            className={inputCls}
+                            style={inputStyle}
+                            value={entry.feePerMonth}
+                            onChange={e => setClassEntries(prev => prev.map((c, i) => i === idx ? { ...c, feePerMonth: e.target.value.replace(/[^0-9]/g, "") } : c))}
+                            placeholder="e.g. 2500"
+                            inputMode="numeric"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs mt-2" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>Add as many class levels as you teach. Each entry will be shown on your profile.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -604,8 +741,8 @@ export default function TutorSetup() {
                     toast.error("Please verify your phone number with OTP before proceeding.");
                     return;
                   }
-                  if (step === 2 && (!form.subjects || !form.experience)) {
-                    toast.error("Please fill in Subjects and Experience.");
+                  if (step === 2 && (!serializeClassEntries(classEntries) || !form.experience)) {
+                    toast.error("Please add at least one class entry with subjects and fill in Experience.");
                     return;
                   }
                   setStep(s => s + 1);

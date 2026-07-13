@@ -454,7 +454,9 @@ export const appRouter = router({
             const dLon = (parseFloat(s.longitude!) - input.longitude) * Math.PI / 180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
             const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return { ...s, distKm: Math.round(distKm * 10) / 10 };
+            // Strip sensitive fields — phone and fullAddress are private until demo is confirmed
+            const { phone: _p, fullAddress: _fa, email: _e, ...safeStudent } = s;
+            return { ...safeStudent, distKm: Math.round(distKm * 10) / 10 };
           })
           .filter(s => s.distKm <= input.radiusKm)
           .sort((a, b) => a.distKm - b.distKm);
@@ -528,7 +530,9 @@ export const appRouter = router({
             const dLon = (parseFloat(t.longitude!) - input.longitude) * Math.PI / 180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
             const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return { ...t, distKm: Math.round(distKm * 10) / 10 };
+            // Strip sensitive fields — phone and fullAddress are private until class is confirmed
+            const { phone: _p, fullAddress: _fa, upiId: _u, ...safeTutor } = t;
+            return { ...safeTutor, distKm: Math.round(distKm * 10) / 10 };
           })
           .filter(t => t.distKm <= input.radiusKm)
           .sort((a, b) => a.distKm - b.distKm);
@@ -709,7 +713,14 @@ export const appRouter = router({
         const studentProfile = await getStudentProfileByUserId(ctx.user.id);
         if (!studentProfile) return null;
         const record = await getStudentDemoInterestByPair(studentProfile.id, input.tutorProfileId);
-        return record ?? null;
+        if (!record) return null;
+        // If confirmed, also fetch the associated demoSlot ID so the parent can navigate to it
+        let demoSlotId: number | null = null;
+        if (record.status === 'confirmed') {
+          const slot = await getDemoSlotByInterestId(record.id);
+          demoSlotId = slot?.id ?? null;
+        }
+        return { ...record, demoSlotId };
       }),
 
     // Student sees all their demo interests
@@ -1321,6 +1332,29 @@ export const appRouter = router({
       .input(z.object({ matchId: z.number().int().positive() }))
       .query(async ({ input }) => {
         return getSessionLogByMatchId(input.matchId);
+      }),
+
+    /** Admin/Tutor/Student: get a presigned URL for the uploaded sheet */
+    getSignedSheetUrl: protectedProcedure
+      .input(z.object({ logId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        const log = await getSessionLogById(input.logId);
+        if (!log?.uploadedSheetUrl) return { url: null };
+        const rawUrl = log.uploadedSheetUrl;
+        // If already a full HTTP URL (legacy), return as-is
+        if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+          return { url: rawUrl };
+        }
+        // Extract key from /manus-storage/{key} path
+        const key = rawUrl.replace(/^\/manus-storage\//, '');
+        try {
+          const { storageGetSignedUrl } = await import('./storage');
+          const signedUrl = await storageGetSignedUrl(key);
+          return { url: signedUrl };
+        } catch {
+          // Fallback to relative path (works in dev)
+          return { url: rawUrl };
+        }
       }),
 
     /** Tutor: get all session logs for their profile */

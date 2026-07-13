@@ -36,6 +36,8 @@ export default function StudentPortal() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<"demos" | "interests" | "classes" | "requirement" | "profile">("demos");
   const [editingReq, setEditingReq] = useState(false);
+  // Track dismissed demo slot cards (after user clicks "Go to My Classes")
+  const [dismissedDemoSlotIds, setDismissedDemoSlotIds] = useState<Set<number>>(new Set());
   const [reqForm, setReqForm] = useState<Record<string, string>>({});
   // Demo slot scheduling state
   const [schedulingSlotId, setSchedulingSlotId] = useState<number | null>(null);
@@ -355,7 +357,7 @@ export default function StudentPortal() {
                   <p className="text-gray-400 mb-6">Once EduNest confirms a demo class with a tutor, you can schedule the date and time here.</p>
                 </div>
               ) : (
-                myDemoSlots.map(slot => (
+                myDemoSlots.filter((slot: any) => !dismissedDemoSlotIds.has(slot.id)).map(slot => (
                   <div key={slot.id} className="bg-white rounded-2xl shadow-sm border p-6" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
                     <div className="flex items-start justify-between gap-3 mb-4">
                       <div>
@@ -534,51 +536,44 @@ export default function StudentPortal() {
                       const confirmedMatch = myConfirmedMatches?.find((m: any) => m.demoSlotId === slot.id);
                       const isGotAClass = confirmedMatch?.classStatus === 'got_a_class';
                       return (
-                      <div className={`mt-4 p-3 rounded-xl border ${isGotAClass ? 'bg-emerald-50 border-emerald-300' : 'bg-green-50 border-green-200'}`}>
-                        <p className={`text-xs font-semibold ${isGotAClass ? 'text-emerald-700' : 'text-green-700'}`}>
-                          {isGotAClass ? '🎓 Got a Class! EduNest has confirmed your class arrangement.' : '🎉 Great news! Both parties agreed. You\'ve got a class!'}
+                      <div className="mt-4 p-3 rounded-xl border-2" style={{ borderColor: "oklch(0.88 0.18 145)", backgroundColor: "oklch(0.96 0.04 145)" }}>
+                        <p className="text-sm font-bold mb-1" style={{ color: "oklch(0.35 0.12 145)", fontFamily: "'Poppins', sans-serif" }}>
+                          {isGotAClass ? '🎓 Class Confirmed by EduNest!' : '🎉 Both parties agreed to proceed!'}
                         </p>
-                        {isGotAClass && confirmedMatch?.paymentAmount && (
-                          <p className="text-xs text-emerald-700 mt-1 font-semibold">💰 Monthly Fee: ₹{confirmedMatch.paymentAmount}</p>
-                        )}
-                        {/* Payment Status Icon */}
+                        <p className="text-xs mb-3" style={{ color: "oklch(0.45 0.08 145)" }}>
+                          {isGotAClass
+                            ? `Your class is confirmed${confirmedMatch?.paymentAmount ? ` at ₹${confirmedMatch.paymentAmount}/month` : ''}. Go to My Classes to track sessions and make payments.`
+                            : 'Your class has been confirmed. Go to My Classes to track sessions and make payments.'}
+                        </p>
+                        {/* Payment Status (compact) */}
                         {(() => {
                           const log = mySessionLogs?.find((l: any) => l.studentProfileId === (slot as any).studentProfileId);
                           if (!log) return null;
                           return (
-                            <div className="mt-3 border-t border-green-200 pt-3">
-                              <p className="text-xs font-bold text-green-800 mb-2">💳 Payment Status</p>
-                              <div className="flex flex-wrap gap-2 items-center">
-                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                                  log.paymentStatus === 'payment_processed'
-                                    ? 'bg-green-100 text-green-700'
-                                    : log.paymentStatus === 'sheet_uploaded'
-                                    ? 'bg-blue-100 text-blue-700'
-                                    : 'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                  <CreditCard size={13} />
-                                  {log.paymentStatus === 'payment_processed' ? '✅ Payment Processed' :
-                                   log.paymentStatus === 'sheet_uploaded' ? '⏳ Session Sheet Submitted — Payment Pending' :
-                                   '⏳ Awaiting Session Sheet from Tutor'}
-                                </span>
-                                {/* View uploaded sheet */}
-                                {log.uploadedSheetUrl && (
-                                  <a
-                                    href={log.uploadedSheetUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                                  >
-                                    <ExternalLink size={13} /> View Session Sheet
-                                  </a>
-                                )}
-                              </div>
-                              {log.paymentStatus === 'payment_processed' && (
-                                <p className="text-xs text-green-600 mt-1">✔️ EduNest has confirmed payment to your tutor. Thank you!</p>
-                              )}
+                            <div className="mb-3 p-2 rounded-lg bg-white border border-green-200">
+                              <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold ${
+                                log.paymentStatus === 'payment_processed' ? 'bg-green-100 text-green-700'
+                                : log.paymentStatus === 'sheet_uploaded' ? 'bg-blue-100 text-blue-700'
+                                : 'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                <CreditCard size={12} />
+                                {log.paymentStatus === 'payment_processed' ? '✅ Payment Processed'
+                                 : log.paymentStatus === 'sheet_uploaded' ? '⏳ Session Sheet Submitted'
+                                 : '⏳ Awaiting Session Sheet'}
+                              </span>
                             </div>
                           );
-                            })()}
+                        })()}
+                        <button
+                          onClick={() => {
+                            setDismissedDemoSlotIds(prev => new Set(prev).add(slot.id));
+                            setActiveTab('classes');
+                          }}
+                          className="w-full py-2 px-4 rounded-lg text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
+                          style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
+                        >
+                          📚 Go to My Classes →
+                        </button>
                       </div>
                       );
                     })()}

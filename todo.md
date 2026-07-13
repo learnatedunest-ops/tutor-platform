@@ -408,3 +408,17 @@
 - [x] Update DashboardLayout sign-in button to say "Sign in with Google"
 - [x] Update ensureOwnerAdmin procedure to check Google admin email (learn.at.edunest@gmail.com) instead of OWNER_OPEN_ID
 - [x] 15/15 tests passing, 0 TypeScript errors
+
+## Round 35 — 8 Bug Fixes
+
+- [x] Fix T&C modal styling (TutorTermsModal + ParentTermsModal) — proper scrollable modal with fixed header/footer
+- [x] Fix post-approval navigation: tutor "Go to My Dashboard" → /tutor-dashboard (not role-select)
+- [x] Fix post-approval navigation: parent "Find Nearby Tutors" → /nearby-tutors (not role-select)
+- [x] Flexible class registration in TutorSetup — dynamic multi-row entries (grade range + subjects + fee)
+- [x] Privacy: strip phone + address from getNearbyStudents, getNearbyTutors, getDemoSlotsByTutor
+- [x] Remove phone/address display from TutorDashboard demo slot card and student interests card
+- [x] NearbyTutors "Demo Class Confirmed!" card — add "Go to Dashboard to Schedule" link
+- [x] TutorDashboard Student Interests — add "View Demo Details" link for confirmed interests
+- [x] TutorDashboard demo slot card — show "Go to My Classes" button when both parties accept, dismiss card on click
+- [x] StudentPortal demo slot card — show "Go to My Classes" button when both parties accept, dismiss card on click
+- [x] Admin "View Uploaded Sheet" — fix 404 by using presigned S3 URL via ViewSheetButton component

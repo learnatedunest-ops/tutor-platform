@@ -271,17 +271,7 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: {
               <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">💰 ₹{budget}/month</span>
             )}
           </div>
-          {phone && (
-            <div className="flex items-center gap-1.5">
-              <Phone size={12} style={{ color: "oklch(0.45 0.08 240)" }} />
-              <a href={`tel:${phone}`} className="text-xs font-semibold underline" style={{ color: "oklch(0.35 0.12 240)" }}>
-                {phone}
-              </a>
-            </div>
-          )}
-          {addr && (
-            <p className="text-xs" style={{ color: "oklch(0.45 0.01 270)" }}>🏠 {addr}</p>
-          )}
+          {/* Phone and address are private — contact details shared by EduNest directly */}
           {mapsUrl && (
             <a
               href={mapsUrl}
@@ -509,6 +499,9 @@ export default function TutorDashboard() {
     undefined,
     { enabled: isAuthenticated }
   );
+
+  // Track dismissed demo slot cards (after user clicks "Go to My Classes")
+  const [dismissedDemoSlotIds, setDismissedDemoSlotIds] = useState<Set<number>>(new Set());
 
   // Build a map of studentProfileId → status from DB data + local optimistic adds
   const [localExpressedIds, setLocalExpressedIds] = useState<Set<number>>(new Set());
@@ -797,7 +790,7 @@ export default function TutorDashboard() {
             ) : (
               <div className="space-y-3">
                 {demoSlots
-                  .filter((slot: any) => !(slot.status === 'completed' && slot.tutorProceedIntent === 'yes' && slot.studentProceedIntent === 'yes'))
+                  .filter((slot: any) => !dismissedDemoSlotIds.has(slot.id))
                   .map((slot: any) => (
                   <div key={slot.id} className="bg-white rounded-2xl shadow-sm border p-4" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
                     <div className="flex items-start justify-between gap-3">
@@ -862,10 +855,7 @@ export default function TutorDashboard() {
                               {budget && (
                                 <p className="text-xs font-semibold" style={{ color: 'oklch(0.45 0.18 50)' }}>💰 Budget: ₹{budget}/month</p>
                               )}
-                              {addr && <p className="text-xs text-blue-800">🏠 {addr}</p>}
-                              {(slot as any).studentPhone && (
-                                <p className="text-xs text-blue-800">📞 <a href={`tel:${(slot as any).studentPhone}`} className="underline font-medium">{(slot as any).studentPhone}</a></p>
-                              )}
+                              {/* Address and phone are private — EduNest shares contact details directly */}
                               {mapsUrl && (
                                 <a
                                   href={mapsUrl}
@@ -953,6 +943,24 @@ export default function TutorDashboard() {
                         {slot.status === "completed" && (slot as any).tutorProceedIntent === "yes" && (slot as any).studentProceedIntent === "no" && (
                           <div className="mt-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
                             <p className="text-xs font-semibold text-gray-500">The student/parent chose not to continue. Better luck next time!</p>
+                          </div>
+                        )}
+                        {slot.status === "completed" && (slot as any).tutorProceedIntent === "yes" && (slot as any).studentProceedIntent === "yes" && (
+                          <div className="mt-3 p-3 rounded-xl border-2" style={{ borderColor: "oklch(0.88 0.18 145)", backgroundColor: "oklch(0.96 0.04 145)" }}>
+                            <p className="text-sm font-bold mb-1" style={{ color: "oklch(0.35 0.12 145)", fontFamily: "'Poppins', sans-serif" }}>
+                              🎉 Both parties agreed to proceed!
+                            </p>
+                            <p className="text-xs mb-3" style={{ color: "oklch(0.45 0.08 145)" }}>Your class has been confirmed. Go to My Classes to track sessions and manage payments.</p>
+                            <button
+                              onClick={() => {
+                                setDismissedDemoSlotIds(prev => new Set(prev).add(slot.id));
+                                setActiveTab('classes');
+                              }}
+                              className="w-full py-2 px-4 rounded-lg text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
+                              style={{ backgroundColor: "oklch(0.55 0.18 145)" }}
+                            >
+                              📚 Go to My Classes →
+                            </button>
                           </div>
                         )}
                       </div>
@@ -1076,11 +1084,24 @@ export default function TutorDashboard() {
                             ✕ Decline
                           </button>
                         </div>
+                      ) : interest.status === 'confirmed' ? (
+                        <div className="flex flex-col gap-1.5 shrink-0 items-end">
+                          <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700">
+                            ✔ Accepted
+                          </span>
+                          {interest.demoSlotId && (
+                            <button
+                              onClick={() => setActiveTab('demos')}
+                              className="text-xs px-2.5 py-1 rounded-full font-semibold border transition-all hover:opacity-80"
+                              style={{ borderColor: "oklch(0.68 0.18 50)", color: "oklch(0.68 0.18 50)" }}
+                            >
+                              📅 View Demo Details
+                            </button>
+                          )}
+                        </div>
                       ) : (
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${
-                          interest.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }`}>
-                          {interest.status === 'confirmed' ? '✔ Accepted' : '✕ Declined'}
+                        <span className="text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 bg-red-100 text-red-700">
+                          ✕ Declined
                         </span>
                       )}
                     </div>

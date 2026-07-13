@@ -72,9 +72,24 @@ function BookDemoButton({ tutorProfileId }: { tutorProfileId: number }) {
   }
 
   if (existingInterest) {
+    if (existingInterest.status === 'confirmed') {
+      return (
+        <div className="w-full space-y-2">
+          <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm" style={{ backgroundColor: "oklch(0.96 0.04 145)", color: "oklch(0.45 0.14 145)", fontFamily: "'Poppins', sans-serif" }}>
+            <CheckCircle2 size={14} /> Demo Class Confirmed!
+          </div>
+          <Link
+            href="/parent-dashboard"
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold border transition-all hover:opacity-80 active:scale-95"
+            style={{ borderColor: "oklch(0.68 0.18 50)", color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
+          >
+            📅 Schedule Demo → Go to Dashboard
+          </Link>
+        </div>
+      );
+    }
     const statusConfig = {
       pending: { label: "Request Sent — Awaiting Confirmation", bg: "oklch(0.96 0.04 85)", color: "oklch(0.55 0.12 60)", icon: Send },
-      confirmed: { label: "Demo Class Confirmed!", bg: "oklch(0.96 0.04 145)", color: "oklch(0.45 0.14 145)", icon: CheckCircle2 },
       cancelled: { label: "Request Cancelled", bg: "oklch(0.96 0.01 0)", color: "oklch(0.55 0.10 20)", icon: AlertCircle },
     };
     const cfg = statusConfig[existingInterest.status as keyof typeof statusConfig] ?? statusConfig.pending;

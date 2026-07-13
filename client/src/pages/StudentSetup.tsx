@@ -206,10 +206,18 @@ export default function StudentSetup() {
     }
   }, [existingProfile]);
 
+  const utils = trpc.useUtils();
+  const setRoleMutation = trpc.auth.setRole.useMutation({
+    onSuccess: () => { utils.auth.getRole.invalidate(); },
+  });
   const saveMutation = trpc.studentProfile.save.useMutation({
     onSuccess: () => {
       setSubmitted(true);
       toast.success("Requirement submitted! We'll match you with a tutor soon.");
+      // Ensure userRole is set to 'student' so AuthGate doesn't redirect to /role-select
+      if (userRole === null) {
+        setRoleMutation.mutate({ userRole: "student" });
+      }
     },
     onError: (err) => {
       toast.error(err.message || "Failed to submit. Please try again.");
