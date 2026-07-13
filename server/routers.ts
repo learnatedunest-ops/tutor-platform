@@ -101,6 +101,8 @@ import {
   cancelDemoByParent,
   clearDemoCancellationFee,
   getCancelledDemosWithPendingFee,
+  getCancelledConfirmedMatches,
+  getSmartPairs,
 } from "./db";
 import { z } from "zod";
 
@@ -1389,6 +1391,10 @@ export const appRouter = router({
       if (!profile) return [];
       return getActiveTutorIdsForStudent(profile.id);
     }),
+    /** Admin: list all cancelled confirmed matches */
+    listCancelledClasses: adminProcedure.query(async () => getCancelledConfirmedMatches()),
+    /** Admin: get smart pairs (student+tutor within 10km, matching gender+subjects, not yet matched) */
+    getSmartPairs: adminProcedure.query(async () => getSmartPairs(10)),
   }),
 
   // ─── Session Logs ─────────────────────────────────────────────────────────────

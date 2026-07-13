@@ -1042,18 +1042,25 @@ export default function TutorDashboard() {
               </div>
             ) : (
               <div className="space-y-4">
-                <p className="text-sm font-semibold" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>
-                  {myConfirmedMatches.length} confirmed class{myConfirmedMatches.length !== 1 ? "es" : ""}
-                </p>
-                {myConfirmedMatches.map((match: any) => (
-                  <MyClassCard
-                    key={match.id}
-                    slot={match}
-                    mySessionLogs={mySessionLogs ?? []}
-                    onRefreshLogs={refetchSessionLogs}
-                    onRefreshMatches={refetchConfirmedMatches}
-                  />
-                ))}
+                {(() => {
+                  const activeMatches = myConfirmedMatches.filter((m: any) => m.classStatus !== 'cancelled');
+                  return (
+                    <>
+                      <p className="text-sm font-semibold" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>
+                        {activeMatches.length} confirmed class{activeMatches.length !== 1 ? "es" : ""}
+                      </p>
+                      {activeMatches.map((match: any) => (
+                        <MyClassCard
+                          key={match.id}
+                          slot={match}
+                          mySessionLogs={mySessionLogs ?? []}
+                          onRefreshLogs={refetchSessionLogs}
+                          onRefreshMatches={refetchConfirmedMatches}
+                        />
+                      ))}
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>

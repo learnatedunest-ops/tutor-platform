@@ -458,3 +458,10 @@
 - [x] Add admin manual mark-paid-to-tutor button in Session Logs tab (Mark Paid to Tutor Manual)
 - [x] Auto session timeout already implemented (30 min inactivity, useSessionTimeout in AuthGate)
 - [x] 20/20 tests passing, 0 TypeScript errors
+
+## Round 42 — Images Fix + Cancelled Classes + Smart Pairs
+- [ ] Permanently fix images/logos on edunest.courses (diagnose CORS/CSP/storage proxy issue)
+- [ ] Hide cancelled confirmed matches from tutor view and student view
+- [ ] Add Admin Cancelled Classes tab
+- [ ] Add Admin Smart Pairs tab (10km radius, gender match, class/subject overlap, distance in km)
+- [ ] 20/20 tests passing, 0 TypeScript errors

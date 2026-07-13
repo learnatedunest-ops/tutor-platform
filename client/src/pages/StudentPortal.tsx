@@ -798,14 +798,14 @@ export default function StudentPortal() {
           {/* My Classes Tab */}
           {activeTab === "classes" && (
             <div className="space-y-4">
-              {!myConfirmedMatches?.length ? (
+              {!myConfirmedMatches?.filter((m: any) => m.classStatus !== 'cancelled').length ? (
                 <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                   <GraduationCap size={48} className="mx-auto mb-4 opacity-20" style={{ color: "oklch(0.68 0.18 50)" }} />
                   <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No confirmed classes yet</h3>
                   <p className="text-gray-400">Once both you and your tutor agree to proceed after a demo class, your confirmed class will appear here.</p>
                 </div>
               ) : (
-                myConfirmedMatches.map((match: any) => {
+                myConfirmedMatches.filter((m: any) => m.classStatus !== 'cancelled').map((match: any) => {
                   const isGotAClass = match.classStatus === 'got_a_class';
                   const isCancelled = match.classStatus === 'cancelled';
                   const isCancellationRequested = match.classStatus === 'cancellation_requested';
