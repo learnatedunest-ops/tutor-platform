@@ -460,8 +460,8 @@
 - [x] 20/20 tests passing, 0 TypeScript errors
 
 ## Round 42 — Images Fix + Cancelled Classes + Smart Pairs
-- [ ] Permanently fix images/logos on edunest.courses (diagnose CORS/CSP/storage proxy issue)
-- [ ] Hide cancelled confirmed matches from tutor view and student view
-- [ ] Add Admin Cancelled Classes tab
-- [ ] Add Admin Smart Pairs tab (10km radius, gender match, class/subject overlap, distance in km)
-- [ ] 20/20 tests passing, 0 TypeScript errors
+- [x] Permanently fix images/logos on edunest.courses (diagnose CORS/CSP/storage proxy issue)
+- [x] Hide cancelled confirmed matches from tutor view and student view
+- [x] Add Admin Cancelled Classes tab
+- [x] Add Admin Smart Pairs tab (10km radius, gender match, class/subject overlap, distance in km)
+- [x] 20/20 tests passing, 0 TypeScript errors
