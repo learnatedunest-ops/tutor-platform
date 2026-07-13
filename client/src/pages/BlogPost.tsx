@@ -108,6 +108,263 @@ At EduNest, we have 25+ NEET-specialized tutors in Bengaluru with proven track r
 
 Start early, stay consistent, and get the right guidance. NEET 2026 is yours to crack!`,
 
+  "jee-maths-tips": `JEE Mathematics is widely regarded as one of the most demanding sections in the Joint Entrance Examination. Scoring 90+ percentile in JEE Mains Maths requires not just hard work, but smart preparation — understanding the question patterns, mastering high-weightage topics, and building speed and accuracy. Here are the top 10 tips from EduNest's expert JEE tutors in Bengaluru.
+
+## 1. Master the NCERT Textbooks First
+
+Before diving into advanced reference books, ensure you have a thorough understanding of Class 11 and 12 NCERT Mathematics. Many JEE questions are directly based on NCERT concepts. Solve every exercise and example in both textbooks before moving to supplementary material.
+
+## 2. Prioritise High-Weightage Topics
+
+Not all chapters carry equal weight in JEE Mains. Focus your preparation time on the highest-scoring topics:
+- Coordinate Geometry (Straight Lines, Circles, Parabola, Ellipse, Hyperbola)
+- Calculus (Limits, Continuity, Differentiation, Integration, Differential Equations)
+- Algebra (Matrices, Determinants, Complex Numbers, Sequences and Series)
+- Trigonometry (Inverse Trigonometric Functions, Properties of Triangles)
+
+These four areas together account for over 60% of the Maths section marks.
+
+## 3. Solve Previous Year Papers Religiously
+
+The single most effective JEE Maths preparation strategy is solving the last 10 years of JEE Mains papers. This gives you a clear picture of the question types, difficulty level, and recurring topics. Aim to solve at least 2 previous year papers per week from Month 6 onwards.
+
+## 4. Build a Formula Sheet
+
+Create a personal formula sheet for each chapter as you study it. Include all key formulas, identities, and shortcuts. Review this sheet daily. On the day before the exam, this sheet is your best revision tool.
+
+## 5. Learn to Eliminate Wrong Options
+
+JEE Mains is a multiple-choice exam. If you cannot solve a problem directly, use the elimination method — rule out clearly wrong options and make an educated guess from the remaining ones. This technique can save 2-3 marks per paper.
+
+## 6. Practice Mental Maths
+
+JEE Maths is time-pressured — you have roughly 2 minutes per question. Practising mental arithmetic (squares, cubes, fractions, trigonometric values) reduces the time you spend on calculations and gives you more time for complex problems.
+
+## 7. Understand Concepts, Don't Memorise Solutions
+
+A common mistake is memorising solutions to specific problems. JEE questions are designed to test conceptual understanding. If you understand why a method works, you can apply it to any variation of the problem — even ones you've never seen before.
+
+## 8. Take Full-Length Timed Mock Tests
+
+From Month 8 of your preparation, take at least one full-length mock test every week under exam conditions — 3 hours, no interruptions, no calculator. After each test, spend equal time analysing your mistakes. Understanding why you got a question wrong is more valuable than solving 10 new problems.
+
+## 9. Don't Neglect Coordinate Geometry
+
+Many students underestimate Coordinate Geometry, but it is consistently the highest-scoring area in JEE Mains Maths. Master the standard equations for all conic sections, learn to identify the type of conic from a general equation, and practise problems involving tangents, normals, and chords.
+
+## 10. Get a Specialist JEE Tutor
+
+JEE Maths requires a level of depth and problem-solving skill that is difficult to develop through self-study alone. A specialist JEE tutor can identify your weak areas, teach you time-saving techniques, and provide the kind of targeted practice that moves the needle on your score.
+
+At EduNest, we have experienced JEE Mathematics tutors in Bengaluru who have helped students achieve 95+ percentile. Book a free demo class today at edunest.courses.`,
+
+  "online-vs-home-tuition": `The debate between online tuition and home tuition is one that every Bengaluru parent faces at some point. Both modes have genuine advantages, and the right choice depends on your child's learning style, the subject, and your family's practical constraints. Here's an honest comparison to help you decide.
+
+## What is Home Tuition?
+
+Home tuition means a qualified tutor visits your home and teaches your child in person, one-on-one. The sessions happen in your child's own environment — familiar, comfortable, and free from the distractions of a classroom or coaching centre.
+
+## What is Online Tuition?
+
+Online tuition happens over video call — platforms like Zoom, Google Meet, or dedicated tutoring apps. The tutor and student are in different locations but interact in real time. Some platforms also offer recorded sessions and digital whiteboards.
+
+## The Case for Home Tuition
+
+**Personal Connection**: The in-person relationship between tutor and student is difficult to replicate online. A tutor who visits your home can read your child's body language, notice when they're confused or disengaged, and adjust their teaching style in real time.
+
+**Better for Younger Children**: For students in Classes 1 to 7, in-person instruction is significantly more effective. Young children have shorter attention spans and struggle to stay focused during video calls.
+
+**Hands-On Subjects**: For subjects like Mathematics, Physics, and Chemistry — where working through problems on paper is essential — home tuition allows the tutor to guide the student's pen-and-paper work directly.
+
+**Parental Oversight**: Parents can sit in on sessions, observe the tutor's methods, and stay closely involved in their child's progress.
+
+## The Case for Online Tuition
+
+**Access to Specialists**: Online tuition gives you access to the best tutors regardless of location. If you need a specialist JEE or NEET tutor who lives in another part of Bengaluru or even another city, online tuition makes that possible.
+
+**Flexibility**: Sessions can be scheduled more flexibly, and there's no travel time for either party. This is especially useful for students with busy schedules.
+
+**Recorded Sessions**: Many online platforms allow sessions to be recorded, so students can review explanations later — a significant advantage for complex topics.
+
+**Cost**: Online tuition is often slightly less expensive than home tuition because tutors save on travel time and costs.
+
+## Which is Better for Your Child?
+
+The honest answer is: it depends. Here's a simple framework:
+
+- **Choose home tuition** if your child is in Classes 1-8, struggles with focus during video calls, or needs hands-on guidance with problem-solving.
+- **Choose online tuition** if your child is in Classes 9-12, is self-disciplined, needs a specialist tutor who isn't available locally, or has a very tight schedule.
+
+At EduNest, we offer both home and online tuition. When you register as a parent, you can specify your preference and we'll match you with a tutor accordingly. Book a free demo class at edunest.courses.`,
+
+  "cbse-board-exam-preparation": `CBSE Class 10 board exams are a pivotal milestone in every student's academic journey. With the right preparation strategy, scoring above 90% is entirely achievable. Here's a detailed month-by-month guide to help Class 10 students in Bengaluru prepare effectively.
+
+## Understanding the CBSE Class 10 Exam Structure
+
+CBSE Class 10 board exams cover five main subjects: Mathematics, Science, Social Science, English, and a language (Hindi, Sanskrit, or others). The exams are conducted in February-March each year. Each paper is 3 hours long and carries 80 marks (with 20 marks for internal assessment).
+
+## Month-by-Month Preparation Plan
+
+**August-September (Foundation Phase)**
+
+Begin by completing the entire NCERT syllabus for all subjects. Don't skip any chapter — CBSE board questions are almost exclusively NCERT-based. For Mathematics, solve every exercise in the NCERT textbook. For Science, read each chapter thoroughly and note down all definitions, formulas, and diagrams.
+
+**October-November (Practice Phase)**
+
+Start solving CBSE sample papers and previous year question papers. CBSE releases official sample papers every year — these are the closest indication of what will appear in the actual exam. Aim to solve at least 2 sample papers per subject during this phase. Identify your weak areas and spend extra time on them.
+
+**December (Revision Phase)**
+
+Create concise revision notes for each subject. For Science and Social Science, prepare chapter-wise summaries with key points, dates, and diagrams. For Mathematics, maintain a formula sheet and a list of common mistakes to avoid. Revise these notes every week.
+
+**January-February (Mock Test Phase)**
+
+Take full-length mock tests under exam conditions — 3 hours, no interruptions, no reference materials. Analyse each test carefully. Pay attention not just to what you got wrong, but why you got it wrong. Time management is crucial — practice completing papers 10-15 minutes before the time limit.
+
+**March (Final Revision)**
+
+In the final 2-3 weeks before exams, focus entirely on revision. Don't attempt new topics. Review your notes, formula sheets, and previous year papers. Get adequate sleep — a well-rested brain performs significantly better than an exhausted one.
+
+## Subject-Specific Tips
+
+**Mathematics**: Practice is everything. Solve at least 10 problems per topic per day. Focus on Algebra, Geometry, Trigonometry, and Statistics — these carry the most marks.
+
+**Science**: Diagrams are worth marks. Practice drawing and labelling all important diagrams (human eye, electric circuit, digestive system, etc.). For Chemistry, memorise all chemical equations.
+
+**Social Science**: CBSE Social Science rewards structured, point-by-point answers. Practice writing answers in the exact format the examiner expects — introduction, main points, conclusion.
+
+**English**: Reading comprehension and writing skills improve with practice. Read one editorial or article daily and practise writing formal letters, essays, and notices.
+
+## The Role of a Home Tutor
+
+A home tutor can make a significant difference in board exam preparation by providing personalised attention, identifying weak areas early, and keeping the student on track with a structured study plan. At EduNest, our tutors are experienced with CBSE Class 10 and have helped hundreds of students in Bengaluru score above 90%. Book a free demo class at edunest.courses.`,
+
+  "importance-of-demo-class": `The demo class is one of the most underutilised tools in a parent's tutor-selection process. Many parents treat it as a formality — a brief introduction before committing to a tutor. In reality, the demo class is your single best opportunity to evaluate whether a tutor is the right fit for your child. Here's why it matters and exactly what to look for.
+
+## What is a Demo Class?
+
+A demo class is a free, no-obligation trial session between a tutor and a student. At EduNest, every tutor offers a free first demo class before any commitment is made. The session typically lasts 45-60 minutes and covers a topic from the student's current syllabus.
+
+## Why the Demo Class is So Important
+
+**You See the Tutor in Action**: A tutor's qualifications and experience tell you what they know. The demo class shows you how they teach. These are very different things. A highly qualified tutor who cannot explain concepts clearly or connect with your child will not be effective.
+
+**Your Child Gets a Voice**: Children often know instinctively whether they like a teacher. After the demo class, ask your child: Did you understand the explanations? Did you feel comfortable asking questions? Would you like to continue? Their answer should carry significant weight in your decision.
+
+**You Can Compare Multiple Tutors**: Because the demo class is free, you can take demos with 2-3 different tutors before making a decision. This comparison is invaluable — you'll quickly notice the difference between a good and a great tutor.
+
+## What to Observe During the Demo Class
+
+**Explanation Clarity**: Does the tutor explain concepts in a way your child can understand? Do they use examples and analogies, or just repeat the textbook?
+
+**Engagement**: Does the tutor ask questions to check understanding, or do they just lecture? A good tutor makes the session interactive.
+
+**Patience**: How does the tutor react when your child doesn't understand something? Do they explain it differently, or show frustration?
+
+**Preparation**: Did the tutor come prepared with a plan for the session, or did they improvise? Preparation signals professionalism.
+
+**Communication with Parent**: After the session, does the tutor share their assessment of the child's current level and suggest a plan going forward? This is a strong indicator of a tutor who will keep you informed.
+
+## Questions to Ask After the Demo
+
+Before confirming a tutor, ask these questions:
+- What is your assessment of my child's current level in this subject?
+- What is your plan for the first month of sessions?
+- How often will you share progress updates with me?
+- What happens if my child misses a session?
+
+## How to Book a Free Demo on EduNest
+
+At EduNest, booking a demo class is simple. Register as a parent at edunest.courses, browse verified tutors near you, and click "Book Demo" on any tutor's profile. The tutor will come to your home for the first session — completely free, no commitment required. Use the demo wisely, and you'll find the right tutor for your child.`,
+
+  "study-habits-for-students": `What separates top-scoring students from average ones is rarely raw intelligence. It's habits — consistent, deliberate practices that compound over time into exceptional academic performance. We spoke to 50 high-scoring students from schools across Bengaluru to identify the habits that make the biggest difference. Here's what they told us.
+
+## 1. They Study at the Same Time Every Day
+
+Every top student we spoke to had a fixed study schedule. Whether it was 5-7 PM after school or 7-9 PM after dinner, they studied at the same time every day. This consistency trains the brain to enter a focused state at that time, making it easier to concentrate and reducing the mental effort of getting started.
+
+## 2. They Start with the Hardest Subject
+
+Willpower and mental energy are highest at the beginning of a study session. Top students consistently tackle their most difficult subject first — when their mind is fresh — and leave easier revision for later. If you always save Maths for last, you're studying it when you're most tired.
+
+## 3. They Take Active Notes, Not Passive Ones
+
+Copying text from the textbook into a notebook is passive note-taking — it requires almost no thinking and leads to very little retention. Top students take active notes: they summarise concepts in their own words, draw diagrams, create mind maps, and write questions in the margins. This forces the brain to process the information, not just transcribe it.
+
+## 4. They Use the Pomodoro Technique
+
+Almost every high-scorer we interviewed used some version of focused study intervals with short breaks. The classic Pomodoro Technique — 25 minutes of focused study, 5-minute break, repeat — prevents mental fatigue and maintains concentration throughout a long study session. After four cycles, take a longer 20-30 minute break.
+
+## 5. They Solve Problems Every Day
+
+For Maths and Science, reading theory is not enough. Top students solve problems every single day — not just when preparing for tests. Daily problem-solving builds pattern recognition and procedural fluency that cannot be developed through reading alone.
+
+## 6. They Review Their Mistakes Carefully
+
+After every test or practice paper, top students spend as much time reviewing their mistakes as they spent taking the test. They don't just check the correct answer — they understand why they got it wrong and what they need to do differently next time. This deliberate error analysis is one of the most powerful learning strategies available.
+
+## 7. They Sleep 8 Hours Without Compromise
+
+Every single top student we interviewed prioritised sleep. Sleep is when the brain consolidates memories and transfers information from short-term to long-term storage. Pulling all-nighters before exams is counterproductive — you retain less and perform worse. Consistent 8-hour sleep is a non-negotiable habit for academic excellence.
+
+## Building These Habits Takes Time
+
+Don't try to implement all seven habits at once. Start with one — perhaps the fixed study schedule — and build from there. A good home tutor can help your child develop these habits by providing structure, accountability, and personalised guidance. Find a verified tutor in Bengaluru at edunest.courses.`,
+
+  "karnataka-cet-guide": `Karnataka CET (KCET) is the gateway to engineering and pharmacy colleges across Karnataka. With over 1.5 lakh students appearing each year for a limited number of seats in top colleges like RV College of Engineering, BMS College of Engineering, and MSRIT, preparation needs to be thorough, strategic, and board-aligned. Here's everything you need to know about KCET 2026.
+
+## What is Karnataka CET?
+
+Karnataka Common Entrance Test (KCET) is conducted by the Karnataka Examinations Authority (KEA) for admission to undergraduate engineering, pharmacy, and other professional courses in Karnataka. The exam tests Physics, Chemistry, Mathematics (for engineering), and Biology (for pharmacy/agriculture).
+
+## KCET 2026 — Key Details
+
+KCET is typically held in April each year. The exam consists of multiple-choice questions from the Karnataka State Board (PUC) syllabus for Class 11 and 12. Each subject paper carries 60 marks (60 questions, 1 mark each, no negative marking). The total duration is 80 minutes per subject.
+
+Note: There is no negative marking in KCET — attempt every question.
+
+## KCET Syllabus Overview
+
+KCET follows the Karnataka PUC (Pre-University Course) syllabus exactly. Unlike JEE, which tests beyond the board syllabus, KCET is entirely based on what is taught in Class 11 and 12 PUC. This means thorough NCERT and Karnataka PUC textbook preparation is sufficient.
+
+**Physics**: Electrostatics, Current Electricity, Magnetic Effects, Electromagnetic Induction, Optics, Modern Physics, Semiconductor Devices
+
+**Chemistry**: Solid State, Solutions, Electrochemistry, Chemical Kinetics, Organic Chemistry (Aldehydes, Ketones, Amines, Biomolecules), Coordination Compounds
+
+**Mathematics**: Relations and Functions, Inverse Trigonometry, Matrices and Determinants, Calculus (Continuity, Differentiation, Integration, Differential Equations), Vector Algebra, 3D Geometry, Linear Programming, Probability
+
+## Month-by-Month Study Plan for KCET 2026
+
+**August-October (Foundation Phase)**
+
+Complete the entire Class 11 and 12 PUC syllabus for all three subjects. Focus on understanding concepts, not memorising solutions. For Mathematics, solve every exercise in the PUC textbook. For Physics and Chemistry, ensure you understand all derivations and reactions.
+
+**November-January (Practice Phase)**
+
+Start solving KCET previous year papers. KEA releases official previous year papers — solve at least the last 5 years for each subject. KCET questions are highly repetitive; many questions from previous years appear in slightly modified form. Identify the most frequently tested topics and give them extra attention.
+
+**February-March (Mock Test Phase)**
+
+Take full mock tests under timed conditions. Since KCET has no negative marking, practice attempting all 60 questions within 80 minutes. Speed and accuracy are both essential. Review every mock test carefully.
+
+**April (Final Revision)**
+
+Focus entirely on revision. Review your notes, formula sheets, and the most frequently tested topics. Avoid starting new topics. Get adequate sleep in the week before the exam.
+
+## How a Tutor Can Help with KCET
+
+KCET preparation alongside PUC board exams is demanding. A specialist KCET tutor can help by:
+- Aligning preparation with both PUC board exams and KCET simultaneously
+- Identifying the most frequently tested KCET topics and prioritising them
+- Providing targeted practice with previous year KCET questions
+- Keeping the student on track with a structured study plan
+
+At EduNest, we have experienced KCET tutors in Bengaluru who have helped students secure seats in top Karnataka engineering colleges. Book a free demo class at edunest.courses.
+
+## Final Tip
+
+KCET rewards consistency over cramming. Start early, follow a structured plan, and use the no-negative-marking policy to your advantage — attempt every question. With the right preparation and guidance, a top KCET rank is well within reach.`,
+
   "best-home-tutors-koramangala": `Koramangala is one of Bengaluru's most vibrant and sought-after neighbourhoods — home to thousands of families, top schools, and a culture that values academic excellence. If you're a parent in Koramangala looking for a reliable home tutor, this guide covers everything you need to know.
 
 ## Why Koramangala Parents Choose Home Tutors

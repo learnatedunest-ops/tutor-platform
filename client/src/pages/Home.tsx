@@ -540,8 +540,56 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── LOCAL GUIDES / NEIGHBOURHOOD SECTION ─────────────────────────── */}
+      <WaveDivider fill="oklch(0.97 0.01 60)" fromColor="oklch(0.99 0.01 80)" />
+      <section className="py-20" style={{ backgroundColor: "oklch(0.97 0.01 60)" }}>
+        <div className="container">
+          <div className="text-center mb-12">
+            <span className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4" style={{ backgroundColor: "oklch(0.93 0.04 50)", color: "oklch(0.55 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
+              Serving Bengaluru’s Best Neighbourhoods
+            </span>
+            <h2 className="text-3xl md:text-4xl font-extrabold mb-4" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+              Find Home Tutors Near You
+            </h2>
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: "oklch(0.45 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>
+              EduNest has verified tutors across Bengaluru’s most popular residential areas. Click your neighbourhood to read our local guide.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+            {[
+              { name: "Koramangala", slug: "best-home-tutors-koramangala", desc: "CBSE, ICSE & IGCSE tutors for Inventure Academy, Greenwood High & DPS students", icon: "🏙️" },
+              { name: "Indiranagar", slug: "home-tutor-indiranagar", desc: "Verified tutors for Baldwin Boys\u2019, St. Joseph\u2019s & all CBSE/ICSE schools", icon: "🌳" },
+              { name: "HSR Layout", slug: "home-tutor-hsr-layout", desc: "Home tutors for Bengaluru’s fastest-growing residential neighbourhood", icon: "🏘️" },
+              { name: "Whitefield", slug: "home-tutor-whitefield", desc: "JEE, NEET & board exam tutors for Whitefield’s tech-professional families", icon: "💻" },
+              { name: "Jayanagar & JP Nagar", slug: "home-tutor-jayanagar", desc: "Tutors for NPS, Vijaya High School & all CBSE/ICSE/State Board schools", icon: "🎓" },
+              { name: "All of Bengaluru", slug: null, desc: "Browse all verified tutors across 15+ Bengaluru areas and book a free demo", icon: "📍" },
+            ].map((area) => (
+              <Link key={area.name} href={area.slug ? `/blog/${area.slug}` : "/find-tutor"}>
+                <div className="group bg-white rounded-2xl p-6 border-2 border-transparent hover:border-[#F47920] shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer h-full flex flex-col">
+                  <div className="text-3xl mb-3">{area.icon}</div>
+                  <h3 className="text-lg font-bold mb-2 group-hover:text-[#F47920] transition-colors" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
+                    {area.name}
+                  </h3>
+                  <p className="text-sm flex-1 leading-relaxed" style={{ color: "oklch(0.5 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>
+                    {area.desc}
+                  </p>
+                  <div className="flex items-center gap-1 mt-4 text-sm font-semibold" style={{ color: "#F47920", fontFamily: "'Poppins', sans-serif" }}>
+                    {area.slug ? "Read Guide" : "Find a Tutor"} <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+          <div className="text-center">
+            <Link href="/blog?category=Local+Guides" className="inline-flex items-center gap-2 text-sm font-semibold" style={{ color: "#F47920", fontFamily: "'Poppins', sans-serif" }}>
+              <BookOpen size={16} /> View all Local Guides on the Blog <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Wave divider */}
-      <WaveDivider fill="oklch(0.14 0.02 270)" fromColor="oklch(0.99 0.01 80)" />
+      <WaveDivider fill="oklch(0.14 0.02 270)" fromColor="oklch(0.97 0.01 60)" />
 
       {/* ── CTA BANNER ───────────────────────────────────────────────────────── */}
       <section style={{ backgroundColor: "oklch(0.14 0.02 270)" }} className="py-20 relative overflow-hidden">
