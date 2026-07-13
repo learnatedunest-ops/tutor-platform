@@ -28,4 +28,13 @@ describe("Google OAuth environment variables", () => {
     // Google OAuth client IDs end with .apps.googleusercontent.com
     expect(clientId).toMatch(/\.apps\.googleusercontent\.com$/);
   });
+
+  it("GOOGLE_REDIRECT_URI should be a valid HTTPS URL when set", () => {
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI ?? "";
+    if (redirectUri) {
+      expect(redirectUri).toMatch(/^https:\/\//);
+      expect(redirectUri).toContain("/api/auth/callback/google");
+    }
+    // If not set, that's fine — local dev derives it from the request host
+  });
 });

@@ -11,4 +11,7 @@ export const ENV = {
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
   googleAdminEmail: process.env.GOOGLE_ADMIN_EMAIL ?? "learn.at.edunest@gmail.com",
+  // Optional: explicitly set the redirect URI for production deployments
+  // (needed when the app is behind a proxy/CDN and req.get("host") returns an internal hostname)
+  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? "",
 };

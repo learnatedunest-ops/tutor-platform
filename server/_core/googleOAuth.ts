@@ -6,7 +6,16 @@ import { getSessionCookieOptions } from "./cookies";
 import { ENV } from "./env";
 import { sdk } from "./sdk";
 
+/**
+ * Returns the OAuth redirect URI.
+ * Priority:
+ *  1. GOOGLE_REDIRECT_URI env var (explicit override — required for production behind Cloud Run proxy)
+ *  2. Derived from the incoming request host (works for local dev)
+ */
 function getRedirectUri(req: Request): string {
+  if (ENV.googleRedirectUri) {
+    return ENV.googleRedirectUri;
+  }
   const protocol = ENV.isProduction ? "https" : req.protocol;
   const host = req.get("host") ?? "localhost:3000";
   return `${protocol}://${host}/api/auth/callback/google`;
