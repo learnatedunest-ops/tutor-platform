@@ -686,7 +686,7 @@ export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(Demo
   }));
 }
 
-export async function getDemoSlotsByStudent(studentProfileId: number): Promise<(DemoSlot & { confirmedMatchId: number | null })[]> {
+export async function getDemoSlotsByStudent(studentProfileId: number): Promise<(DemoSlot & { confirmedMatchId: number | null; tutorName: string | null; tutorPhone: string | null })[]> {
   const db = await getDb();
   if (!db) return [];
   const rows = await db
@@ -714,12 +714,15 @@ export async function getDemoSlotsByStudent(studentProfileId: number): Promise<(
       createdAt: demoSlots.createdAt,
       updatedAt: demoSlots.updatedAt,
       confirmedMatchId: confirmedMatches.id,
+      tutorName: tutorProfiles.name,
+      tutorPhone: tutorProfiles.phone,
     })
     .from(demoSlots)
     .leftJoin(confirmedMatches, eq(confirmedMatches.demoSlotId, demoSlots.id))
+    .leftJoin(tutorProfiles, eq(tutorProfiles.id, demoSlots.tutorProfileId))
     .where(eq(demoSlots.studentProfileId, studentProfileId))
     .orderBy(desc(demoSlots.createdAt));
-  return rows.map(r => ({ ...r, confirmedMatchId: r.confirmedMatchId ?? null }));
+  return rows.map(r => ({ ...r, confirmedMatchId: r.confirmedMatchId ?? null, tutorName: r.tutorName ?? null, tutorPhone: r.tutorPhone ?? null }));
 }
 
 export async function updateDemoSlotTutorConfirmedComing(
@@ -1016,7 +1019,7 @@ export async function getConfirmedMatchesByStudent(studentProfileId: number) {
       matchedAt: confirmedMatches.matchedAt,
       classStatus: confirmedMatches.classStatus,
       paymentAmount: confirmedMatches.paymentAmount,
-      // tutor profile info (no contact details)
+      // tutor profile info (full details for My Classes)
       tutorQualification: tutorProfiles.qualification,
       tutorSubjects: tutorProfiles.subjects,
       tutorExperience: tutorProfiles.experience,
@@ -1024,6 +1027,8 @@ export async function getConfirmedMatchesByStudent(studentProfileId: number) {
       tutorArea: tutorProfiles.area,
       tutorEducation: tutorProfiles.education,
       tutorPhoto: tutorProfiles.photo,
+      tutorPhone: tutorProfiles.phone,
+      tutorEmail: tutorProfiles.email,
       // demo slot schedule info
       scheduledDate: demoSlots.scheduledDate,
       scheduledTime: demoSlots.scheduledTime,

@@ -422,3 +422,12 @@
 - [x] TutorDashboard demo slot card — show "Go to My Classes" button when both parties accept, dismiss card on click
 - [x] StudentPortal demo slot card — show "Go to My Classes" button when both parties accept, dismiss card on click
 - [x] Admin "View Uploaded Sheet" — fix 404 by using presigned S3 URL via ViewSheetButton component
+
+## Round 36 — UX Improvements
+
+- [ ] Simplify tutor class registration: two text areas (grades + subjects), remove fee input
+- [ ] Parent dashboard: replace "Schedule your demo below" with a link; show tutor name + contact in confirmed demo card
+- [ ] My Classes: show full party details (tutor info to parent, parent info to tutor)
+- [ ] Post-payment: add direct-payment message to both parties when fee is processed
+- [ ] Reflect class cancellation by admin in My Classes cards for both parties
+- [ ] Move T&C content inside modal only — remove any inline display outside

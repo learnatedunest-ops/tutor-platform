@@ -271,10 +271,11 @@ export default function TutorSetup() {
     setForm(prev => ({ ...prev, [key]: value }));
 
   const handleSubmit = () => {
-    // Serialize class entries into subjects field
-    const serializedSubjects = serializeClassEntries(classEntries);
-    if (!serializedSubjects) {
-      toast.error("Please add at least one class entry with subjects.");
+    // Validate the two-textarea subjects format (grades\nsubjects)
+    const gradesLine = form.subjects.split("\n")[0]?.trim() ?? "";
+    const subjectsLine = form.subjects.split("\n")[1]?.trim() ?? "";
+    if (!gradesLine || !subjectsLine) {
+      toast.error("Please fill in both Grades and Subjects you teach.");
       return;
     }
     if (!form.name || !form.phone || !form.qualification || !form.experience) {
@@ -295,7 +296,7 @@ export default function TutorSetup() {
     }
     saveMutation.mutate({
       ...form,
-      subjects: serializedSubjects,
+      subjects: form.subjects,
       latitude: form.latitude ?? undefined,
       longitude: form.longitude ?? undefined,
       gender: form.gender || undefined,
@@ -528,83 +529,41 @@ export default function TutorSetup() {
                 <BookOpen size={18} className="inline mr-2" style={{ color: "oklch(0.68 0.18 50)" }} />
                 Teaching Details
               </h2>
-              {/* Dynamic class entries */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className={labelCls} style={labelStyle}>Classes You Teach *</label>
-                  <button
-                    type="button"
-                    onClick={() => setClassEntries(prev => [...prev, { ...EMPTY_CLASS_ENTRY }])}
-                    className="text-xs font-bold px-3 py-1 rounded-lg transition-all hover:opacity-80 active:scale-95"
-                    style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)", border: "1px solid oklch(0.88 0.08 50)", fontFamily: "'Poppins', sans-serif" }}
-                  >
-                    + Add Class
-                  </button>
+              {/* Simplified class registration: two text areas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls} style={labelStyle}>Grades You Teach *</label>
+                  <textarea
+                    className={inputCls}
+                    style={{ ...inputStyle, minHeight: "80px", resize: "vertical" }}
+                    value={form.subjects.split("\n")[0] ?? ""}
+                    onChange={e => {
+                      const lines = form.subjects.split("\n");
+                      lines[0] = e.target.value;
+                      set("subjects", lines.join("\n"));
+                    }}
+                    placeholder="e.g. Class 6, 7, 8, 9, 10"
+                    rows={3}
+                  />
+                  <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>List all the grades/classes you are comfortable teaching.</p>
                 </div>
-                <div className="space-y-3">
-                  {classEntries.map((entry, idx) => (
-                    <div key={idx} className="rounded-xl border p-4 relative" style={{ borderColor: "oklch(0.88 0.005 80)", backgroundColor: "oklch(0.99 0.005 80)" }}>
-                      {classEntries.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => setClassEntries(prev => prev.filter((_, i) => i !== idx))}
-                          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold transition-all hover:bg-red-100"
-                          style={{ color: "#DC2626" }}
-                        >
-                          ✕
-                        </button>
-                      )}
-                      <div className="grid grid-cols-2 gap-3 mb-3">
-                        <div>
-                          <label className="block text-xs font-semibold mb-1" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>From Grade</label>
-                          <select
-                            className={inputCls}
-                            style={inputStyle}
-                            value={entry.gradeFrom}
-                            onChange={e => setClassEntries(prev => prev.map((c, i) => i === idx ? { ...c, gradeFrom: e.target.value } : c))}
-                          >
-                            {GRADE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold mb-1" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>To Grade</label>
-                          <select
-                            className={inputCls}
-                            style={inputStyle}
-                            value={entry.gradeTo}
-                            onChange={e => setClassEntries(prev => prev.map((c, i) => i === idx ? { ...c, gradeTo: e.target.value } : c))}
-                          >
-                            {GRADE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
-                          </select>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-semibold mb-1" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>Subjects *</label>
-                          <input
-                            className={inputCls}
-                            style={inputStyle}
-                            value={entry.subjects}
-                            onChange={e => setClassEntries(prev => prev.map((c, i) => i === idx ? { ...c, subjects: e.target.value } : c))}
-                            placeholder="e.g. Maths, Science"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold mb-1" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>Fee / Month (₹)</label>
-                          <input
-                            className={inputCls}
-                            style={inputStyle}
-                            value={entry.feePerMonth}
-                            onChange={e => setClassEntries(prev => prev.map((c, i) => i === idx ? { ...c, feePerMonth: e.target.value.replace(/[^0-9]/g, "") } : c))}
-                            placeholder="e.g. 2500"
-                            inputMode="numeric"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div>
+                  <label className={labelCls} style={labelStyle}>Subjects You Teach *</label>
+                  <textarea
+                    className={inputCls}
+                    style={{ ...inputStyle, minHeight: "80px", resize: "vertical" }}
+                    value={form.subjects.split("\n")[1] ?? ""}
+                    onChange={e => {
+                      const lines = form.subjects.split("\n");
+                      lines[0] = lines[0] ?? "";
+                      lines[1] = e.target.value;
+                      set("subjects", lines.join("\n"));
+                    }}
+                    placeholder="e.g. Maths, Science, English, Hindi"
+                    rows={3}
+                  />
+                  <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>List all the subjects you can teach.</p>
                 </div>
-                <p className="text-xs mt-2" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>Add as many class levels as you teach. Each entry will be shown on your profile.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -711,7 +670,7 @@ export default function TutorSetup() {
                   <button type="button" onClick={() => setShowTutorTerms(true)} className="font-bold underline" style={{ color: "oklch(0.68 0.18 50)", background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
                     EduNest Tutor Terms &amp; Conditions
                   </button>
-                  , including the 40% first-month deduction policy, conduct guidelines, and platform rules.
+                  .
                 </label>
               </div>
             </div>

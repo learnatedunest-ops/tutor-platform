@@ -271,7 +271,19 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: {
               <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">💰 ₹{budget}/month</span>
             )}
           </div>
-          {/* Phone and address are private — contact details shared by EduNest directly */}
+          {/* Full contact details — shown in My Classes after class is confirmed */}
+          {phone && (
+            <div className="mt-2 flex items-center gap-1.5 text-xs">
+              <span className="font-semibold text-gray-600">📞 Phone:</span>
+              <a href={`tel:${phone}`} className="text-blue-700 underline hover:text-blue-900 font-medium">{phone}</a>
+            </div>
+          )}
+          {addr && (
+            <div className="mt-1 flex items-start gap-1.5 text-xs">
+              <span className="font-semibold text-gray-600 shrink-0">🏠 Address:</span>
+              <span className="text-gray-700">{addr}</span>
+            </div>
+          )}
           {mapsUrl && (
             <a
               href={mapsUrl}
@@ -372,9 +384,20 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: {
             </p>
           )}
           {log?.paymentStatus === 'payment_processed' && (
-            <p className="text-xs text-green-600 font-semibold">
-              🎉 Your fee has been processed by EduNest and sent to your UPI ID. Thank you!
-            </p>
+            <div className="space-y-2">
+              <p className="text-xs text-green-600 font-semibold">
+                🎉 Your fee has been processed by EduNest and sent to your UPI ID. Thank you!
+              </p>
+              <div className="rounded-lg p-3 border" style={{ backgroundColor: "oklch(0.97 0.02 145)", borderColor: "oklch(0.85 0.08 145)" }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: "oklch(0.35 0.12 145)" }}>ℹ️ From the next month onwards:</p>
+                <p className="text-xs" style={{ color: "oklch(0.40 0.08 145)" }}>
+                  Payment will be made directly by the parent to you — without the involvement of EduNest. Please coordinate with the parent for future payments.
+                </p>
+                <p className="text-xs mt-1" style={{ color: "oklch(0.50 0.05 270)" }}>
+                  For any concerns or disputes, contact EduNest at <a href="mailto:learn.at.edunest@gmail.com" className="underline font-semibold">learn.at.edunest@gmail.com</a>
+                </p>
+              </div>
+            </div>
           )}
         </div>
 

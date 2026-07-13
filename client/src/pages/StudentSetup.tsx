@@ -626,7 +626,7 @@ export default function StudentSetup() {
                   <button type="button" onClick={() => setShowParentTerms(true)} className="font-bold underline" style={{ color: "oklch(0.68 0.18 50)", background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
                     EduNest Parent Terms &amp; Conditions
                   </button>
-                  , including the free demo policy, ₹350 demo cancellation fee, and conduct guidelines.
+                  .
                 </label>
               </div>
             </div>

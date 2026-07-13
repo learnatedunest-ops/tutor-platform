@@ -453,9 +453,19 @@ export default function StudentPortal() {
 
                     {/* Tutor confirmed coming notification */}
                     {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'yes' && (
-                      <div className="mt-3 p-3 rounded-xl bg-green-50 border border-green-200 flex items-center gap-2">
-                        <span className="text-lg">🚗</span>
-                        <p className="text-xs font-semibold text-green-700">Your tutor has confirmed they are available and coming for the demo!</p>
+                      <div className="mt-3 p-3 rounded-xl bg-green-50 border border-green-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">🚗</span>
+                          <p className="text-xs font-semibold text-green-700">Your tutor has confirmed they are available and coming for the demo!</p>
+                        </div>
+                        {(slot as any).tutorName && (
+                          <div className="mt-1 pl-7 space-y-1">
+                            <p className="text-xs text-green-800"><span className="font-semibold">Tutor Name:</span> {(slot as any).tutorName}</p>
+                            {(slot as any).tutorPhone && (
+                              <p className="text-xs text-green-800"><span className="font-semibold">Contact:</span> <a href={`tel:${(slot as any).tutorPhone}`} className="underline hover:text-green-900">{(slot as any).tutorPhone}</a></p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                     {slot.status === "scheduled" && (slot as any).tutorConfirmedComing === 'no' && (() => {
@@ -737,7 +747,12 @@ export default function StudentPortal() {
                               );
                             }
                             return (
-                              <span className="text-xs text-orange-600 font-medium">⏳ Schedule your demo below</span>
+                              <button
+                                onClick={() => setActiveTab('demos')}
+                                className="text-xs text-orange-600 font-medium underline hover:text-orange-800 transition-colors"
+                              >
+                                ⏳ Schedule your demo → Go to Demo Schedule
+                              </button>
                             );
                           })()}
                         </div>
@@ -761,9 +776,15 @@ export default function StudentPortal() {
               ) : (
                 myConfirmedMatches.map((match: any) => {
                   const isGotAClass = match.classStatus === 'got_a_class';
+                  const isCancelled = match.classStatus === 'cancelled';
+                  const isCancellationRequested = match.classStatus === 'cancellation_requested';
                   return (
                     <div key={match.id} className={`rounded-2xl shadow-sm border p-6 transition-all ${
-                      isGotAClass
+                      isCancelled
+                        ? 'bg-red-50 border-red-200'
+                        : isCancellationRequested
+                        ? 'bg-amber-50 border-amber-200'
+                        : isGotAClass
                         ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200'
                         : 'bg-white border-gray-100'
                     }`}>
@@ -785,13 +806,32 @@ export default function StudentPortal() {
                           </div>
                         </div>
                         <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${
-                          isGotAClass
+                          isCancelled
+                            ? 'bg-red-100 text-red-700 border-red-200'
+                            : isCancellationRequested
+                            ? 'bg-amber-100 text-amber-700 border-amber-200'
+                            : isGotAClass
                             ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
                             : 'bg-blue-50 text-blue-700 border-blue-200'
                         }`}>
-                          {isGotAClass ? '🎓 Got a Class!' : '⏳ Awaiting Confirmation'}
+                          {isCancelled ? '🚫 Class Stopped' : isCancellationRequested ? '⏳ Cancellation Under Review' : isGotAClass ? '🎓 Got a Class!' : '⏳ Awaiting Confirmation'}
                         </span>
                       </div>
+                      {/* Cancellation notice for parent */}
+                      {isCancelled && (
+                        <div className="mb-4 p-3 rounded-xl bg-red-100 border border-red-200">
+                          <p className="text-xs font-semibold text-red-700">🚫 This class has been stopped by EduNest.</p>
+                          {match.cancellationNote && (
+                            <p className="text-xs text-red-600 mt-1">Reason: {match.cancellationNote}</p>
+                          )}
+                          <p className="text-xs text-red-500 mt-1">For any concerns, contact EduNest at <a href="mailto:learn.at.edunest@gmail.com" className="underline">learn.at.edunest@gmail.com</a></p>
+                        </div>
+                      )}
+                      {isCancellationRequested && (
+                        <div className="mb-4 p-3 rounded-xl bg-amber-100 border border-amber-200">
+                          <p className="text-xs font-semibold text-amber-700">⏳ A cancellation request is under review by EduNest.</p>
+                        </div>
+                      )}
 
                       {/* Details grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
@@ -840,6 +880,24 @@ export default function StudentPortal() {
                             <div>
                               <p className="text-xs text-gray-400 font-medium">Location</p>
                               <p className="text-sm font-semibold text-gray-800">{match.tutorArea}</p>
+                            </div>
+                          </div>
+                        )}
+                        {match.tutorPhone && (
+                          <div className="flex items-start gap-2">
+                            <Phone size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Tutor Contact</p>
+                              <a href={`tel:${match.tutorPhone}`} className="text-sm font-semibold text-blue-700 underline hover:text-blue-900">{match.tutorPhone}</a>
+                            </div>
+                          </div>
+                        )}
+                        {match.tutorEmail && (
+                          <div className="flex items-start gap-2">
+                            <Mail size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Tutor Email</p>
+                              <a href={`mailto:${match.tutorEmail}`} className="text-sm font-semibold text-blue-700 underline hover:text-blue-900">{match.tutorEmail}</a>
                             </div>
                           </div>
                         )}
@@ -934,10 +992,19 @@ export default function StudentPortal() {
 
                           {/* Payment processed state */}
                           {match.paymentStatus === 'payment_processed' && (
-                            <div className="rounded-xl border p-4" style={{ borderColor: 'oklch(0.85 0.12 145)', backgroundColor: 'oklch(0.97 0.03 145)' }}>
+                            <div className="rounded-xl border p-4 space-y-2" style={{ borderColor: 'oklch(0.85 0.12 145)', backgroundColor: 'oklch(0.97 0.03 145)' }}>
                               <p className="text-sm font-semibold" style={{ color: 'oklch(0.35 0.12 145)' }}>
                                 🎉 Payment confirmed! Enjoy your classes!
                               </p>
+                              <div className="rounded-lg p-3 border" style={{ backgroundColor: 'oklch(0.99 0.01 80)', borderColor: 'oklch(0.88 0.08 50)' }}>
+                                <p className="text-xs font-semibold mb-1" style={{ color: 'oklch(0.45 0.12 50)' }}>ℹ️ From the next month onwards:</p>
+                                <p className="text-xs" style={{ color: 'oklch(0.40 0.05 270)' }}>
+                                  Payment will be made directly by you to the tutor — without the involvement of EduNest. Please coordinate with your tutor for future payments.
+                                </p>
+                                <p className="text-xs mt-1" style={{ color: 'oklch(0.50 0.05 270)' }}>
+                                  For any concerns or disputes, contact EduNest at <a href="mailto:learn.at.edunest@gmail.com" className="underline font-semibold">learn.at.edunest@gmail.com</a>
+                                </p>
+                              </div>
                             </div>
                           )}
                         </div>
