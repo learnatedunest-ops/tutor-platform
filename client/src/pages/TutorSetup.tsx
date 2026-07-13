@@ -700,9 +700,17 @@ export default function TutorSetup() {
                     toast.error("Please verify your phone number with OTP before proceeding.");
                     return;
                   }
-                  if (step === 2 && (!serializeClassEntries(classEntries) || !form.experience)) {
-                    toast.error("Please add at least one class entry with subjects and fill in Experience.");
-                    return;
+                  if (step === 2) {
+                    const gradesLine = form.subjects.split("\n")[0]?.trim() ?? "";
+                    const subjectsLine = form.subjects.split("\n")[1]?.trim() ?? "";
+                    if (!gradesLine || !subjectsLine) {
+                      toast.error("Please fill in both Grades and Subjects you teach.");
+                      return;
+                    }
+                    if (!form.experience) {
+                      toast.error("Please fill in your Experience.");
+                      return;
+                    }
                   }
                   setStep(s => s + 1);
                 }}
