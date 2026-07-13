@@ -228,7 +228,7 @@ export default function Home() {
             <div className="relative hidden lg:block">
               <div className="absolute inset-0 rounded-3xl" style={{ background: "rgba(255,255,255,0.12)", transform: "rotate(4deg) scale(0.95)", backdropFilter: "blur(4px)" }} />
               <img
-                src="/manus-storage/hero-tutor-student_bfec5a06.png"
+                src="/manus-storage/hero-tutor-student_c7384dd5.png"
                 alt="Tutor with student"
                 className="relative z-10 rounded-3xl w-full object-cover shadow-2xl"
                 style={{ maxHeight: "480px", transform: "rotate(-1deg)" }}
@@ -368,7 +368,7 @@ export default function Home() {
               <div className="relative">
                 <div className="absolute inset-0 rounded-3xl" style={{ background: "linear-gradient(135deg, #F47920 0%, #FFB347 100%)", transform: "rotate(3deg) scale(0.97)", opacity: 0.15 }} />
                 <img
-                  src="/manus-storage/student-benefit_13c705d9.png"
+                  src="/manus-storage/student-benefit_590b428f.png"
                   alt="Student learning"
                   className="relative z-10 rounded-3xl w-full object-cover shadow-xl"
                   style={{ maxHeight: "420px" }}
@@ -430,7 +430,7 @@ export default function Home() {
               <div className="relative">
                 <div className="absolute inset-0 rounded-3xl" style={{ background: "linear-gradient(135deg, #6C63FF 0%, #F47920 100%)", transform: "rotate(-3deg) scale(0.97)", opacity: 0.15 }} />
                 <img
-                  src="/manus-storage/tutor-benefit_cb974077.png"
+                  src="/manus-storage/tutor-benefit_82b1fdc0.png"
                   alt="Tutor teaching"
                   className="relative z-10 rounded-3xl w-full object-cover shadow-xl"
                   style={{ maxHeight: "420px" }}
