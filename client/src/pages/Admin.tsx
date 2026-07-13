@@ -46,7 +46,7 @@ function formatDate(date: Date | string) {
 }
 
 /** Fetches a presigned S3 URL for the uploaded session sheet and opens it in a new tab.
- *  This avoids the 404 error caused by the /manus-storage/ path not being accessible in production. */
+ *  This avoids the 404 error caused by the /api/img/ path not being accessible in production. */
 function ViewSheetButton({ logId }: { logId: number }) {
   const [loading, setLoading] = useState(false);
   const utils = trpc.useUtils();
@@ -314,7 +314,7 @@ export default function Admin() {
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/manus-storage/edunest-logo-small_2b84d7c3.png" alt="EduNest" className="w-8 h-8 object-contain" />
+            <img src="/api/img/edunest-logo-small_2b84d7c3.png" alt="EduNest" className="w-8 h-8 object-contain" />
             <div>
               <span className="text-lg font-extrabold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.68 0.18 50)" }}>
                 Edu<span style={{ color: "oklch(0.14 0.02 270)" }}>Nest</span>
