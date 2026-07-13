@@ -449,3 +449,12 @@
 - [x] Compress logo to small WebP, re-upload, update all references via shared constant
 - [x] Add manual "Mark Class Started" button in Admin Demo Slots tab
 - [x] 20/20 tests passing, 0 TypeScript errors
+
+## Round 41 — Logo Fix + UI Fixes + Admin Mark Paid + Auto Timeout
+- [x] Fix logo loading on live site (CSP headers + CORP policy + re-upload compressed 24KB PNG)
+- [x] Hide tutor location and email in parent My Classes dashboard
+- [x] Show student name in tutor My Classes card (studentChildName from DB join)
+- [x] Fix view-uploaded-sheet presigned URL for parent and tutor accounts (ViewSheetButton component)
+- [x] Add admin manual mark-paid-to-tutor button in Session Logs tab (Mark Paid to Tutor Manual)
+- [x] Auto session timeout already implemented (30 min inactivity, useSessionTimeout in AuthGate)
+- [x] 20/20 tests passing, 0 TypeScript errors

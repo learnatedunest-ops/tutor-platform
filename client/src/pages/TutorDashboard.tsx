@@ -116,6 +116,37 @@ function DemoSlotAvailabilityCard({ slot, onDone }: { slot: any; onDone: () => v
   );
 }
 
+/** Small button that fetches a presigned URL for the session sheet and opens it */
+function ViewSheetButton({ logId }: { logId: number }) {
+  const [loading, setLoading] = useState(false);
+  const utils = trpc.useUtils();
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const result = await utils.client.sessionLog.getSignedSheetUrl.query({ logId });
+      if (result?.url) {
+        window.open(result.url, '_blank', 'noopener,noreferrer');
+      } else {
+        toast.error('Sheet URL not available. Please try again later.');
+      }
+    } catch {
+      toast.error('Failed to load sheet. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-60"
+    >
+      {loading ? <Loader2 size={13} className="animate-spin" /> : <ExternalLink size={13} />}
+      View Uploaded Sheet
+    </button>
+  );
+}
+
 /** Sub-component: My Classes card for a single confirmed match (completed demo) */
 function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: { slot: any; mySessionLogs: any[]; onRefreshLogs: () => void; onRefreshMatches?: () => void }) {
   const [isUploading, setIsUploading] = useState(false);
@@ -360,15 +391,8 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: {
             )}
 
             {/* View uploaded sheet */}
-            {log?.uploadedSheetUrl && (
-              <a
-                href={log.uploadedSheetUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-              >
-                <ExternalLink size={13} /> View Uploaded Sheet
-              </a>
+            {log?.uploadedSheetUrl && log?.id && (
+              <ViewSheetButton logId={log.id} />
             )}
           </div>
 

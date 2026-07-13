@@ -1341,6 +1341,22 @@ export default function Admin() {
                           ✅ Approve & Notify Tutor
                         </button>
                       )}
+                      {/* Admin manual override: mark as paid to tutor without waiting for parent */}
+                      {log.paymentStatus === 'sheet_uploaded' && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Mark payment as processed for ${log.tutorName ?? 'this tutor'} without parent confirmation?\n\nThis will notify the tutor that their fee has been processed.`)) {
+                              approvePaymentMutation.mutate({ logId: log.id });
+                            }
+                          }}
+                          disabled={approvePaymentMutation.isPending}
+                          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-colors disabled:opacity-50"
+                          style={{ backgroundColor: 'oklch(0.55 0.15 50)' }}
+                        >
+                          {approvePaymentMutation.isPending ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={13} />}
+                          💰 Mark Paid to Tutor (Manual)
+                        </button>
+                      )}
                       {/* Undo payment (reset to sheet_uploaded) */}
                       {log.paymentStatus === 'payment_processed' && (
                         <button

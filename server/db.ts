@@ -892,6 +892,8 @@ export async function getConfirmedMatchesByTutor(tutorProfileId: number) {
       studentAddress: studentProfiles.fullAddress,
       studentLatitude: studentProfiles.latitude,
       studentLongitude: studentProfiles.longitude,
+      studentChildName: studentProfiles.studentName,
+      studentRole: studentProfiles.role,
       // demo slot schedule info
       scheduledDate: demoSlots.scheduledDate,
       scheduledTime: demoSlots.scheduledTime,
