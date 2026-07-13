@@ -391,3 +391,20 @@
 - [x] 15/15 tests passing, 0 TypeScript errors
 
 
+
+## Round 34 — Google OAuth (Replace Manus OAuth)
+- [x] Install googleapis package
+- [x] Create server/_core/googleOAuth.ts with /api/auth/google and /api/auth/callback/google routes
+- [x] Add Google env vars to server/_core/env.ts (googleClientId, googleClientSecret, googleAdminEmail)
+- [x] Register Google OAuth routes in server/_core/index.ts
+- [x] Update client/src/const.ts — startLogin() now redirects to /api/auth/google
+- [x] Update client/src/main.tsx — remove Manus sessionStorage fallback from tRPC client headers
+- [x] Update client/src/_core/hooks/useAuth.ts — remove Manus sessionStorage references
+- [x] Fix sdk.ts authenticateRequest — skip Manus OAuth fallback for google_ users
+- [x] Update LoginWall component with Google Sign-In button (white button with Google logo)
+- [x] Update Navbar login buttons to say "Sign in with Google"
+- [x] Update Admin.tsx login button from "Log In with Manus" to "Sign in with Google"
+- [x] Update ManusDialog component to say "Sign in with Google"
+- [x] Update DashboardLayout sign-in button to say "Sign in with Google"
+- [x] Update ensureOwnerAdmin procedure to check Google admin email (learn.at.edunest@gmail.com) instead of OWNER_OPEN_ID
+- [x] 15/15 tests passing, 0 TypeScript errors

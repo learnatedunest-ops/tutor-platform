@@ -1,5 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { ENV } from "./_core/env";
 import { notifyOwner } from "./_core/notification";
 import { sendContactRevealToStudent, sendContactRevealToTutor, sendDemoBookingEmail, sendInquiryEmail, sendOtpEmail, sendParentPayNowEmail, sendTutorApplicationEmail, sendTutorFeePaidEmail } from "./email";
 import { notifyAdminDemoScheduled, notifyAdminSheetUploaded, notifyAdminParentPaid, notifyAdminCancellationRequested } from "./whatsapp";
@@ -183,15 +184,15 @@ export const appRouter = router({
         return { success: true, userRole: input.userRole };
       }),
 
-    // Called once after first login to ensure the owner account has admin role.
-    // Safe to call multiple times — idempotent.
+    // Called once after first login to ensure the admin account has admin role.
+    // Checks Google admin email OR legacy OWNER_OPEN_ID. Safe to call multiple times — idempotent.
     ensureOwnerAdmin: protectedProcedure.mutation(async ({ ctx }) => {
+      const adminEmail = ENV.googleAdminEmail;
       const ownerOpenId = process.env.OWNER_OPEN_ID ?? '';
-      if (!ownerOpenId) {
-        return { promoted: false, reason: 'OWNER_OPEN_ID not configured' };
-      }
-      if (ctx.user.openId !== ownerOpenId) {
-        return { promoted: false, reason: 'Not the owner account' };
+      const isAdminByEmail = adminEmail && ctx.user.email?.toLowerCase() === adminEmail.toLowerCase();
+      const isAdminByOpenId = ownerOpenId && ctx.user.openId === ownerOpenId;
+      if (!isAdminByEmail && !isAdminByOpenId) {
+        return { promoted: false, reason: 'Not the admin account' };
       }
       if (ctx.user.role === 'admin') {
         return { promoted: false, reason: 'Already admin' };

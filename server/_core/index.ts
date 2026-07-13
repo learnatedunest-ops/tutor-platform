@@ -4,6 +4,7 @@ import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
+import { registerGoogleOAuthRoutes } from "./googleOAuth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -172,6 +173,10 @@ async function startServer() {
   // ── Storage proxy & OAuth routes ────────────────────────────────────────────
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  registerGoogleOAuthRoutes(app);
+
+  // Apply auth rate limiter to Google OAuth routes too
+  app.use("/api/auth", authLimiter);
 
   // ─── Sitemap ────────────────────────────────────────────────────────────────
   const SITE_URL = "https://edu-nest.manus.space";

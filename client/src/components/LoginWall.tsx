@@ -4,7 +4,7 @@
  * Supports an optional `role` prop to pre-select tutor or student after login.
  */
 
-import { GraduationCap, BookOpen, ArrowRight, Shield, Star, Users } from "lucide-react";
+import { GraduationCap, BookOpen, Shield, Star, Users } from "lucide-react";
 import { startLogin } from "@/const";
 
 interface LoginWallProps {
@@ -27,6 +27,19 @@ const STUDENT_BENEFITS = [
   "Transparent fee structure — no hidden charges",
 ];
 
+// Google "G" logo SVG
+function GoogleLogo() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      <path fill="none" d="M0 0h48v48H0z"/>
+    </svg>
+  );
+}
+
 export default function LoginWall({ role, title, subtitle }: LoginWallProps) {
   const isTutor = role === "tutor";
   const benefits = isTutor ? TUTOR_BENEFITS : STUDENT_BENEFITS;
@@ -37,8 +50,8 @@ export default function LoginWall({ role, title, subtitle }: LoginWallProps) {
     : "Find the Perfect Tutor Near You";
 
   const defaultSubtitle = isTutor
-    ? "Create your free account to start receiving student leads near your location."
-    : "Sign up free to submit your requirement and get matched with a verified tutor.";
+    ? "Sign in with your Google account to start receiving student leads near your location."
+    : "Sign in with your Google account to get matched with a verified tutor.";
 
   return (
     <div
@@ -105,19 +118,23 @@ export default function LoginWall({ role, title, subtitle }: LoginWallProps) {
 
           {/* CTA */}
           <div className="px-8 py-8">
+            {/* Google Sign-In Button */}
             <button
               onClick={() => startLogin()}
-              className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-white text-lg transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md"
-              style={{
-                background: "oklch(0.68 0.18 50)",
-                fontFamily: "'Poppins', sans-serif",
-              }}
+              className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-semibold text-gray-700 text-base transition-all duration-200 hover:bg-gray-50 active:scale-[0.98] shadow-sm border border-gray-200 bg-white"
+              style={{ fontFamily: "'Poppins', sans-serif" }}
             >
-              <span>Sign Up / Log In — It's Free</span>
-              <ArrowRight size={20} />
+              <GoogleLogo />
+              <span>Continue with Google</span>
             </button>
 
-            <div className="flex items-center justify-center gap-6 mt-6">
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-xs text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>No password needed</span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+
+            <div className="flex items-center justify-center gap-6">
               <div className="flex items-center gap-1.5">
                 <Shield size={14} style={{ color: "oklch(0.5 0.02 270)" }} />
                 <span className="text-xs" style={{ fontFamily: "'Nunito', sans-serif", color: "oklch(0.5 0.02 270)" }}>
@@ -142,7 +159,8 @@ export default function LoginWall({ role, title, subtitle }: LoginWallProps) {
               className="text-center text-xs mt-4"
               style={{ fontFamily: "'Nunito', sans-serif", color: "oklch(0.65 0.02 270)" }}
             >
-              Already have an account? Logging in will take you straight to your dashboard.
+              By signing in, you agree to our{" "}
+              <a href="/terms-conditions" className="underline hover:text-orange-500">Terms &amp; Conditions</a>.
             </p>
           </div>
         </div>

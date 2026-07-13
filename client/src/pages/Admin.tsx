@@ -214,7 +214,7 @@ export default function Admin() {
             className="w-full py-3 rounded-xl font-bold text-white transition-all hover:opacity-90 active:scale-95"
             style={{ backgroundColor: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}
           >
-            Log In with Manus
+            Sign in with Google
           </button>
         </div>
       </div>

@@ -290,7 +290,10 @@ class SDKServer {
     let user = await db.getUserByOpenId(sessionUserId);
 
     // If user not in DB, sync from OAuth server automatically
-    if (!user) {
+    // Skip for Google OAuth users (openId starts with "google_") — they are
+    // always upserted during the Google OAuth callback, so a missing DB row
+    // means a genuine error rather than a first-visit sync gap.
+    if (!user && !sessionUserId.startsWith("google_")) {
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionToken ?? "");
         await db.upsertUser({
