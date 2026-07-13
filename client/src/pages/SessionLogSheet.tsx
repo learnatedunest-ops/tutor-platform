@@ -13,7 +13,7 @@ import { Printer, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const ROWS = 26;
-const LOGO_URL = "/manus-storage/edunest-logo-v3_41a5bc0e.png";
+const LOGO_URL = "/manus-storage/edunest-logo-v3_fd1a251e.png";
 
 export default function SessionLogSheet() {
   const { matchId } = useParams<{ matchId: string }>();
