@@ -26,7 +26,7 @@ export default function TermsAndConditions() {
           <section>
             <p className="text-gray-700 leading-relaxed">
               These terms and conditions (<strong>"Terms"</strong>) govern the use of services made available on or through{" "}
-              <strong>edu-nest.manus.space</strong> (the <strong>"Platform"</strong>). These Terms also include our Privacy Policy and any
+              <strong>edunest.courses</strong> (the <strong>"Platform"</strong>). These Terms also include our Privacy Policy and any
               guidelines, additional, or supplemental terms issued by us from time to time. By registering on the Platform, you confirm
               that you have read, understood, and agree to be bound by these Terms.
             </p>
@@ -38,7 +38,7 @@ export default function TermsAndConditions() {
             <p className="text-gray-700 leading-relaxed">
               EduNest Tuitions is owned and operated by <strong>Amogha Amange</strong>, with its principal place of business in
               Bengaluru, Karnataka, India. The Platform is engaged in the business of providing education consultancy and home tuition
-              matching services and is the sole author and publisher of the internet resource <strong>edu-nest.manus.space</strong>.
+              matching services and is the sole author and publisher of the internet resource <strong>edunest.courses</strong>.
             </p>
           </section>
 

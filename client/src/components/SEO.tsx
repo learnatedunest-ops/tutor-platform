@@ -10,7 +10,7 @@ interface SEOProps {
 
 const DEFAULT_IMAGE = "/manus-storage/og-social-banner_a6bd98e7.png";
 const SITE_NAME = "EduNest";
-const BASE_URL = "https://edu-nest.manus.space";
+const BASE_URL = "https://edunest.courses";
 
 export default function SEO({
   title = "EduNest - Find Verified Home Tutors in Bengaluru",

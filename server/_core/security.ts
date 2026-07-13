@@ -87,7 +87,7 @@ export function adminRouteGuard(req: Request, res: Response, next: NextFunction)
   const referer = req.headers.referer ?? "";
   const origin = req.headers.origin ?? "";
   const allowedHosts = [
-    "edu-nest.manus.space",
+    "edunest.courses",
     "edututor-zmz25qz7.manus.space",
     "localhost",
     "127.0.0.1",

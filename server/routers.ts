@@ -216,7 +216,7 @@ export const appRouter = router({
         await createInquiry(input);
         await notifyOwner({
           title: `📩 New Inquiry from ${input.name}`,
-          content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Role:** ${input.role}\n**Subject:** ${input.subject ?? "—"}\n**Area:** ${input.area ?? "—"}\n\n**Message:**\n${input.message}\n\nView all inquiries at https://edu-nest.manus.space/admin`,
+          content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Role:** ${input.role}\n**Subject:** ${input.subject ?? "—"}\n**Area:** ${input.area ?? "—"}\n\n**Message:**\n${input.message}\n\nView all inquiries at https://edunest.courses/admin`,
         }).catch(() => {/* non-blocking */});
         await sendInquiryEmail(input).catch((err) => console.error("[Email] Failed to send inquiry email:", err));
         return { success: true };
@@ -240,7 +240,7 @@ export const appRouter = router({
         await createTutorApplication(input);
         await notifyOwner({
           title: `🎓 New Tutor Application from ${input.name}`,
-          content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Qualification:** ${input.qualification}\n**Subjects:** ${input.subjects}\n**Experience:** ${input.experience}\n**Area:** ${input.area}\n**Mode:** ${input.mode.replace("_", " ")}\n\n**About:**\n${input.about ?? "—"}\n\nView all applications at https://edu-nest.manus.space/admin`,
+          content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Qualification:** ${input.qualification}\n**Subjects:** ${input.subjects}\n**Experience:** ${input.experience}\n**Area:** ${input.area}\n**Mode:** ${input.mode.replace("_", " ")}\n\n**About:**\n${input.about ?? "—"}\n\nView all applications at https://edunest.courses/admin`,
         }).catch(() => {/* non-blocking */});
         await sendTutorApplicationEmail(input).catch((err) => console.error("[Email] Failed to send tutor application email:", err));
         return { success: true };
@@ -264,7 +264,7 @@ export const appRouter = router({
         await createDemoBooking(input);
         await notifyOwner({
           title: `📚 Demo Class Booked with ${input.tutorName}`,
-          content: `**Student:** ${input.studentName}\n**Email:** ${input.studentEmail}\n**Phone:** ${input.studentPhone}\n**Grade:** ${input.grade}\n**Subject:** ${input.subject}\n**Tutor:** ${input.tutorName} (${input.tutorSubject})\n**Date:** ${input.preferredDate}\n**Time:** ${input.preferredTime}\n**Mode:** ${input.mode.replace("_", " ")}\n\n**Message:** ${input.message ?? "—"}\n\nManage at https://edu-nest.manus.space/admin`,
+          content: `**Student:** ${input.studentName}\n**Email:** ${input.studentEmail}\n**Phone:** ${input.studentPhone}\n**Grade:** ${input.grade}\n**Subject:** ${input.subject}\n**Tutor:** ${input.tutorName} (${input.tutorSubject})\n**Date:** ${input.preferredDate}\n**Time:** ${input.preferredTime}\n**Mode:** ${input.mode.replace("_", " ")}\n\n**Message:** ${input.message ?? "—"}\n\nManage at https://edunest.courses/admin`,
         }).catch((err) => console.error("[Notify] Failed to send owner notification:", err));
         await sendDemoBookingEmail(input).catch((err) => console.error("[Email] Failed to send demo booking email:", err));
         return { success: true };
@@ -341,7 +341,7 @@ export const appRouter = router({
         await createStudentRequirement(input);
         await notifyOwner({
           title: `👨‍🎓 New Tutor Requirement from ${input.name}`,
-          content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Role:** ${input.role}\n**Grade:** ${input.grade} (${input.board})\n**Subjects:** ${input.subjects}\n**Area:** ${input.area}\n**Mode:** ${input.mode.replace("_", " ")}\n**Budget:** ${input.budget ?? "—"}\n**Preferred Time:** ${input.preferredTime ?? "—"}\n\n**Notes:** ${input.additionalNotes ?? "—"}\n\nMatch a tutor at https://edu-nest.manus.space/admin`,
+          content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Role:** ${input.role}\n**Grade:** ${input.grade} (${input.board})\n**Subjects:** ${input.subjects}\n**Area:** ${input.area}\n**Mode:** ${input.mode.replace("_", " ")}\n**Budget:** ${input.budget ?? "—"}\n**Preferred Time:** ${input.preferredTime ?? "—"}\n\n**Notes:** ${input.additionalNotes ?? "—"}\n\nMatch a tutor at https://edunest.courses/admin`,
         }).catch(() => {/* non-blocking */});
         return { success: true };
       }),
@@ -409,7 +409,7 @@ export const appRouter = router({
         // Notify Amogha
         await notifyOwner({
           title: `👨‍🏫 New Tutor Profile: ${input.name}`,
-          content: `**Name:** ${input.name}\n**Subjects:** ${input.subjects}\n**Experience:** ${input.experience}\n**Mode:** ${input.mode}\n**Location:** ${input.fullAddress ?? input.area ?? 'Not provided'}\n\nReview at https://edu-nest.manus.space/admin`,
+          content: `**Name:** ${input.name}\n**Subjects:** ${input.subjects}\n**Experience:** ${input.experience}\n**Mode:** ${input.mode}\n**Location:** ${input.fullAddress ?? input.area ?? 'Not provided'}\n\nReview at https://edunest.courses/admin`,
         }).catch(() => {});
         return { success: true, profile };
       }),
@@ -506,7 +506,7 @@ export const appRouter = router({
         });
         await notifyOwner({
           title: `🎓 New Student Requirement: ${input.name}`,
-          content: `**Name:** ${input.name}\n**Grade:** ${input.grade} (${input.board})\n**Subjects:** ${input.subjects}\n**Mode:** ${input.mode}\n**Location:** ${input.fullAddress ?? input.area ?? 'Not provided'}\n\nReview at https://edu-nest.manus.space/admin`,
+          content: `**Name:** ${input.name}\n**Grade:** ${input.grade} (${input.board})\n**Subjects:** ${input.subjects}\n**Mode:** ${input.mode}\n**Location:** ${input.fullAddress ?? input.area ?? 'Not provided'}\n\nReview at https://edunest.courses/admin`,
         }).catch(() => {});
         return { success: true, profile };
       }),
@@ -664,7 +664,7 @@ export const appRouter = router({
         await createReferral({ ...input, referralCode: code });
         await notifyOwner({
           title: `🎁 New Referral from ${input.referrerName}`,
-          content: `**Referrer:** ${input.referrerName} (${input.referrerEmail})\n**Referred:** ${input.refereeName} (${input.refereeEmail})\n**Code:** ${code}\n\nManage at https://edu-nest.manus.space/admin`,
+          content: `**Referrer:** ${input.referrerName} (${input.referrerEmail})\n**Referred:** ${input.refereeName} (${input.refereeEmail})\n**Code:** ${code}\n\nManage at https://edunest.courses/admin`,
         }).catch(() => {/* non-blocking */});
         return { success: true, referralCode: code };
       }),

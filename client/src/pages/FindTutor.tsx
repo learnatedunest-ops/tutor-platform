@@ -177,7 +177,7 @@ export default function FindTutor() {
         title="Find a Tutor in Bengaluru | EduNest"
         description="Post your tuition requirement and get matched with a verified home tutor in Bengaluru within 24 hours. CBSE, ICSE, IB, all subjects covered."
         keywords="find tutor Bengaluru, home tuition near me, CBSE tutor Bengaluru, hire tutor Bengaluru"
-        url="https://edu-nest.manus.space/find-tutor"
+        url="https://edunest.courses/find-tutor"
       />
       <Navbar />
 

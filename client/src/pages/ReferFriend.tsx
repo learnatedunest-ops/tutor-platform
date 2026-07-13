@@ -91,7 +91,7 @@ export default function ReferFriend() {
   };
 
   const handleShare = () => {
-    const text = `Hey! I'm using EduNest for quality home tutoring in Bengaluru. Use my referral code ${referralCode} when you sign up to get ₹200 off your first booking! 🎓 https://edu-nest.manus.space`;
+    const text = `Hey! I'm using EduNest for quality home tutoring in Bengaluru. Use my referral code ${referralCode} when you sign up to get ₹200 off your first booking! 🎓 https://edunest.courses`;
     if (navigator.share) {
       navigator.share({ text });
     } else {
@@ -106,7 +106,7 @@ export default function ReferFriend() {
         title="Refer a Friend — EduNest | Earn ₹200 Discount"
         description="Refer a friend to EduNest and both of you get ₹200 off your next tutor booking in Bengaluru. No limit on referrals!"
         keywords="refer a friend EduNest, tutor referral Bengaluru, home tuition discount"
-        url="https://edu-nest.manus.space/refer"
+        url="https://edunest.courses/refer"
       />
       <Navbar />
 

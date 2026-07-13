@@ -71,7 +71,7 @@ export async function sendInquiryEmail(data: {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #fff;">
           <div style="background: linear-gradient(135deg, #F47920, #e06510); padding: 20px; border-radius: 8px 8px 0 0;">
             <h1 style="color: white; margin: 0; font-size: 22px;">📩 New Contact Inquiry</h1>
-            <p style="color: rgba(255,255,255,0.85); margin: 5px 0 0; font-size: 14px;">EduNest — edu-nest.manus.space</p>
+            <p style="color: rgba(255,255,255,0.85); margin: 5px 0 0; font-size: 14px;">EduNest — edunest.courses</p>
           </div>
           <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #eee;">
             <table style="width: 100%; border-collapse: collapse;">
@@ -87,7 +87,7 @@ export async function sendInquiryEmail(data: {
               <p style="color: #333; margin: 8px 0 0; line-height: 1.6;">${data.message}</p>
             </div>
             <div style="margin-top: 20px; text-align: center;">
-              <a href="https://edu-nest.manus.space/admin" style="background: #F47920; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
+              <a href="https://edunest.courses/admin" style="background: #F47920; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
                 View in Admin Dashboard →
               </a>
             </div>
@@ -123,7 +123,7 @@ export async function sendTutorApplicationEmail(data: {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #fff;">
           <div style="background: linear-gradient(135deg, #6C63FF, #5a52e0); padding: 20px; border-radius: 8px 8px 0 0;">
             <h1 style="color: white; margin: 0; font-size: 22px;">🎓 New Tutor Application</h1>
-            <p style="color: rgba(255,255,255,0.85); margin: 5px 0 0; font-size: 14px;">EduNest — edu-nest.manus.space</p>
+            <p style="color: rgba(255,255,255,0.85); margin: 5px 0 0; font-size: 14px;">EduNest — edunest.courses</p>
           </div>
           <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #eee;">
             <table style="width: 100%; border-collapse: collapse;">
@@ -142,7 +142,7 @@ export async function sendTutorApplicationEmail(data: {
               <p style="color: #333; margin: 8px 0 0; line-height: 1.6;">${data.about}</p>
             </div>` : ""}
             <div style="margin-top: 20px; text-align: center;">
-              <a href="https://edu-nest.manus.space/admin" style="background: #6C63FF; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
+              <a href="https://edunest.courses/admin" style="background: #6C63FF; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
                 Review Application →
               </a>
             </div>
@@ -180,7 +180,7 @@ export async function sendDemoBookingEmail(data: {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #fff;">
           <div style="background: linear-gradient(135deg, #22c55e, #16a34a); padding: 20px; border-radius: 8px 8px 0 0;">
             <h1 style="color: white; margin: 0; font-size: 22px;">📚 New Demo Class Booking</h1>
-            <p style="color: rgba(255,255,255,0.85); margin: 5px 0 0; font-size: 14px;">EduNest — edu-nest.manus.space</p>
+            <p style="color: rgba(255,255,255,0.85); margin: 5px 0 0; font-size: 14px;">EduNest — edunest.courses</p>
           </div>
           <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #eee;">
             <h3 style="color: #22c55e; margin: 0 0 12px;">📅 Booking Details</h3>
@@ -204,7 +204,7 @@ export async function sendDemoBookingEmail(data: {
               <p style="color: #333; margin: 8px 0 0;">${data.message}</p>
             </div>` : ""}
             <div style="margin-top: 20px; text-align: center;">
-              <a href="https://edu-nest.manus.space/admin" style="background: #22c55e; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
+              <a href="https://edunest.courses/admin" style="background: #22c55e; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
                 Confirm Booking →
               </a>
             </div>
@@ -263,7 +263,7 @@ export async function sendOtpEmail(data: {
             </p>
             <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #eee;">
               <p style="color: #bbb; font-size: 11px; margin: 0;">EduNest — Best Home Tuition &amp; Tutors in Bengaluru</p>
-              <a href="https://edu-nest.manus.space" style="color: #F47920; font-size: 11px; text-decoration: none;">edu-nest.manus.space</a>
+              <a href="https://edunest.courses" style="color: #F47920; font-size: 11px; text-decoration: none;">edunest.courses</a>
             </div>
           </div>
         </div>
@@ -335,7 +335,7 @@ export async function sendContactRevealToTutor(data: {
             </p>
             <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
               <p style="color: #bbb; font-size: 11px; margin: 0;">EduNest — Best Home Tuition &amp; Tutors in Bengaluru</p>
-              <a href="https://edu-nest.manus.space" style="color: #6C63FF; font-size: 11px; text-decoration: none;">edu-nest.manus.space</a>
+              <a href="https://edunest.courses" style="color: #6C63FF; font-size: 11px; text-decoration: none;">edunest.courses</a>
             </div>
           </div>
         </div>
@@ -407,7 +407,7 @@ export async function sendContactRevealToStudent(data: {
             </p>
             <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
               <p style="color: #bbb; font-size: 11px; margin: 0;">EduNest — Best Home Tuition &amp; Tutors in Bengaluru</p>
-              <a href="https://edu-nest.manus.space" style="color: #F47920; font-size: 11px; text-decoration: none;">edu-nest.manus.space</a>
+              <a href="https://edunest.courses" style="color: #F47920; font-size: 11px; text-decoration: none;">edunest.courses</a>
             </div>
           </div>
         </div>
@@ -436,7 +436,7 @@ export async function sendParentPayNowEmail(data: {
     return;
   }
   const upiId = "8618635627@yescred";
-  const portalUrl = data.portalUrl ?? "https://edu-nest.manus.space/student-portal";
+  const portalUrl = data.portalUrl ?? "https://edunest.courses/student-portal";
   try {
     await transport.sendMail({
       from: FROM_EMAIL_GMAIL,
@@ -472,7 +472,7 @@ export async function sendParentPayNowEmail(data: {
             </p>
             <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
               <p style="color: #bbb; font-size: 11px; margin: 0;">EduNest — Best Home Tuition &amp; Tutors in Bengaluru</p>
-              <a href="https://edu-nest.manus.space" style="color: #F47920; font-size: 11px; text-decoration: none;">edu-nest.manus.space</a>
+              <a href="https://edunest.courses" style="color: #F47920; font-size: 11px; text-decoration: none;">edunest.courses</a>
             </div>
           </div>
         </div>
@@ -533,7 +533,7 @@ export async function sendTutorFeePaidEmail(data: {
             </p>
             <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
               <p style="color: #bbb; font-size: 11px; margin: 0;">EduNest — Best Home Tuition &amp; Tutors in Bengaluru</p>
-              <a href="https://edu-nest.manus.space" style="color: #F47920; font-size: 11px; text-decoration: none;">edu-nest.manus.space</a>
+              <a href="https://edunest.courses" style="color: #F47920; font-size: 11px; text-decoration: none;">edunest.courses</a>
             </div>
           </div>
         </div>

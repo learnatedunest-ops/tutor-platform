@@ -402,7 +402,7 @@ export default function NearbyTutors() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "oklch(0.97 0.005 80)", fontFamily: "'Nunito', sans-serif" }}>
-      <SEO title="Tutors Near Me — EduNest" description="Find verified tutors near you on EduNest." url="https://edu-nest.manus.space/nearby-tutors" />
+      <SEO title="Tutors Near Me — EduNest" description="Find verified tutors near you on EduNest." url="https://edunest.courses/nearby-tutors" />
 
       {/* Full Profile Modal */}
       <TutorProfileModal
@@ -415,7 +415,7 @@ export default function NearbyTutors() {
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/manus-storage/edunest-logo-v3_f012b9fe.png" alt="EduNest" className="w-8 h-8 object-contain" />
+            <img src="/manus-storage/edunest-logo-v3_53536b96.png" alt="EduNest" className="w-8 h-8 object-contain" />
             <div>
               <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)" }}>Tutors Near Me</p>
               <p className="text-sm font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>

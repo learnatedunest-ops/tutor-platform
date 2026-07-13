@@ -275,7 +275,7 @@ export default function StudentSetup() {
   if (submitted || existingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
-        <SEO title="Requirement Submitted — EduNest" description="Your tuition requirement has been submitted." url="https://edu-nest.manus.space/student-setup" />
+        <SEO title="Requirement Submitted — EduNest" description="Your tuition requirement has been submitted." url="https://edunest.courses/student-setup" />
         <div className="bg-white rounded-2xl shadow-lg p-10 max-w-lg w-full text-center">
           <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: "#DCFCE7" }}>
             <CheckCircle2 size={32} style={{ color: "#16A34A" }} />
@@ -328,13 +328,13 @@ export default function StudentSetup() {
 
   return (
     <div className="min-h-screen py-8 px-4" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
-      <SEO title="Find a Tutor — EduNest" description="Submit your tuition requirement and get matched with a verified tutor near you in Bengaluru." url="https://edu-nest.manus.space/student-setup" />
+      <SEO title="Find a Tutor — EduNest" description="Submit your tuition requirement and get matched with a verified tutor near you in Bengaluru." url="https://edunest.courses/student-setup" />
 
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <img src="/manus-storage/edunest-logo-v3_f012b9fe.png" alt="EduNest" className="w-10 h-10 object-contain" />
+            <img src="/manus-storage/edunest-logo-v3_53536b96.png" alt="EduNest" className="w-10 h-10 object-contain" />
             <Link href="/">
               <button
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-80"

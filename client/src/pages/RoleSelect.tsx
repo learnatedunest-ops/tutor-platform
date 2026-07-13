@@ -71,7 +71,7 @@ export default function RoleSelect() {
       <div className="flex items-center justify-between w-full max-w-lg mb-10">
         <div className="flex items-center gap-2">
           <img
-            src="/manus-storage/edunest-logo-v3_f012b9fe.png"
+            src="/manus-storage/edunest-logo-v3_53536b96.png"
             alt="EduNest"
             className="w-10 h-10 object-contain"
           />

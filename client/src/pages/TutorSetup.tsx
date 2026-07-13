@@ -325,7 +325,7 @@ export default function TutorSetup() {
   if (!editMode && (submitted || existingProfile?.status === "pending" || existingProfile?.status === "approved")) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
-        <SEO title="Tutor Profile — EduNest" description="Complete your tutor profile on EduNest" url="https://edu-nest.manus.space/tutor-setup" />
+        <SEO title="Tutor Profile — EduNest" description="Complete your tutor profile on EduNest" url="https://edunest.courses/tutor-setup" />
         <div className="bg-white rounded-2xl shadow-lg p-10 max-w-lg w-full text-center">
           {existingProfile?.status === "approved" ? (
             <>
@@ -388,13 +388,13 @@ export default function TutorSetup() {
 
   return (
     <div className="min-h-screen py-8 px-4" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
-      <SEO title="Tutor Profile Setup — EduNest" description="Complete your tutor profile on EduNest to start receiving student leads in Bengaluru." url="https://edu-nest.manus.space/tutor-setup" />
+      <SEO title="Tutor Profile Setup — EduNest" description="Complete your tutor profile on EduNest to start receiving student leads in Bengaluru." url="https://edunest.courses/tutor-setup" />
 
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <img src="/manus-storage/edunest-logo-v3_f012b9fe.png" alt="EduNest" className="w-10 h-10 object-contain" />
+            <img src="/manus-storage/edunest-logo-v3_53536b96.png" alt="EduNest" className="w-10 h-10 object-contain" />
             <Link href="/">
               <button
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-80"

@@ -425,9 +425,9 @@
 
 ## Round 36 — UX Improvements
 
-- [ ] Simplify tutor class registration: two text areas (grades + subjects), remove fee input
-- [ ] Parent dashboard: replace "Schedule your demo below" with a link; show tutor name + contact in confirmed demo card
-- [ ] My Classes: show full party details (tutor info to parent, parent info to tutor)
-- [ ] Post-payment: add direct-payment message to both parties when fee is processed
-- [ ] Reflect class cancellation by admin in My Classes cards for both parties
-- [ ] Move T&C content inside modal only — remove any inline display outside
+- [x] Simplify tutor class registration: two text areas (grades + subjects), remove fee input
+- [x] Parent dashboard: replace "Schedule your demo below" with a link; show tutor name + contact in confirmed demo card
+- [x] My Classes: show full party details (tutor info to parent, parent info to tutor)
+- [x] Post-payment: add direct-payment message to both parties when fee is processed
+- [x] Reflect class cancellation by admin in My Classes cards for both parties
+- [x] Move T&C content inside modal only — remove any inline display outside

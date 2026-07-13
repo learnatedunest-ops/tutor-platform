@@ -67,7 +67,7 @@ const mutationLimiter = rateLimit({
 
 // ─── CORS Policy ─────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
-  "https://edu-nest.manus.space",
+  "https://edunest.courses",
   "https://edututor-zmz25qz7.manus.space",
   // Dev origins
   "http://localhost:3000",
@@ -179,7 +179,7 @@ async function startServer() {
   app.use("/api/auth", authLimiter);
 
   // ─── Sitemap ────────────────────────────────────────────────────────────────
-  const SITE_URL = "https://edu-nest.manus.space";
+  const SITE_URL = "https://edunest.courses";
   const PAGES = [
     { url: "/", priority: "1.0", changefreq: "weekly" },
     { url: "/find-tutor", priority: "0.9", changefreq: "weekly" },

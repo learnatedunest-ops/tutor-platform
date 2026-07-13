@@ -20,7 +20,7 @@ const steps = [
     number: "02",
     title: "Add Your Property",
     description: "Click the '+ Add property' button in the top-left dropdown. Choose 'URL prefix' and enter your full website URL.",
-    code: "https://edu-nest.manus.space",
+    code: "https://edunest.courses",
     tip: "Use 'URL prefix' (not Domain) — it's easier to verify for hosted platforms like Manus.",
   },
   {
@@ -33,7 +33,7 @@ const steps = [
     number: "04",
     title: "Submit Your Sitemap",
     description: "Once verified, click 'Sitemaps' in the left sidebar. Enter your sitemap URL and click Submit.",
-    code: "https://edu-nest.manus.space/sitemap.xml",
+    code: "https://edunest.courses/sitemap.xml",
     tip: "A sitemap tells Google about all your pages so they get indexed faster.",
   },
   {
@@ -41,11 +41,11 @@ const steps = [
     title: "Request Indexing",
     description: "Use the URL Inspection tool to manually request indexing for your most important pages. Enter each URL and click 'Request Indexing'.",
     pages: [
-      "https://edu-nest.manus.space/",
-      "https://edu-nest.manus.space/find-tutor",
-      "https://edu-nest.manus.space/become-tutor",
-      "https://edu-nest.manus.space/about",
-      "https://edu-nest.manus.space/contact",
+      "https://edunest.courses/",
+      "https://edunest.courses/find-tutor",
+      "https://edunest.courses/become-tutor",
+      "https://edunest.courses/about",
+      "https://edunest.courses/contact",
     ],
     tip: "Google typically indexes pages within 1–7 days after requesting.",
   },
@@ -183,8 +183,8 @@ export default function SEOGuide() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { icon: Search, title: "Google Search Console", desc: "Monitor your site's search performance", href: "https://search.google.com/search-console" },
-              { icon: Globe, title: "EduNest Sitemap", desc: "Submit this URL to Google Search Console", href: "https://edu-nest.manus.space/sitemap.xml" },
-              { icon: FileText, title: "Robots.txt", desc: "Check which pages Google is allowed to crawl", href: "https://edu-nest.manus.space/robots.txt" },
+              { icon: Globe, title: "EduNest Sitemap", desc: "Submit this URL to Google Search Console", href: "https://edunest.courses/sitemap.xml" },
+              { icon: FileText, title: "Robots.txt", desc: "Check which pages Google is allowed to crawl", href: "https://edunest.courses/robots.txt" },
             ].map((item, i) => (
               <a key={i} href={item.href} target="_blank" rel="noopener noreferrer" className="bg-white rounded-2xl p-6 border transition-all hover:shadow-md hover:-translate-y-1 group" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: "oklch(0.68 0.18 50 / 0.1)" }}>

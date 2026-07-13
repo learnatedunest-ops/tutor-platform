@@ -111,7 +111,7 @@ export async function notifyAdminSheetUploaded(params: {
 }): Promise<void> {
   const { tutorName, tutorPhone, parentName, parentPhone, studentName, sheetUrl } = params;
 
-  const parentWaMsg = `Hi ${parentName}! 👋 EduNest here. Your tutor ${tutorName} has uploaded the session sheet for ${studentName}. Please log in to edu-nest.manus.space to review and process the payment. Thank you!`;
+  const parentWaMsg = `Hi ${parentName}! 👋 EduNest here. Your tutor ${tutorName} has uploaded the session sheet for ${studentName}. Please log in to edunest.courses to review and process the payment. Thank you!`;
   const tutorWaMsg = `Hi ${tutorName}! 👋 EduNest here. We've received your session sheet for ${studentName}. We'll notify the parent to process the payment shortly. Thank you!`;
 
   const html = `
