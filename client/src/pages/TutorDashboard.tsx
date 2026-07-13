@@ -116,37 +116,6 @@ function DemoSlotAvailabilityCard({ slot, onDone }: { slot: any; onDone: () => v
   );
 }
 
-/** Small button that fetches a presigned URL for the session sheet and opens it */
-function ViewSheetButton({ logId }: { logId: number }) {
-  const [loading, setLoading] = useState(false);
-  const utils = trpc.useUtils();
-  const handleClick = async () => {
-    setLoading(true);
-    try {
-      const result = await utils.client.sessionLog.getSignedSheetUrl.query({ logId });
-      if (result?.url) {
-        window.open(result.url, '_blank', 'noopener,noreferrer');
-      } else {
-        toast.error('Sheet URL not available. Please try again later.');
-      }
-    } catch {
-      toast.error('Failed to load sheet. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  return (
-    <button
-      onClick={handleClick}
-      disabled={loading}
-      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-60"
-    >
-      {loading ? <Loader2 size={13} className="animate-spin" /> : <ExternalLink size={13} />}
-      View Uploaded Sheet
-    </button>
-  );
-}
-
 /** Sub-component: My Classes card for a single confirmed match (completed demo) */
 function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: { slot: any; mySessionLogs: any[]; onRefreshLogs: () => void; onRefreshMatches?: () => void }) {
   const [isUploading, setIsUploading] = useState(false);
@@ -391,8 +360,15 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: {
             )}
 
             {/* View uploaded sheet */}
-            {log?.uploadedSheetUrl && log?.id && (
-              <ViewSheetButton logId={log.id} />
+            {log?.uploadedSheetUrl && (
+              <a
+                href={log.uploadedSheetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+              >
+                <ExternalLink size={13} /> View Uploaded Sheet
+              </a>
             )}
           </div>
 
@@ -724,7 +700,7 @@ export default function TutorDashboard() {
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/manus-storage/edunest-logo-small_a87b0e1f.png" alt="EduNest" className="w-8 h-8 object-contain" />
+            <img src="/manus-storage/edunest-logo-small_2b84d7c3.png" alt="EduNest" className="w-8 h-8 object-contain" />
             <div>
               <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>Tutor Dashboard</p>
               <p className="text-sm font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
@@ -1042,25 +1018,18 @@ export default function TutorDashboard() {
               </div>
             ) : (
               <div className="space-y-4">
-                {(() => {
-                  const activeMatches = myConfirmedMatches.filter((m: any) => m.classStatus !== 'cancelled');
-                  return (
-                    <>
-                      <p className="text-sm font-semibold" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>
-                        {activeMatches.length} confirmed class{activeMatches.length !== 1 ? "es" : ""}
-                      </p>
-                      {activeMatches.map((match: any) => (
-                        <MyClassCard
-                          key={match.id}
-                          slot={match}
-                          mySessionLogs={mySessionLogs ?? []}
-                          onRefreshLogs={refetchSessionLogs}
-                          onRefreshMatches={refetchConfirmedMatches}
-                        />
-                      ))}
-                    </>
-                  );
-                })()}
+                <p className="text-sm font-semibold" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>
+                  {myConfirmedMatches.length} confirmed class{myConfirmedMatches.length !== 1 ? "es" : ""}
+                </p>
+                {myConfirmedMatches.map((match: any) => (
+                  <MyClassCard
+                    key={match.id}
+                    slot={match}
+                    mySessionLogs={mySessionLogs ?? []}
+                    onRefreshLogs={refetchSessionLogs}
+                    onRefreshMatches={refetchConfirmedMatches}
+                  />
+                ))}
               </div>
             )}
           </div>

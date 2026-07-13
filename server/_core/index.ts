@@ -68,9 +68,7 @@ const mutationLimiter = rateLimit({
 // ─── CORS Policy ─────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
   "https://edunest.courses",
-  "https://www.edunest.courses",
   "https://edututor-zmz25qz7.manus.space",
-  "https://edu-nest.manus.space",
   // Dev origins
   "http://localhost:3000",
   "http://localhost:5173",
@@ -126,8 +124,6 @@ async function startServer() {
             "'unsafe-inline'", // Required for Vite HMR in dev; tightened in prod
             "https://fonts.googleapis.com",
             "https://maps.googleapis.com",
-            "https://www.googletagmanager.com",
-            "https://www.google-analytics.com",
           ],
           styleSrc: [
             "'self'",
@@ -140,9 +136,6 @@ async function startServer() {
             "'self'",
             "https://api.manus.im",
             "https://*.manus.space",
-            "https://www.google-analytics.com",
-            "https://analytics.google.com",
-            "https://www.googletagmanager.com",
             "wss:", // WebSocket for Vite HMR
           ],
           frameSrc: ["'none'"],
@@ -169,7 +162,6 @@ async function startServer() {
       // Permissions policy (disable unnecessary browser features)
       permittedCrossDomainPolicies: false,
       crossOriginEmbedderPolicy: false, // Needed for Google Maps / external resources
-      crossOriginResourcePolicy: false, // Allow cross-origin image loads (storage proxy redirects to CloudFront CDN)
       crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Allow OAuth popups
     })
   );

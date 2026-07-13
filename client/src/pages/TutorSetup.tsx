@@ -394,7 +394,7 @@ export default function TutorSetup() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <img src="/manus-storage/edunest-logo-small_a87b0e1f.png" alt="EduNest" className="w-10 h-10 object-contain" />
+            <img src="/manus-storage/edunest-logo-small_2b84d7c3.png" alt="EduNest" className="w-10 h-10 object-contain" />
             <Link href="/">
               <button
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-80"

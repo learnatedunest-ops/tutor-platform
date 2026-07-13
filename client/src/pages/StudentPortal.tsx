@@ -25,37 +25,6 @@ function formatDate(date: Date | string) {
   });
 }
 
-/** Small button that fetches a presigned URL for the session sheet and opens it */
-function ViewSheetButton({ logId }: { logId: number }) {
-  const [loading, setLoading] = useState(false);
-  const utils = trpc.useUtils();
-  const handleClick = async () => {
-    setLoading(true);
-    try {
-      const result = await utils.client.sessionLog.getSignedSheetUrl.query({ logId });
-      if (result?.url) {
-        window.open(result.url, '_blank', 'noopener,noreferrer');
-      } else {
-        toast.error('Sheet URL not available. Please try again later.');
-      }
-    } catch {
-      toast.error('Failed to load sheet. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  return (
-    <button
-      onClick={handleClick}
-      disabled={loading}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-60"
-    >
-      {loading ? <Loader2 size={12} className="animate-spin" /> : <ExternalLink size={12} />}
-      View Session Sheet
-    </button>
-  );
-}
-
 const BOOKING_STATUS_CONFIG = {
   pending:   { label: "Pending",   bg: "bg-yellow-100", text: "text-yellow-700", border: "border-yellow-200", icon: Clock },
   confirmed: { label: "Confirmed", bg: "bg-blue-100",   text: "text-blue-700",   border: "border-blue-200",   icon: CheckCircle2 },
@@ -798,14 +767,14 @@ export default function StudentPortal() {
           {/* My Classes Tab */}
           {activeTab === "classes" && (
             <div className="space-y-4">
-              {!myConfirmedMatches?.filter((m: any) => m.classStatus !== 'cancelled').length ? (
+              {!myConfirmedMatches?.length ? (
                 <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                   <GraduationCap size={48} className="mx-auto mb-4 opacity-20" style={{ color: "oklch(0.68 0.18 50)" }} />
                   <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No confirmed classes yet</h3>
                   <p className="text-gray-400">Once both you and your tutor agree to proceed after a demo class, your confirmed class will appear here.</p>
                 </div>
               ) : (
-                myConfirmedMatches.filter((m: any) => m.classStatus !== 'cancelled').map((match: any) => {
+                myConfirmedMatches.map((match: any) => {
                   const isGotAClass = match.classStatus === 'got_a_class';
                   const isCancelled = match.classStatus === 'cancelled';
                   const isCancellationRequested = match.classStatus === 'cancellation_requested';
@@ -905,12 +874,30 @@ export default function StudentPortal() {
                             </div>
                           </div>
                         )}
+                        {match.tutorArea && (
+                          <div className="flex items-start gap-2">
+                            <MapPin size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Location</p>
+                              <p className="text-sm font-semibold text-gray-800">{match.tutorArea}</p>
+                            </div>
+                          </div>
+                        )}
                         {match.tutorPhone && (
                           <div className="flex items-start gap-2">
                             <Phone size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
                             <div>
                               <p className="text-xs text-gray-400 font-medium">Tutor Contact</p>
                               <a href={`tel:${match.tutorPhone}`} className="text-sm font-semibold text-blue-700 underline hover:text-blue-900">{match.tutorPhone}</a>
+                            </div>
+                          </div>
+                        )}
+                        {match.tutorEmail && (
+                          <div className="flex items-start gap-2">
+                            <Mail size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.68 0.18 50)" }} />
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Tutor Email</p>
+                              <a href={`mailto:${match.tutorEmail}`} className="text-sm font-semibold text-blue-700 underline hover:text-blue-900">{match.tutorEmail}</a>
                             </div>
                           </div>
                         )}
@@ -948,8 +935,15 @@ export default function StudentPortal() {
                                 ? '📋 Session Sheet Ready — Please Pay'
                                 : '⏳ Awaiting Session Sheet from Tutor'}
                             </span>
-                            {match.uploadedSheetUrl && match.sessionLogId && (
-                              <ViewSheetButton logId={match.sessionLogId} />
+                            {match.uploadedSheetUrl && (
+                              <a
+                                href={match.uploadedSheetUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                              >
+                                <ExternalLink size={12} /> View Session Sheet
+                              </a>
                             )}
                           </div>
 

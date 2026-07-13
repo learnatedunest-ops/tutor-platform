@@ -171,7 +171,7 @@ export default function BecomeTutor() {
                 ))}
               </div>
               <img
-                src="/manus-storage/tutor-benefit_82b1fdc0.png"
+                src="/manus-storage/tutor-benefit_cb974077.png"
                 alt="Tutor"
                 className="rounded-2xl w-full object-cover shadow-xl hidden lg:block"
                 style={{ maxHeight: "300px" }}

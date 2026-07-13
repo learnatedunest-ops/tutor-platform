@@ -82,7 +82,7 @@ function ViewSheetButton({ logId }: { logId: number }) {
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs" | "cancellations" | "cancelledDemos" | "cancelledClasses" | "smartPairs">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs" | "cancellations" | "cancelledDemos">("inquiries");
   const [tutorForm, setTutorForm] = useState<typeof EMPTY_TUTOR>(EMPTY_TUTOR);
   const [editingTutorId, setEditingTutorId] = useState<number | null>(null);
   const [showTutorForm, setShowTutorForm] = useState(false);
@@ -234,14 +234,6 @@ export default function Admin() {
     onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to clear fee'),
   });
 
-  // Cancelled Classes (confirmed matches that were cancelled)
-  const { data: cancelledClassesList, isLoading: loadingCancelledClasses, refetch: refetchCancelledClasses } =
-    trpc.confirmedMatch.listCancelledClasses.useQuery(undefined, { enabled: isAdmin });
-
-  // Smart Pairs (student+tutor within 10km, matching gender+subjects)
-  const { data: smartPairsList, isLoading: loadingSmartPairs, refetch: refetchSmartPairs } =
-    trpc.confirmedMatch.getSmartPairs.useQuery(undefined, { enabled: isAdmin && activeTab === 'smartPairs' });
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
@@ -322,7 +314,7 @@ export default function Admin() {
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/manus-storage/edunest-logo-small_a87b0e1f.png" alt="EduNest" className="w-8 h-8 object-contain" />
+            <img src="/manus-storage/edunest-logo-small_2b84d7c3.png" alt="EduNest" className="w-8 h-8 object-contain" />
             <div>
               <span className="text-lg font-extrabold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.68 0.18 50)" }}>
                 Edu<span style={{ color: "oklch(0.14 0.02 270)" }}>Nest</span>
@@ -364,7 +356,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["inquiries", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs", "cancellations", "cancelledDemos", "cancelledClasses", "smartPairs"] as const).map(tab => (
+          {(["inquiries", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs", "cancellations", "cancelledDemos"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -393,10 +385,6 @@ export default function Admin() {
                 <span className="flex items-center gap-2">🚫 Cancellation Requests {(cancellationRequests?.length ?? 0) > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "cancellations" ? "bg-white/30" : "bg-red-100 text-red-700"}`}>{cancellationRequests?.length}</span>}</span>
               ) : tab === "cancelledDemos" ? (
                 <span className="flex items-center gap-2">❌ Cancelled Demos {(cancelledDemosList?.length ?? 0) > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "cancelledDemos" ? "bg-white/30" : "bg-red-100 text-red-700"}`}>{cancelledDemosList?.length} pending fee</span>}</span>
-              ) : tab === "cancelledClasses" ? (
-                <span className="flex items-center gap-2">🚫 Cancelled Classes {(cancelledClassesList?.length ?? 0) > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "cancelledClasses" ? "bg-white/30" : "bg-red-100 text-red-700"}`}>{cancelledClassesList?.length}</span>}</span>
-              ) : tab === "smartPairs" ? (
-                <span className="flex items-center gap-2">🧠 Smart Pairs {(smartPairsList?.length ?? 0) > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "smartPairs" ? "bg-white/30" : "bg-blue-100 text-blue-700"}`}>{smartPairsList?.length}</span>}</span>
               ) : (
                 <span className="flex items-center gap-2"><UserCheck size={15} /> Manage Tutors <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
               )}
@@ -1353,22 +1341,6 @@ export default function Admin() {
                           ✅ Approve & Notify Tutor
                         </button>
                       )}
-                      {/* Admin manual override: mark as paid to tutor without waiting for parent */}
-                      {log.paymentStatus === 'sheet_uploaded' && (
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`Mark payment as processed for ${log.tutorName ?? 'this tutor'} without parent confirmation?\n\nThis will notify the tutor that their fee has been processed.`)) {
-                              approvePaymentMutation.mutate({ logId: log.id });
-                            }
-                          }}
-                          disabled={approvePaymentMutation.isPending}
-                          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-colors disabled:opacity-50"
-                          style={{ backgroundColor: 'oklch(0.55 0.15 50)' }}
-                        >
-                          {approvePaymentMutation.isPending ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={13} />}
-                          💰 Mark Paid to Tutor (Manual)
-                        </button>
-                      )}
                       {/* Undo payment (reset to sheet_uploaded) */}
                       {log.paymentStatus === 'payment_processed' && (
                         <button
@@ -1482,138 +1454,6 @@ export default function Admin() {
                   </div>
                 </div>
               ))
-            )}
-          </div>
-        )}
-
-        {/* ── Cancelled Classes (confirmed matches that were cancelled) ── */}
-        {activeTab === "cancelledClasses" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>🚫 Cancelled Classes</h2>
-              <button onClick={() => refetchCancelledClasses()} className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl text-sm text-gray-500 hover:text-gray-700 transition-colors"><RefreshCw size={14} /> Refresh</button>
-            </div>
-            {loadingCancelledClasses ? (
-              <div className="bg-white rounded-2xl shadow-sm p-12 text-center"><Loader2 size={32} className="animate-spin mx-auto mb-3 text-red-400" /><p className="text-gray-400">Loading cancelled classes...</p></div>
-            ) : !cancelledClassesList?.length ? (
-              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-                <CheckCircle2 size={48} className="mx-auto mb-4 text-green-400 opacity-50" />
-                <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No cancelled classes</h3>
-                <p className="text-gray-400">All confirmed classes are currently active.</p>
-              </div>
-            ) : (
-              cancelledClassesList.map((match: any) => (
-                <div key={match.id} className="bg-white rounded-2xl shadow-sm border border-red-100 p-6">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-100 text-red-700">🚫 Class Cancelled</span>
-                        <span className="text-xs font-semibold text-gray-400">Match #{match.id}</span>
-                        {match.cancellationRequestedBy && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">Requested by: {match.cancellationRequestedBy}</span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
-                        {/* Tutor Details */}
-                        <div className="rounded-xl p-3 bg-blue-50 border border-blue-100">
-                          <p className="text-xs font-bold text-blue-700 mb-2">🎓 Tutor (T{String(match.tutorProfileId).padStart(3,'0')})</p>
-                          <p className="text-sm font-bold text-gray-800">{match.tutorName ?? '—'}</p>
-                          {match.tutorPhone && <p className="text-xs text-gray-600 mt-1">📞 <a href={`tel:${match.tutorPhone}`} className="text-blue-700 underline">{match.tutorPhone}</a></p>}
-                          {match.tutorEmail && <p className="text-xs text-gray-500 mt-0.5">✉️ {match.tutorEmail}</p>}
-                          {match.tutorArea && <p className="text-xs text-gray-500 mt-0.5">📍 {match.tutorArea}</p>}
-                          {match.tutorSubjects && <p className="text-xs text-gray-500 mt-0.5">📚 {match.tutorSubjects}</p>}
-                        </div>
-                        {/* Student Details */}
-                        <div className="rounded-xl p-3 bg-orange-50 border border-orange-100">
-                          <p className="text-xs font-bold text-orange-700 mb-2">👨‍🎓 Student (S{String(match.studentProfileId).padStart(3,'0')})</p>
-                          <p className="text-sm font-bold text-gray-800">{match.studentName ?? '—'}</p>
-                          {match.studentPhone && <p className="text-xs text-gray-600 mt-1">📞 <a href={`tel:${match.studentPhone}`} className="text-blue-700 underline">{match.studentPhone}</a></p>}
-                          {match.studentEmail && <p className="text-xs text-gray-500 mt-0.5">✉️ {match.studentEmail}</p>}
-                          {match.studentArea && <p className="text-xs text-gray-500 mt-0.5">📍 {match.studentArea}</p>}
-                          {match.studentGrade && <p className="text-xs text-gray-500 mt-0.5">📚 Grade: {match.studentGrade}</p>}
-                          {match.studentSubjects && <p className="text-xs text-gray-500 mt-0.5">📚 {match.studentSubjects}</p>}
-                        </div>
-                      </div>
-                      {match.cancellationNote && (
-                        <p className="text-xs text-red-600 mt-3 bg-red-50 rounded-lg px-3 py-2"><strong>Reason:</strong> {match.cancellationNote}</p>
-                      )}
-                      <p className="text-xs text-gray-400 mt-2">Matched: {new Date(match.matchedAt).toLocaleString()}</p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* ── Smart Pairs (student+tutor within 10km, matching gender+subjects) ── */}
-        {activeTab === "smartPairs" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h2 className="text-xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>🧠 Smart Pairs</h2>
-                <p className="text-sm text-gray-500 mt-1">Student–Tutor pairs within 10 km radius, matching gender preference and subjects. Not yet matched. Admin can contact them directly.</p>
-              </div>
-              <button onClick={() => refetchSmartPairs()} className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl text-sm text-gray-500 hover:text-gray-700 transition-colors"><RefreshCw size={14} /> Refresh</button>
-            </div>
-            {loadingSmartPairs ? (
-              <div className="bg-white rounded-2xl shadow-sm p-12 text-center"><Loader2 size={32} className="animate-spin mx-auto mb-3 text-blue-400" /><p className="text-gray-400">Calculating smart pairs...</p></div>
-            ) : !smartPairsList?.length ? (
-              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-                <MapPin size={48} className="mx-auto mb-4 text-blue-400 opacity-50" />
-                <h3 className="text-lg font-bold text-gray-700 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>No smart pairs found</h3>
-                <p className="text-gray-400">No unmatched student–tutor pairs within 10 km with matching gender preference and subjects.</p>
-              </div>
-            ) : (
-              <>
-                <p className="text-sm font-semibold text-gray-600">{smartPairsList.length} pair{smartPairsList.length !== 1 ? 's' : ''} found</p>
-                {smartPairsList.map((pair: any, idx: number) => (
-                  <div key={`${pair.tutorProfileId}-${pair.studentProfileId}`} className="bg-white rounded-2xl shadow-sm border border-blue-100 p-6">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">📍 {pair.distanceKm} km apart</span>
-                          <span className="text-xs font-semibold text-gray-400">Pair #{idx + 1}</span>
-                          {pair.tutorGenderPreference && pair.tutorGenderPreference !== 'no_preference' && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">♂️♀️ Gender: {pair.tutorGenderPreference} tutor preferred</span>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {/* Tutor Details */}
-                          <div className="rounded-xl p-4 bg-blue-50 border border-blue-100">
-                            <p className="text-xs font-bold text-blue-700 mb-2">🎓 Tutor (T{String(pair.tutorProfileId).padStart(3,'0')})</p>
-                            <p className="text-sm font-bold text-gray-800">{pair.tutorName}</p>
-                            {pair.tutorGender && <p className="text-xs text-gray-500 mt-0.5">Gender: {pair.tutorGender}</p>}
-                            {pair.tutorPhone && (
-                              <p className="text-xs text-gray-600 mt-1">📞 <a href={`tel:${pair.tutorPhone}`} className="text-blue-700 underline font-semibold">{pair.tutorPhone}</a></p>
-                            )}
-                            {pair.tutorEmail && <p className="text-xs text-gray-500 mt-0.5">✉️ {pair.tutorEmail}</p>}
-                            {pair.tutorArea && <p className="text-xs text-gray-500 mt-0.5">📍 {pair.tutorArea}</p>}
-                            {pair.tutorSubjects && <p className="text-xs text-gray-500 mt-0.5">📚 {pair.tutorSubjects}</p>}
-                            {pair.tutorQualification && <p className="text-xs text-gray-500 mt-0.5">🎓 {pair.tutorQualification}</p>}
-                            {pair.tutorExperience && <p className="text-xs text-gray-500 mt-0.5">⏳ {pair.tutorExperience} exp</p>}
-                          </div>
-                          {/* Student Details */}
-                          <div className="rounded-xl p-4 bg-orange-50 border border-orange-100">
-                            <p className="text-xs font-bold text-orange-700 mb-2">👨‍🎓 Student (S{String(pair.studentProfileId).padStart(3,'0')})</p>
-                            <p className="text-sm font-bold text-gray-800">{pair.studentName}</p>
-                            {pair.studentPhone && (
-                              <p className="text-xs text-gray-600 mt-1">📞 <a href={`tel:${pair.studentPhone}`} className="text-blue-700 underline font-semibold">{pair.studentPhone}</a></p>
-                            )}
-                            {pair.studentEmail && <p className="text-xs text-gray-500 mt-0.5">✉️ {pair.studentEmail}</p>}
-                            {pair.studentArea && <p className="text-xs text-gray-500 mt-0.5">📍 {pair.studentArea}</p>}
-                            {pair.studentGrade && <p className="text-xs text-gray-500 mt-0.5">📚 Grade: {pair.studentGrade}</p>}
-                            {pair.studentSubjects && <p className="text-xs text-gray-500 mt-0.5">📚 {pair.studentSubjects}</p>}
-                            {pair.tutorGenderPreference && pair.tutorGenderPreference !== 'no_preference' && (
-                              <p className="text-xs text-purple-600 mt-0.5">♂️♀️ Prefers {pair.tutorGenderPreference} tutor</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </>
             )}
           </div>
         )}
