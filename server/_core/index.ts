@@ -82,7 +82,9 @@ const corsOptions: cors.CorsOptions = {
     if (!origin) return callback(null, true);
     // Allow any *.manus.space subdomain (covers auto-generated preview URLs)
     const isManusSpace = /^https:\/\/[a-z0-9-]+\.manus\.space$/.test(origin);
-    if (isManusSpace || ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV === "development") {
+    // Allow Google Cloud Run internal origins (Manus hosting infrastructure)
+    const isCloudRun = /^https:\/\/[a-z0-9-]+-[a-z0-9]+-[a-z]{2}\.a\.run\.app$/.test(origin);
+    if (isManusSpace || isCloudRun || ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV === "development") {
       return callback(null, true);
     }
     console.error(`[CORS] Blocked origin: ${origin}`);
