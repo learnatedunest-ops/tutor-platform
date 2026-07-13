@@ -99,6 +99,15 @@ async function startServer() {
   // Trust the first proxy hop (needed for accurate IP in rate limiters on Manus hosting)
   app.set("trust proxy", 1);
 
+  // ── www → non-www canonical redirect ───────────────────────────────────────
+  // Redirects www.edunest.courses → edunest.courses with 301 (permanent)
+  app.use((req, res, next) => {
+    if (req.hostname === "www.edunest.courses") {
+      return res.redirect(301, `https://edunest.courses${req.originalUrl}`);
+    }
+    next();
+  });
+
   // ── Request tracing & security event logging ────────────────────────────────
   app.use(requestIdMiddleware);
   app.use(securityLogger);
