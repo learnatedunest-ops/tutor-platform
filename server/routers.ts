@@ -1102,6 +1102,87 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    /**
+     * Admin: manually force both parties to "yes" and create a confirmed match.
+     * Use this when tutor/student forget to click "Would you like to continue?".
+     */
+    adminForceClassStarted: adminProcedure
+      .input(z.object({ slotId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        const slot = await getDemoSlotById(input.slotId);
+        if (!slot) throw new Error('Demo slot not found.');
+
+        // Force both proceed intents to yes
+        await setDemoSlotProceedIntent(input.slotId, 'tutor', 'yes');
+        const updatedSlot = await setDemoSlotProceedIntent(input.slotId, 'student', 'yes');
+        if (!updatedSlot) throw new Error('Failed to update proceed intents.');
+
+        // Avoid duplicate confirmed matches
+        const existing = await getConfirmedMatchBySlotId(input.slotId);
+        if (existing) return { success: true, matchId: existing.id, alreadyExisted: true };
+
+        // Look up profiles for contact snapshot
+        const allTutors = await getAllTutorProfiles();
+        const allStudents = await getAllStudentProfiles();
+        const tProfile = allTutors.find(t => t.id === updatedSlot.tutorProfileId) ?? null;
+        const sProfile = allStudents.find(s => s.id === updatedSlot.studentProfileId) ?? null;
+        const tutorUser = tProfile ? await getUserById(tProfile.userId) : null;
+        const studentUser = sProfile ? await getUserById(sProfile.userId) : null;
+
+        await createConfirmedMatch({
+          demoSlotId: input.slotId,
+          tutorProfileId: updatedSlot.tutorProfileId,
+          studentProfileId: updatedSlot.studentProfileId,
+          tutorName: tProfile?.name ?? null,
+          tutorEmail: tutorUser?.email ?? null,
+          tutorPhone: tProfile?.phone ?? null,
+          studentName: sProfile?.name ?? null,
+          studentEmail: studentUser?.email ?? null,
+          studentPhone: sProfile?.phone ?? null,
+          studentArea: sProfile?.area ?? null,
+          studentGrade: sProfile?.grade ?? null,
+          studentSubjects: sProfile?.subjects ?? null,
+          paymentAmount: sProfile?.budget ?? null,
+        });
+
+        // Send contact reveal emails
+        if (tutorUser?.email && tProfile) {
+          sendContactRevealToTutor({
+            tutorEmail: tutorUser.email,
+            tutorName: tProfile.name ?? 'Tutor',
+            studentName: sProfile?.name ?? 'Student',
+            studentEmail: studentUser?.email ?? '',
+            studentPhone: sProfile?.phone ?? '',
+            studentArea: sProfile?.area ?? '',
+            studentGrade: sProfile?.grade ?? '',
+            studentSubjects: sProfile?.subjects ?? '',
+          }).catch(() => {});
+        }
+        if (studentUser?.email && sProfile) {
+          sendContactRevealToStudent({
+            studentEmail: studentUser.email,
+            studentName: sProfile.name ?? 'Student',
+            tutorName: tProfile?.name ?? 'Tutor',
+            tutorEmail: tutorUser?.email ?? '',
+            tutorPhone: tProfile?.phone ?? '',
+            tutorQualification: tProfile?.qualification ?? '',
+            tutorSubjects: tProfile?.subjects ?? '',
+            tutorArea: tProfile?.area ?? '',
+            tutorMode: tProfile?.mode ?? 'online',
+            tutorBio: tProfile?.bio ?? undefined,
+          }).catch(() => {});
+        }
+
+        // Notify owner
+        await notifyOwner({
+          title: `✅ Admin Manually Started Class`,
+          content: `Admin manually marked Demo Slot #${input.slotId} as class started. Tutor Profile #${updatedSlot.tutorProfileId} ↔ Student Profile #${updatedSlot.studentProfileId}. Contact details shared with both parties.`,
+        }).catch(() => {});
+
+        const newMatch = await getConfirmedMatchBySlotId(input.slotId);
+        return { success: true, matchId: newMatch?.id ?? null, alreadyExisted: false };
+      }),
+
     // Tutor or Student: set proceed intent after demo completes
     // party is inferred from the user's role (tutor profile vs student profile)
     setProceedIntent: protectedProcedure

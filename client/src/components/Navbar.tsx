@@ -85,7 +85,7 @@ export default function Navbar() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 group">
               <img
-                src="/manus-storage/edunest-logo-v3_fd1a251e.png"
+                src="/manus-storage/edunest-logo-small_2b84d7c3.png"
                 alt="EduNest"
                 className="w-9 h-9 object-contain"
               />

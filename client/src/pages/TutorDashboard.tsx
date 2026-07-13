@@ -700,7 +700,7 @@ export default function TutorDashboard() {
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/manus-storage/edunest-logo-v3_fd1a251e.png" alt="EduNest" className="w-8 h-8 object-contain" />
+            <img src="/manus-storage/edunest-logo-small_2b84d7c3.png" alt="EduNest" className="w-8 h-8 object-contain" />
             <div>
               <p className="text-xs" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>Tutor Dashboard</p>
               <p className="text-sm font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>

@@ -444,3 +444,8 @@
 - [x] Add full article content for remaining 6 blog posts in BlogPost.tsx (jee-maths-tips, online-vs-home-tuition, cbse-board-exam-preparation, importance-of-demo-class, study-habits-for-students, karnataka-cet-guide)
 - [x] Add Local Guides internal linking CTA section on Home page
 - [x] 20/20 tests passing, 0 TypeScript errors
+
+## Round 40 — Logo Fix + Admin Manual Class Start
+- [x] Compress logo to small WebP, re-upload, update all references via shared constant
+- [x] Add manual "Mark Class Started" button in Admin Demo Slots tab
+- [x] 20/20 tests passing, 0 TypeScript errors

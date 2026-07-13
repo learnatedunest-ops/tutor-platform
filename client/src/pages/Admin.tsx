@@ -179,6 +179,18 @@ export default function Admin() {
     onSuccess: () => { refetchDemoSlots(); toast.success("Demo slot status updated"); },
     onError: () => toast.error("Failed to update demo slot status"),
   });
+  const forceClassStartedMutation = trpc.demoSlot.adminForceClassStarted.useMutation({
+    onSuccess: (data) => {
+      refetchDemoSlots();
+      refetchMatches();
+      if (data.alreadyExisted) {
+        toast.success(`Confirmed match already existed (Match #${data.matchId}). No duplicate created.`);
+      } else {
+        toast.success(`✅ Class started! Confirmed Match #${data.matchId} created. Contact details sent to both parties.`);
+      }
+    },
+    onError: (err) => toast.error(`Failed to start class: ${err.message}`),
+  });
 
   // Confirmed Matches — must be before early returns
   const { data: confirmedMatchesList, isLoading: loadingMatches, refetch: refetchMatches } =
@@ -302,7 +314,7 @@ export default function Admin() {
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/manus-storage/edunest-logo-v3_fd1a251e.png" alt="EduNest" className="w-8 h-8 object-contain" />
+            <img src="/manus-storage/edunest-logo-small_2b84d7c3.png" alt="EduNest" className="w-8 h-8 object-contain" />
             <div>
               <span className="text-lg font-extrabold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.68 0.18 50)" }}>
                 Edu<span style={{ color: "oklch(0.14 0.02 270)" }}>Nest</span>
@@ -1011,6 +1023,7 @@ export default function Admin() {
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Created</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Update</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Class Started</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: "oklch(0.95 0.005 80)" }}>
@@ -1058,6 +1071,23 @@ export default function Admin() {
                             <option value="completed">Completed</option>
                             <option value="cancelled">Cancelled</option>
                           </select>
+                        </td>
+                        <td className="px-4 py-4">
+                          {slot.status === 'completed' || slot.status === 'scheduled' ? (
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Mark Demo Slot D${slot.id} as class started?\n\nThis will:\n• Force both tutor and student proceed intent to "Yes"\n• Create a Confirmed Match (if not already done)\n• Send contact details to both parties\n\nOnly use this if both parties agreed but forgot to click the button.`))
+                                  forceClassStartedMutation.mutate({ slotId: slot.id });
+                              }}
+                              disabled={forceClassStartedMutation.isPending}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-600 text-white hover:bg-green-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <CheckCircle2 size={12} />
+                              {forceClassStartedMutation.isPending ? 'Processing…' : 'Mark Started'}
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-300 italic">Schedule first</span>
+                          )}
                         </td>
                       </tr>
                     ))}
