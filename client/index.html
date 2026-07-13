@@ -43,6 +43,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Google Analytics 4
+         HOW TO SET UP:
+         1. Go to https://analytics.google.com and sign in with learn.at.edunest@gmail.com
+         2. Click Admin (gear icon) > Create > Property
+         3. Name it "EduNest", timezone = India (IST), currency = INR
+         4. Choose Web platform, enter https://edunest.courses
+         5. Copy the Measurement ID (looks like G-XXXXXXXXXX)
+         6. Replace BOTH instances of G-XXXXXXXXXX below with your real ID
+         7. Save a checkpoint and click Publish
+    -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
   </head>
 
   <body>

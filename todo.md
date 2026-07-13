@@ -431,3 +431,11 @@
 - [x] Post-payment: add direct-payment message to both parties when fee is processed
 - [x] Reflect class cancellation by admin in My Classes cards for both parties
 - [x] Move T&C content inside modal only — remove any inline display outside
+
+## Round 38 — Blog Local Guides + Google Analytics 4
+- [x] Add 5 SEO blog posts (Local Guides category) to Blog.tsx: Koramangala, Indiranagar, HSR Layout, Whitefield, Jayanagar/JP Nagar
+- [x] Add "Local Guides" category to blog filter
+- [x] Write full article content (~800-1000 words each) for all 5 Local Guides posts in BlogPost.tsx
+- [x] Update sitemap to include all 5 new blog post URLs with priority 0.8
+- [x] Add Google Analytics 4 placeholder script to client/index.html with setup instructions
+- [x] 20/20 tests passing, 0 TypeScript errors
