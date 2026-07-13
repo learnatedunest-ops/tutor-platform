@@ -68,7 +68,9 @@ const mutationLimiter = rateLimit({
 // ─── CORS Policy ─────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
   "https://edunest.courses",
+  "https://www.edunest.courses",
   "https://edututor-zmz25qz7.manus.space",
+  "https://edu-nest.manus.space",
   // Dev origins
   "http://localhost:3000",
   "http://localhost:5173",
@@ -83,6 +85,7 @@ const corsOptions: cors.CorsOptions = {
     if (isManusSpace || ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV === "development") {
       return callback(null, true);
     }
+    console.error(`[CORS] Blocked origin: ${origin}`);
     return callback(new Error("Not allowed by CORS"), false);
   },
   credentials: true,
