@@ -451,7 +451,7 @@
 - [x] 20/20 tests passing, 0 TypeScript errors
 
 ## Round 43 — Favicon + Distance + Smart Pairs Fix
-- [ ] Update favicon to provided logo image (all pages, all users)
-- [ ] Add distance display on student cards in Tutor Dashboard Find Students tab
-- [ ] Fix missing Admin Smart Pairs tab (backend + frontend)
-- [ ] 20/20 tests passing
+- [x] Update favicon to provided logo image (all pages, all users)
+- [x] Add distance display on student cards in Tutor Dashboard Find Students tab
+- [x] Fix missing Admin Smart Pairs tab (backend + frontend)
+- [x] 20/20 tests passing
