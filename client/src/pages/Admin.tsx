@@ -82,7 +82,7 @@ function ViewSheetButton({ logId }: { logId: number }) {
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs" | "cancellations" | "cancelledDemos">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs" | "cancellations" | "cancelledDemos" | "cancelledClasses" | "smartPairs">("inquiries");
   const [tutorForm, setTutorForm] = useState<typeof EMPTY_TUTOR>(EMPTY_TUTOR);
   const [editingTutorId, setEditingTutorId] = useState<number | null>(null);
   const [showTutorForm, setShowTutorForm] = useState(false);
@@ -234,6 +234,14 @@ export default function Admin() {
     onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to clear fee'),
   });
 
+  // Cancelled Classes (confirmed matches that were cancelled)
+  const { data: cancelledClassesList, isLoading: loadingCancelledClasses } =
+    trpc.cancelledClasses.list.useQuery(undefined, { enabled: isAdmin && activeTab === 'cancelledClasses' });
+
+  // Smart Pairs (unmatched student+tutor within 10km, gender match, subject overlap)
+  const { data: smartPairsList, isLoading: loadingSmartPairs } =
+    trpc.smartPairs.list.useQuery(undefined, { enabled: isAdmin && activeTab === 'smartPairs' });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
@@ -356,7 +364,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["inquiries", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs", "cancellations", "cancelledDemos"] as const).map(tab => (
+          {(["inquiries", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs", "cancellations", "cancelledDemos", "cancelledClasses", "smartPairs"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -385,6 +393,10 @@ export default function Admin() {
                 <span className="flex items-center gap-2">🚫 Cancellation Requests {(cancellationRequests?.length ?? 0) > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "cancellations" ? "bg-white/30" : "bg-red-100 text-red-700"}`}>{cancellationRequests?.length}</span>}</span>
               ) : tab === "cancelledDemos" ? (
                 <span className="flex items-center gap-2">❌ Cancelled Demos {(cancelledDemosList?.length ?? 0) > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "cancelledDemos" ? "bg-white/30" : "bg-red-100 text-red-700"}`}>{cancelledDemosList?.length} pending fee</span>}</span>
+              ) : tab === "cancelledClasses" ? (
+                <span className="flex items-center gap-2">🚫 Cancelled Classes <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "cancelledClasses" ? "bg-white/30" : "bg-red-100 text-red-700"}`}>{cancelledClassesList?.length ?? 0}</span></span>
+              ) : tab === "smartPairs" ? (
+                <span className="flex items-center gap-2">🧠 Smart Pairs <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "smartPairs" ? "bg-white/30" : "bg-green-100 text-green-700"}`}>{smartPairsList?.length ?? 0}</span></span>
               ) : (
                 <span className="flex items-center gap-2"><UserCheck size={15} /> Manage Tutors <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
               )}
@@ -1451,6 +1463,108 @@ export default function Admin() {
                     >
                       {clearCancellationFeeMutation.isPending ? 'Processing...' : '✅ Clear Fee'}
                     </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ── Cancelled Classes Tab ── */}
+        {activeTab === "cancelledClasses" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>🚫 Cancelled Classes</h2>
+              <span className="text-sm text-gray-500">{cancelledClassesList?.length ?? 0} cancelled</span>
+            </div>
+            {loadingCancelledClasses ? (
+              <div className="flex items-center justify-center py-12"><div className="w-8 h-8 border-4 border-[oklch(0.68_0.18_50)] border-t-transparent rounded-full animate-spin" /></div>
+            ) : !cancelledClassesList?.length ? (
+              <div className="bg-white rounded-2xl shadow-sm p-10 text-center">
+                <div className="text-4xl mb-3">✅</div>
+                <p className="text-gray-500" style={{ fontFamily: "'Nunito', sans-serif" }}>No cancelled classes yet.</p>
+              </div>
+            ) : (
+              cancelledClassesList.map((cls) => (
+                <div key={cls.id} className="bg-white rounded-2xl shadow-sm p-5 border border-red-100">
+                  <div className="flex flex-wrap gap-3 items-start justify-between mb-3">
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 mb-2">🚫 Cancelled</span>
+                      {cls.cancellationNote && <p className="text-sm text-gray-500 italic mt-1">"{cls.cancellationNote}"</p>}
+                    </div>
+                    <span className="text-xs text-gray-400">{new Date(cls.matchedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-blue-50 rounded-xl p-4">
+                      <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-2">🎓 Tutor</p>
+                      <p className="font-semibold text-gray-800">{cls.tutorName ?? '—'}</p>
+                      <p className="text-sm text-gray-500">{cls.tutorEmail ?? '—'}</p>
+                      <p className="text-sm text-gray-500">{cls.tutorPhone ?? '—'}</p>
+                      <p className="text-sm text-gray-400">{cls.tutorArea ?? '—'}</p>
+                      <p className="text-xs text-gray-400 mt-1">{cls.tutorSubjects ?? '—'}</p>
+                    </div>
+                    <div className="bg-orange-50 rounded-xl p-4">
+                      <p className="text-xs font-bold text-orange-600 uppercase tracking-wide mb-2">👨‍🎓 Student</p>
+                      <p className="font-semibold text-gray-800">{cls.studentName ?? '—'}</p>
+                      <p className="text-sm text-gray-500">{cls.studentEmail ?? '—'}</p>
+                      <p className="text-sm text-gray-500">{cls.studentPhone ?? '—'}</p>
+                      <p className="text-sm text-gray-400">{cls.studentArea ?? '—'}</p>
+                      <p className="text-xs text-gray-400 mt-1">Grade: {cls.studentGrade ?? '—'} | {cls.studentSubjects ?? '—'}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ── Smart Pairs Tab ── */}
+        {activeTab === "smartPairs" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>🧠 Smart Pairs</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Unmatched student–tutor pairs within 10 km · gender preference met · subject overlap</p>
+              </div>
+              <span className="text-sm text-gray-500">{smartPairsList?.length ?? 0} pairs found</span>
+            </div>
+            {loadingSmartPairs ? (
+              <div className="flex items-center justify-center py-12"><div className="w-8 h-8 border-4 border-[oklch(0.68_0.18_50)] border-t-transparent rounded-full animate-spin" /></div>
+            ) : !smartPairsList?.length ? (
+              <div className="bg-white rounded-2xl shadow-sm p-10 text-center">
+                <div className="text-4xl mb-3">🔍</div>
+                <p className="text-gray-500" style={{ fontFamily: "'Nunito', sans-serif" }}>No smart pairs found within 10 km matching all criteria.</p>
+                <p className="text-xs text-gray-400 mt-2">Pairs appear when both tutor and student have set their location, gender preference, and subjects.</p>
+              </div>
+            ) : (
+              smartPairsList.map((pair, idx) => (
+                <div key={`${pair.tutorProfileId}-${pair.studentProfileId}`} className="bg-white rounded-2xl shadow-sm p-5 border border-green-100">
+                  <div className="flex flex-wrap gap-3 items-center justify-between mb-3">
+                    <span className="text-sm font-bold text-gray-400">#{idx + 1}</span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">📍 {pair.distanceKm} km away</span>
+                    {pair.tutorGenderPreference && pair.tutorGenderPreference !== 'no_preference' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">Gender: {pair.tutorGenderPreference}</span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-blue-50 rounded-xl p-4">
+                      <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-2">🎓 Tutor</p>
+                      <p className="font-semibold text-gray-800">{pair.tutorName ?? '—'}</p>
+                      <p className="text-sm text-gray-500">{pair.tutorEmail ?? '—'}</p>
+                      <p className="text-sm text-gray-500">{pair.tutorPhone ?? '—'}</p>
+                      <p className="text-sm text-gray-400">{pair.tutorArea ?? '—'}</p>
+                      <p className="text-xs text-gray-400 mt-1">Subjects: {pair.tutorSubjects ?? '—'}</p>
+                      {pair.tutorGender && <p className="text-xs text-gray-400">Gender: {pair.tutorGender}</p>}
+                    </div>
+                    <div className="bg-orange-50 rounded-xl p-4">
+                      <p className="text-xs font-bold text-orange-600 uppercase tracking-wide mb-2">👨‍🎓 Student</p>
+                      <p className="font-semibold text-gray-800">{pair.studentName ?? '—'}</p>
+                      <p className="text-sm text-gray-500">{pair.studentEmail ?? '—'}</p>
+                      <p className="text-sm text-gray-500">{pair.studentPhone ?? '—'}</p>
+                      <p className="text-sm text-gray-400">{pair.studentArea ?? '—'}</p>
+                      <p className="text-xs text-gray-400 mt-1">Grade: {pair.studentGrade ?? '—'}</p>
+                      <p className="text-xs text-gray-400">Subjects: {pair.studentSubjects ?? '—'}</p>
+                    </div>
                   </div>
                 </div>
               ))

@@ -101,6 +101,8 @@ import {
   cancelDemoByParent,
   clearDemoCancellationFee,
   getCancelledDemosWithPendingFee,
+  getCancelledConfirmedMatches,
+  getSmartPairs,
 } from "./db";
 import { z } from "zod";
 
@@ -1611,6 +1613,16 @@ export const appRouter = router({
         await updateSessionLogPaymentStatus(input.logId, 'sheet_uploaded');
         return { success: true };
       }),
+  }),
+
+  // ─── Admin: Cancelled Classes ──────────────────────────────────────────────
+  cancelledClasses: router({
+    list: adminProcedure.query(async () => getCancelledConfirmedMatches()),
+  }),
+
+  // ─── Admin: Smart Pairs ────────────────────────────────────────────────────
+  smartPairs: router({
+    list: adminProcedure.query(async () => getSmartPairs()),
   }),
 });
 export type AppRouter = typeof appRouter;

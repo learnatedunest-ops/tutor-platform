@@ -1180,3 +1180,115 @@ export async function getCancelledDemosWithPendingFee(): Promise<DemoSlot[]> {
     .where(and(eq(demoSlots.demoCancelledBy, 'parent'), eq(demoSlots.demoCancellationFeeCleared, false)))
     .orderBy(desc(demoSlots.demoCancelledAt));
 }
+
+/** Admin: get all confirmed matches with classStatus = 'cancelled' */
+export async function getCancelledConfirmedMatches() {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({
+    id: confirmedMatches.id,
+    tutorProfileId: confirmedMatches.tutorProfileId,
+    studentProfileId: confirmedMatches.studentProfileId,
+    classStatus: confirmedMatches.classStatus,
+    cancellationNote: confirmedMatches.cancellationNote,
+    matchedAt: confirmedMatches.matchedAt,
+    tutorName: tutorProfiles.name,
+    tutorPhone: tutorProfiles.phone,
+    tutorEmail: tutorProfiles.email,
+    tutorArea: tutorProfiles.area,
+    tutorSubjects: tutorProfiles.subjects,
+    studentName: studentProfiles.name,
+    studentPhone: studentProfiles.phone,
+    studentEmail: studentProfiles.email,
+    studentArea: studentProfiles.area,
+    studentGrade: studentProfiles.grade,
+    studentSubjects: studentProfiles.subjects,
+  })
+    .from(confirmedMatches)
+    .leftJoin(tutorProfiles, eq(confirmedMatches.tutorProfileId, tutorProfiles.id))
+    .leftJoin(studentProfiles, eq(confirmedMatches.studentProfileId, studentProfiles.id))
+    .where(eq(confirmedMatches.classStatus, 'cancelled'))
+    .orderBy(desc(confirmedMatches.matchedAt));
+  return rows;
+}
+
+/** Admin: compute smart pairs — unmatched student+tutor within 10km, gender match, subject overlap */
+export async function getSmartPairs() {
+  const [approvedTutors, activeStudents, activeStudentIds] = await Promise.all([
+    getApprovedTutorProfiles(),
+    getActiveStudentProfiles(),
+    getAllActiveStudentIds(),
+  ]);
+
+  const activeSet = new Set(activeStudentIds);
+  const R = 6371;
+
+  const pairs: Array<{
+    tutorProfileId: number;
+    tutorName: string | null;
+    tutorPhone: string | null;
+    tutorEmail: string | null;
+    tutorArea: string | null;
+    tutorSubjects: string | null;
+    tutorGender: string | null;
+    studentProfileId: number;
+    studentName: string | null;
+    studentPhone: string | null;
+    studentEmail: string | null;
+    studentArea: string | null;
+    studentSubjects: string | null;
+    studentGrade: string | null;
+    tutorGenderPreference: string | null;
+    distanceKm: number;
+  }> = [];
+
+  for (const tutor of approvedTutors) {
+    if (!tutor.latitude || !tutor.longitude) continue;
+    const tLat = parseFloat(tutor.latitude);
+    const tLng = parseFloat(tutor.longitude);
+
+    for (const student of activeStudents) {
+      if (activeSet.has(student.id)) continue;
+      if (!student.latitude || !student.longitude) continue;
+
+      const sLat = parseFloat(student.latitude);
+      const sLng = parseFloat(student.longitude);
+
+      const dLat = (sLat - tLat) * Math.PI / 180;
+      const dLon = (sLng - tLng) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(tLat * Math.PI / 180) * Math.cos(sLat * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+      const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      if (distKm > 10) continue;
+
+      const pref = student.tutorGenderPreference ?? 'no_preference';
+      if (pref !== 'no_preference' && tutor.gender && tutor.gender !== pref) continue;
+
+      const tutorSubjectsLower = (tutor.subjects ?? '').toLowerCase();
+      const studentSubjectList = (student.subjects ?? '').toLowerCase().split(/[,;]+/).map((s: string) => s.trim()).filter(Boolean);
+      const hasOverlap = studentSubjectList.some((sub: string) => tutorSubjectsLower.includes(sub));
+      if (!hasOverlap) continue;
+
+      pairs.push({
+        tutorProfileId: tutor.id,
+        tutorName: tutor.name,
+        tutorPhone: tutor.phone ?? null,
+        tutorEmail: tutor.email ?? null,
+        tutorArea: tutor.area ?? null,
+        tutorSubjects: tutor.subjects,
+        tutorGender: tutor.gender ?? null,
+        studentProfileId: student.id,
+        studentName: student.name,
+        studentPhone: student.phone ?? null,
+        studentEmail: student.email ?? null,
+        studentArea: student.area ?? null,
+        studentSubjects: student.subjects,
+        studentGrade: student.grade,
+        tutorGenderPreference: pref,
+        distanceKm: Math.round(distKm * 10) / 10,
+      });
+    }
+  }
+
+  pairs.sort((a, b) => a.distanceKm - b.distanceKm);
+  return pairs;
+}

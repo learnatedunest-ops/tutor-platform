@@ -1226,9 +1226,10 @@ export default function TutorDashboard() {
                                 <span className="text-sm font-semibold" style={{ color: "oklch(0.14 0.02 270)", fontFamily: "'Poppins', sans-serif" }}>
                                   {student.role === "parent" ? "Parent" : "Student"} — {student.grade ?? "Grade N/A"}
                                 </span>
-                                {student.distanceKm != null && (
-                                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)" }}>
-                                    {student.distanceKm < 1 ? `${Math.round(student.distanceKm * 1000)} m` : `${student.distanceKm.toFixed(1)} km`}
+                                {(student as any).distKm != null && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold flex items-center gap-1" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)" }}>
+                                    <MapPin size={10} />
+                                    {(student as any).distKm < 1 ? `${Math.round((student as any).distKm * 1000)} m away` : `${((student as any).distKm as number).toFixed(1)} km away`}
                                   </span>
                                 )}
                               </div>
