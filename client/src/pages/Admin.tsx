@@ -255,6 +255,20 @@ export default function Admin() {
     onSuccess: () => toast.success('📧 Email sent to student/parent!'),
     onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to send student email'),
   });
+  const moveToDemoSlotMutation = trpc.smartPairs.moveToDemoSlot.useMutation({
+    onSuccess: (data) => toast.success(`📅 Demo slot #${data.slotId} created! Both parties will see it in their dashboards.`),
+    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to create demo slot'),
+  });
+  const [showOnlyUncontacted, setShowOnlyUncontacted] = useState(true);
+  const [demoModalPair, setDemoModalPair] = useState<null | {
+    tutorProfileId: number; studentProfileId: number;
+    tutorName: string; tutorEmail: string;
+    studentName: string; studentEmail: string;
+  }>(null);
+  const [demoDate, setDemoDate] = useState('');
+  const [demoTime, setDemoTime] = useState('');
+  const [demoMode, setDemoMode] = useState<'home_tuition' | 'online' | 'both'>('home_tuition');
+  const [demoNotes, setDemoNotes] = useState('');
 
   if (loading) {
     return (
@@ -1542,25 +1556,114 @@ export default function Admin() {
             const key = `${c.tutorProfileId}-${c.studentProfileId}`;
             if (!contactedMap.has(key)) contactedMap.set(key, { contactedAt: c.contactedAt, contactedBy: c.contactedBy ?? null });
           }
+          const filteredPairs = showOnlyUncontacted
+            ? (smartPairsList ?? []).filter(p => !contactedSet.has(`${p.tutorProfileId}-${p.studentProfileId}`))
+            : (smartPairsList ?? []);
           return (
             <div className="space-y-4">
-              <div className="flex items-center justify-between mb-2">
+              {/* Demo Slot Modal */}
+              {demoModalPair && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setDemoModalPair(null)}>
+                  <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-lg font-bold mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>📅 Schedule Demo Slot</h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      <span className="font-semibold text-blue-700">{demoModalPair.tutorName}</span> ↔ <span className="font-semibold text-orange-700">{demoModalPair.studentName}</span>
+                    </p>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Date</label>
+                        <input type="date" value={demoDate} onChange={e => setDemoDate(e.target.value)}
+                          className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-300"
+                          style={{ borderColor: 'oklch(0.88 0.005 80)' }} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Time</label>
+                        <input type="time" value={demoTime} onChange={e => setDemoTime(e.target.value)}
+                          className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-300"
+                          style={{ borderColor: 'oklch(0.88 0.005 80)' }} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Mode</label>
+                        <select value={demoMode} onChange={e => setDemoMode(e.target.value as 'home_tuition' | 'online' | 'both')}
+                          className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-300"
+                          style={{ borderColor: 'oklch(0.88 0.005 80)' }}>
+                          <option value="home_tuition">Home Tuition</option>
+                          <option value="online">Online</option>
+                          <option value="both">Both</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Notes (optional)</label>
+                        <textarea value={demoNotes} onChange={e => setDemoNotes(e.target.value)}
+                          placeholder="Any notes for the demo..."
+                          rows={2}
+                          className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-300 resize-none"
+                          style={{ borderColor: 'oklch(0.88 0.005 80)' }} />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <button
+                        onClick={() => {
+                          if (!demoDate || !demoTime) { toast.error('Please set date and time'); return; }
+                          moveToDemoSlotMutation.mutate({
+                            tutorProfileId: demoModalPair.tutorProfileId,
+                            studentProfileId: demoModalPair.studentProfileId,
+                            scheduledDate: demoDate,
+                            scheduledTime: demoTime,
+                            mode: demoMode,
+                            notes: demoNotes || undefined,
+                            tutorName: demoModalPair.tutorName,
+                            tutorEmail: demoModalPair.tutorEmail || undefined,
+                            studentName: demoModalPair.studentName,
+                            studentEmail: demoModalPair.studentEmail || undefined,
+                          }, { onSuccess: () => { setDemoModalPair(null); setDemoDate(''); setDemoTime(''); setDemoNotes(''); } });
+                        }}
+                        disabled={moveToDemoSlotMutation.isPending}
+                        className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        {moveToDemoSlotMutation.isPending ? 'Scheduling...' : '📅 Schedule Demo'}
+                      </button>
+                      <button onClick={() => setDemoModalPair(null)}
+                        className="px-4 py-2 rounded-lg border text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                        style={{ borderColor: 'oklch(0.88 0.005 80)' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
                 <div>
                   <h2 className="text-xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>🧠 Smart Pairs</h2>
                   <p className="text-sm text-gray-500 mt-0.5">Unmatched student–tutor pairs within 10 km · gender preference met · subject overlap</p>
                 </div>
-                <span className="text-sm text-gray-500">{smartPairsList?.length ?? 0} pairs found</span>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowOnlyUncontacted(v => !v)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors cursor-pointer ${
+                      showOnlyUncontacted
+                        ? 'bg-orange-500 text-white border-orange-500'
+                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {showOnlyUncontacted ? '🔴 Fresh Leads Only' : '🟢 Show All Pairs'}
+                  </button>
+                  <span className="text-sm text-gray-500">{filteredPairs.length} / {smartPairsList?.length ?? 0} shown</span>
+                </div>
               </div>
               {loadingSmartPairs ? (
                 <div className="flex items-center justify-center py-12"><div className="w-8 h-8 border-4 border-[oklch(0.68_0.18_50)] border-t-transparent rounded-full animate-spin" /></div>
-              ) : !smartPairsList?.length ? (
+              ) : !filteredPairs.length ? (
                 <div className="bg-white rounded-2xl shadow-sm p-10 text-center">
                   <div className="text-4xl mb-3">🔍</div>
-                  <p className="text-gray-500" style={{ fontFamily: "'Nunito', sans-serif" }}>No smart pairs found within 10 km matching all criteria.</p>
+                  <p className="text-gray-500" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                    {showOnlyUncontacted ? 'All pairs have been contacted! Toggle to see all pairs.' : 'No smart pairs found within 10 km matching all criteria.'}
+                  </p>
                   <p className="text-xs text-gray-400 mt-2">Pairs appear when both tutor and student have set their location, gender preference, and subjects.</p>
                 </div>
               ) : (
-                smartPairsList.map((pair, idx) => {
+                filteredPairs.map((pair, idx) => {
                   const pairKey = `${pair.tutorProfileId}-${pair.studentProfileId}`;
                   const isContacted = contactedSet.has(pairKey);
                   const contactRecord = contactedMap.get(pairKey);
@@ -1606,7 +1709,10 @@ export default function Admin() {
                               </a>
                             )}
                             {pair.tutorPhone && (
-                              <a href={`https://wa.me/91${pair.tutorPhone.replace(/^\+91/, '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
+                              <a
+                                href={`https://wa.me/91${pair.tutorPhone.replace(/^\+91/, '').replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${pair.tutorName ?? 'there'}, we found a great student for you on EduNest! Can we connect?`)}`}
+                                target="_blank" rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
                                 💬 WhatsApp
                               </a>
                             )}
@@ -1648,7 +1754,10 @@ export default function Admin() {
                               </a>
                             )}
                             {pair.studentPhone && (
-                              <a href={`https://wa.me/91${pair.studentPhone.replace(/^\+91/, '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
+                              <a
+                                href={`https://wa.me/91${pair.studentPhone.replace(/^\+91/, '').replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${pair.studentName ?? 'there'}, we found a great tutor for you on EduNest! Can we connect?`)}`}
+                                target="_blank" rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
                                 💬 WhatsApp
                               </a>
                             )}
@@ -1673,6 +1782,28 @@ export default function Admin() {
                             )}
                           </div>
                         </div>
+                      </div>
+                      {/* Move to Demo Slot */}
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <button
+                          onClick={() => {
+                            setDemoModalPair({
+                              tutorProfileId: pair.tutorProfileId,
+                              studentProfileId: pair.studentProfileId,
+                              tutorName: pair.tutorName ?? 'Tutor',
+                              tutorEmail: pair.tutorEmail ?? '',
+                              studentName: pair.studentName ?? 'Student',
+                              studentEmail: pair.studentEmail ?? '',
+                            });
+                            setDemoDate('');
+                            setDemoTime('');
+                            setDemoMode('home_tuition');
+                            setDemoNotes('');
+                          }}
+                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all shadow-sm cursor-pointer"
+                        >
+                          📅 Move to Demo Slot
+                        </button>
                       </div>
                     </div>
                   );

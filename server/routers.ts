@@ -107,6 +107,7 @@ import {
   getSmartPairContacts,
   markSmartPairTutorEmailSent,
   markSmartPairStudentEmailSent,
+  adminCreateDemoSlotForPair,
 } from "./db";
 import { z } from "zod";
 
@@ -1698,6 +1699,67 @@ export const appRouter = router({
         });
         await markSmartPairStudentEmailSent(input.tutorProfileId, input.studentProfileId);
         return { success: true };
+      }),
+
+    /**
+     * Admin: move a Smart Pair directly to a scheduled demo slot.
+     * Creates the demo interest + demo slot without either party needing to act.
+     */
+    moveToDemoSlot: adminProcedure
+      .input(z.object({
+        tutorProfileId: z.number(),
+        studentProfileId: z.number(),
+        scheduledDate: z.string().min(1).max(32).trim(),
+        scheduledTime: z.string().min(1).max(32).trim(),
+        mode: z.enum(['home_tuition', 'online', 'both']).default('home_tuition'),
+        notes: z.string().max(500).trim().optional(),
+        // For notification emails
+        tutorName: z.string().optional(),
+        tutorEmail: z.string().email().optional(),
+        studentName: z.string().optional(),
+        studentEmail: z.string().email().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const slot = await adminCreateDemoSlotForPair(
+          input.studentProfileId,
+          input.tutorProfileId,
+          input.scheduledDate,
+          input.scheduledTime,
+          input.mode,
+          input.notes,
+        );
+
+        // Notify owner
+        await notifyOwner({
+          title: `📅 Admin Scheduled Demo from Smart Pairs`,
+          content: `Admin scheduled a demo for Tutor Profile #${input.tutorProfileId} (${input.tutorName ?? ''}) and Student Profile #${input.studentProfileId} (${input.studentName ?? ''}) on ${input.scheduledDate} at ${input.scheduledTime}. Demo Slot ID: ${slot.id}.`,
+        }).catch(() => {});
+
+        // Send notification emails to both parties if emails are provided
+        if (input.tutorEmail && input.tutorName && input.studentName) {
+          sendSmartPairEmailToTutor({
+            tutorEmail: input.tutorEmail,
+            tutorName: input.tutorName,
+            studentName: input.studentName,
+            studentGrade: '',
+            studentSubjects: '',
+            studentArea: '',
+            distanceKm: 0,
+          }).catch(() => {});
+        }
+        if (input.studentEmail && input.studentName && input.tutorName) {
+          sendSmartPairEmailToStudent({
+            studentEmail: input.studentEmail,
+            studentName: input.studentName,
+            tutorName: input.tutorName,
+            tutorSubjects: '',
+            tutorArea: '',
+            tutorQualification: '',
+            distanceKm: 0,
+          }).catch(() => {});
+        }
+
+        return { success: true, slotId: slot.id };
       }),
   }),
 });

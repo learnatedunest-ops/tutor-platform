@@ -468,3 +468,10 @@
 - [x] Seed 100 bot tutor profiles across major Bengaluru areas (realistic names, subjects, lat/lng)
 - [x] Seed 100 bot student/parent profiles across major Bengaluru areas (realistic names, subjects, budgets, lat/lng)
 - [x] 20/20 tests passing, 0 TypeScript errors
+
+## Round 46 — Smart Pairs Enhancements
+
+- [x] Smart Pairs: contacted filter toggle (show only uncontacted pairs)
+- [x] Smart Pairs: WhatsApp pre-filled message templates for tutor and student
+- [x] Smart Pairs: Admin "Move to Demo Slot" — admin creates demo slot for a pair without party involvement
+- [x] Backend: adminProcedure to create a demo slot for a smart pair

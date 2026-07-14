@@ -1351,3 +1351,70 @@ export async function markSmartPairStudentEmailSent(tutorProfileId: number, stud
       .where(eq(smartPairContacts.id, rows[0].id));
   }
 }
+
+/**
+ * Admin: create a student demo interest + demo slot for a Smart Pair
+ * without requiring either party to initiate. Returns the created demo slot.
+ */
+export async function adminCreateDemoSlotForPair(
+  studentProfileId: number,
+  tutorProfileId: number,
+  scheduledDate: string,
+  scheduledTime: string,
+  mode: "home_tuition" | "online" | "both",
+  notes?: string
+): Promise<DemoSlot> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Check if a demo interest already exists for this pair
+  let interest = await getStudentDemoInterestByPair(studentProfileId, tutorProfileId);
+  if (!interest) {
+    // Create a synthetic student demo interest (admin-initiated)
+    await db.insert(studentDemoInterests).values({
+      studentProfileId,
+      tutorProfileId,
+      message: "Admin-initiated via Smart Pairs",
+      status: "confirmed",
+    });
+    // Fetch the newly created record
+    const rows = await db.select().from(studentDemoInterests)
+      .where(and(
+        eq(studentDemoInterests.studentProfileId, studentProfileId),
+        eq(studentDemoInterests.tutorProfileId, tutorProfileId),
+      ))
+      .orderBy(desc(studentDemoInterests.createdAt))
+      .limit(1);
+    interest = rows[0] ?? null;
+  }
+  if (!interest) throw new Error("Failed to create demo interest record.");
+
+  // Check if a demo slot already exists for this interest
+  const existingSlot = await getDemoSlotByInterestId(interest.id);
+  if (existingSlot) {
+    // Update the existing slot with the new schedule
+    await updateDemoSlotSchedule(existingSlot.id, scheduledDate, scheduledTime, notes);
+    const updated = await getDemoSlotById(existingSlot.id);
+    return updated!;
+  }
+
+  // Create the demo slot — admin-initiated so parentAccepted=yes immediately
+  await db.insert(demoSlots).values({
+    studentDemoInterestId: interest.id,
+    studentProfileId,
+    tutorProfileId,
+    mode,
+    status: "scheduled",
+    interestDirection: "student_to_tutor",
+    parentAccepted: "yes",
+    scheduledDate,
+    scheduledTime,
+    notes: notes ?? null,
+  });
+
+  const rows = await db.select().from(demoSlots)
+    .where(eq(demoSlots.studentDemoInterestId, interest.id))
+    .orderBy(desc(demoSlots.createdAt))
+    .limit(1);
+  return rows[0]!;
+}
