@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { ENV } from "./_core/env";
 import { notifyOwner } from "./_core/notification";
-import { sendContactRevealToStudent, sendContactRevealToTutor, sendDemoBookingEmail, sendInquiryEmail, sendOtpEmail, sendParentPayNowEmail, sendSmartPairEmailToStudent, sendSmartPairEmailToTutor, sendTutorApplicationEmail, sendTutorFeePaidEmail } from "./email";
+import { sendContactRevealToStudent, sendContactRevealToTutor, sendDemoBookingEmail, sendInquiryEmail, sendOtpEmail, sendParentPayNowEmail, sendTutorApplicationEmail, sendTutorFeePaidEmail } from "./email";
 import { notifyAdminDemoScheduled, notifyAdminSheetUploaded, notifyAdminParentPaid, notifyAdminCancellationRequested } from "./whatsapp";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -103,10 +103,6 @@ import {
   getCancelledDemosWithPendingFee,
   getCancelledConfirmedMatches,
   getSmartPairs,
-  markSmartPairContacted,
-  getSmartPairContacts,
-  markSmartPairTutorEmailSent,
-  markSmartPairStudentEmailSent,
 } from "./db";
 import { z } from "zod";
 
@@ -1627,78 +1623,6 @@ export const appRouter = router({
   // ─── Admin: Smart Pairs ────────────────────────────────────────────────────
   smartPairs: router({
     list: adminProcedure.query(async () => getSmartPairs()),
-
-    listContacted: adminProcedure.query(async () => getSmartPairContacts()),
-
-    markContacted: adminProcedure
-      .input(z.object({
-        tutorProfileId: z.number(),
-        studentProfileId: z.number(),
-        notes: z.string().optional(),
-        contactedBy: z.string().optional(),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        const adminName = ctx.user.name ?? 'Admin';
-        await markSmartPairContacted(
-          input.tutorProfileId,
-          input.studentProfileId,
-          input.contactedBy ?? adminName,
-          input.notes,
-        );
-        return { success: true };
-      }),
-
-    sendTutorEmail: adminProcedure
-      .input(z.object({
-        tutorProfileId: z.number(),
-        studentProfileId: z.number(),
-        tutorEmail: z.string().email(),
-        tutorName: z.string(),
-        studentName: z.string(),
-        studentGrade: z.string(),
-        studentSubjects: z.string(),
-        studentArea: z.string(),
-        distanceKm: z.number(),
-      }))
-      .mutation(async ({ input }) => {
-        await sendSmartPairEmailToTutor({
-          tutorEmail: input.tutorEmail,
-          tutorName: input.tutorName,
-          studentName: input.studentName,
-          studentGrade: input.studentGrade,
-          studentSubjects: input.studentSubjects,
-          studentArea: input.studentArea,
-          distanceKm: input.distanceKm,
-        });
-        await markSmartPairTutorEmailSent(input.tutorProfileId, input.studentProfileId);
-        return { success: true };
-      }),
-
-    sendStudentEmail: adminProcedure
-      .input(z.object({
-        tutorProfileId: z.number(),
-        studentProfileId: z.number(),
-        studentEmail: z.string().email(),
-        studentName: z.string(),
-        tutorName: z.string(),
-        tutorSubjects: z.string(),
-        tutorArea: z.string(),
-        tutorQualification: z.string(),
-        distanceKm: z.number(),
-      }))
-      .mutation(async ({ input }) => {
-        await sendSmartPairEmailToStudent({
-          studentEmail: input.studentEmail,
-          studentName: input.studentName,
-          tutorName: input.tutorName,
-          tutorSubjects: input.tutorSubjects,
-          tutorArea: input.tutorArea,
-          tutorQualification: input.tutorQualification,
-          distanceKm: input.distanceKm,
-        });
-        await markSmartPairStudentEmailSent(input.tutorProfileId, input.studentProfileId);
-        return { success: true };
-      }),
   }),
 });
 export type AppRouter = typeof appRouter;

@@ -241,20 +241,6 @@ export default function Admin() {
   // Smart Pairs (unmatched student+tutor within 10km, gender match, subject overlap)
   const { data: smartPairsList, isLoading: loadingSmartPairs } =
     trpc.smartPairs.list.useQuery(undefined, { enabled: isAdmin && activeTab === 'smartPairs' });
-  const { data: smartPairContactsList, refetch: refetchSmartPairContacts } =
-    trpc.smartPairs.listContacted.useQuery(undefined, { enabled: isAdmin && activeTab === 'smartPairs' });
-  const markContactedMutation = trpc.smartPairs.markContacted.useMutation({
-    onSuccess: () => { refetchSmartPairContacts(); toast.success('✅ Pair marked as contacted!'); },
-    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to mark as contacted'),
-  });
-  const sendTutorEmailMutation = trpc.smartPairs.sendTutorEmail.useMutation({
-    onSuccess: () => toast.success('📧 Email sent to tutor!'),
-    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to send tutor email'),
-  });
-  const sendStudentEmailMutation = trpc.smartPairs.sendStudentEmail.useMutation({
-    onSuccess: () => toast.success('📧 Email sent to student/parent!'),
-    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to send student email'),
-  });
 
   if (loading) {
     return (
@@ -1533,158 +1519,58 @@ export default function Admin() {
         )}
 
         {/* ── Smart Pairs Tab ── */}
-        {activeTab === "smartPairs" && (() => {
-          // Build a Set of contacted pair keys for O(1) lookup
-          const contactedSet = new Set(
-            (smartPairContactsList ?? []).map(c => `${c.tutorProfileId}-${c.studentProfileId}`)
-          );
-          // Build a map of most recent contact record per pair key
-          const contactedMap = new Map<string, { contactedAt: Date; contactedBy: string | null }>(); 
-          for (const c of (smartPairContactsList ?? [])) {
-            const key = `${c.tutorProfileId}-${c.studentProfileId}`;
-            if (!contactedMap.has(key)) contactedMap.set(key, { contactedAt: c.contactedAt, contactedBy: c.contactedBy ?? null });
-          }
-          return (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h2 className="text-xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>🧠 Smart Pairs</h2>
-                  <p className="text-sm text-gray-500 mt-0.5">Unmatched student–tutor pairs within 10 km · gender preference met · subject overlap</p>
-                </div>
-                <span className="text-sm text-gray-500">{smartPairsList?.length ?? 0} pairs found</span>
+        {activeTab === "smartPairs" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>🧠 Smart Pairs</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Unmatched student–tutor pairs within 10 km · gender preference met · subject overlap</p>
               </div>
-              {loadingSmartPairs ? (
-                <div className="flex items-center justify-center py-12"><div className="w-8 h-8 border-4 border-[oklch(0.68_0.18_50)] border-t-transparent rounded-full animate-spin" /></div>
-              ) : !smartPairsList?.length ? (
-                <div className="bg-white rounded-2xl shadow-sm p-10 text-center">
-                  <div className="text-4xl mb-3">🔍</div>
-                  <p className="text-gray-500" style={{ fontFamily: "'Nunito', sans-serif" }}>No smart pairs found within 10 km matching all criteria.</p>
-                  <p className="text-xs text-gray-400 mt-2">Pairs appear when both tutor and student have set their location, gender preference, and subjects.</p>
-                </div>
-              ) : (
-                smartPairsList.map((pair, idx) => {
-                  const pairKey = `${pair.tutorProfileId}-${pair.studentProfileId}`;
-                  const isContacted = contactedSet.has(pairKey);
-                  const contactRecord = contactedMap.get(pairKey);
-                  return (
-                    <div key={pairKey} className={`bg-white rounded-2xl shadow-sm p-5 border ${isContacted ? 'border-green-400 bg-green-50/30' : 'border-green-100'}`}>
-                      {/* Header row */}
-                      <div className="flex flex-wrap gap-3 items-center justify-between mb-3">
-                        <span className="text-sm font-bold text-gray-400">#{idx + 1}</span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">📍 {pair.distanceKm} km away</span>
-                        {pair.tutorGenderPreference && pair.tutorGenderPreference !== 'no_preference' && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">Gender: {pair.tutorGenderPreference}</span>
-                        )}
-                        {isContacted ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-600 text-white">
-                            ✅ Contacted {contactRecord ? `· ${new Date(contactRecord.contactedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}` : ''}
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => markContactedMutation.mutate({ tutorProfileId: pair.tutorProfileId, studentProfileId: pair.studentProfileId })}
-                            disabled={markContactedMutation.isPending}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 hover:bg-yellow-200 transition-colors disabled:opacity-50 cursor-pointer"
-                          >
-                            {markContactedMutation.isPending ? '...' : '📞 Mark as Contacted'}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Cards */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Tutor card */}
-                        <div className="bg-blue-50 rounded-xl p-4">
-                          <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-2">🎓 Tutor</p>
-                          <p className="font-semibold text-gray-800">{pair.tutorName ?? '—'}</p>
-                          <p className="text-sm text-gray-500">{pair.tutorEmail ?? '—'}</p>
-                          <p className="text-sm text-gray-500">{pair.tutorPhone ?? '—'}</p>
-                          <p className="text-sm text-gray-400">{pair.tutorArea ?? '—'}</p>
-                          <p className="text-xs text-gray-400 mt-1">Subjects: {pair.tutorSubjects ?? '—'}</p>
-                          {pair.tutorGender && <p className="text-xs text-gray-400">Gender: {pair.tutorGender}</p>}
-                          {/* Tutor action links */}
-                          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-blue-200">
-                            {pair.tutorPhone && (
-                              <a href={`tel:${pair.tutorPhone}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-                                📞 Call Tutor
-                              </a>
-                            )}
-                            {pair.tutorPhone && (
-                              <a href={`https://wa.me/91${pair.tutorPhone.replace(/^\+91/, '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
-                                💬 WhatsApp
-                              </a>
-                            )}
-                            {pair.tutorEmail && (
-                              <button
-                                onClick={() => sendTutorEmailMutation.mutate({
-                                  tutorProfileId: pair.tutorProfileId,
-                                  studentProfileId: pair.studentProfileId,
-                                  tutorEmail: pair.tutorEmail!,
-                                  tutorName: pair.tutorName ?? 'Tutor',
-                                  studentName: pair.studentName ?? 'Student',
-                                  studentGrade: pair.studentGrade ?? '',
-                                  studentSubjects: pair.studentSubjects ?? '',
-                                  studentArea: pair.studentArea ?? '',
-                                  distanceKm: pair.distanceKm,
-                                })}
-                                disabled={sendTutorEmailMutation.isPending}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500 text-white hover:bg-indigo-600 transition-colors disabled:opacity-50 cursor-pointer"
-                              >
-                                📧 Email Tutor
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Student / Parent card */}
-                        <div className="bg-orange-50 rounded-xl p-4">
-                          <p className="text-xs font-bold text-orange-600 uppercase tracking-wide mb-2">👨‍🎓 Student / Parent</p>
-                          <p className="font-semibold text-gray-800">{pair.studentName ?? '—'}</p>
-                          <p className="text-sm text-gray-500">{pair.studentEmail ?? '—'}</p>
-                          <p className="text-sm text-gray-500">{pair.studentPhone ?? '—'}</p>
-                          <p className="text-sm text-gray-400">{pair.studentArea ?? '—'}</p>
-                          <p className="text-xs text-gray-400 mt-1">Grade: {pair.studentGrade ?? '—'}</p>
-                          <p className="text-xs text-gray-400">Subjects: {pair.studentSubjects ?? '—'}</p>
-                          {/* Student action links */}
-                          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-orange-200">
-                            {pair.studentPhone && (
-                              <a href={`tel:${pair.studentPhone}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-colors">
-                                📞 Call Parent
-                              </a>
-                            )}
-                            {pair.studentPhone && (
-                              <a href={`https://wa.me/91${pair.studentPhone.replace(/^\+91/, '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
-                                💬 WhatsApp
-                              </a>
-                            )}
-                            {pair.studentEmail && (
-                              <button
-                                onClick={() => sendStudentEmailMutation.mutate({
-                                  tutorProfileId: pair.tutorProfileId,
-                                  studentProfileId: pair.studentProfileId,
-                                  studentEmail: pair.studentEmail!,
-                                  studentName: pair.studentName ?? 'Student',
-                                  tutorName: pair.tutorName ?? 'Tutor',
-                                  tutorSubjects: pair.tutorSubjects ?? '',
-                                  tutorArea: pair.tutorArea ?? '',
-                                  tutorQualification: '',
-                                  distanceKm: pair.distanceKm,
-                                })}
-                                disabled={sendStudentEmailMutation.isPending}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500 text-white hover:bg-indigo-600 transition-colors disabled:opacity-50 cursor-pointer"
-                              >
-                                📧 Email Parent
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+              <span className="text-sm text-gray-500">{smartPairsList?.length ?? 0} pairs found</span>
             </div>
-          );
-        })()}
+            {loadingSmartPairs ? (
+              <div className="flex items-center justify-center py-12"><div className="w-8 h-8 border-4 border-[oklch(0.68_0.18_50)] border-t-transparent rounded-full animate-spin" /></div>
+            ) : !smartPairsList?.length ? (
+              <div className="bg-white rounded-2xl shadow-sm p-10 text-center">
+                <div className="text-4xl mb-3">🔍</div>
+                <p className="text-gray-500" style={{ fontFamily: "'Nunito', sans-serif" }}>No smart pairs found within 10 km matching all criteria.</p>
+                <p className="text-xs text-gray-400 mt-2">Pairs appear when both tutor and student have set their location, gender preference, and subjects.</p>
+              </div>
+            ) : (
+              smartPairsList.map((pair, idx) => (
+                <div key={`${pair.tutorProfileId}-${pair.studentProfileId}`} className="bg-white rounded-2xl shadow-sm p-5 border border-green-100">
+                  <div className="flex flex-wrap gap-3 items-center justify-between mb-3">
+                    <span className="text-sm font-bold text-gray-400">#{idx + 1}</span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">📍 {pair.distanceKm} km away</span>
+                    {pair.tutorGenderPreference && pair.tutorGenderPreference !== 'no_preference' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">Gender: {pair.tutorGenderPreference}</span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-blue-50 rounded-xl p-4">
+                      <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-2">🎓 Tutor</p>
+                      <p className="font-semibold text-gray-800">{pair.tutorName ?? '—'}</p>
+                      <p className="text-sm text-gray-500">{pair.tutorEmail ?? '—'}</p>
+                      <p className="text-sm text-gray-500">{pair.tutorPhone ?? '—'}</p>
+                      <p className="text-sm text-gray-400">{pair.tutorArea ?? '—'}</p>
+                      <p className="text-xs text-gray-400 mt-1">Subjects: {pair.tutorSubjects ?? '—'}</p>
+                      {pair.tutorGender && <p className="text-xs text-gray-400">Gender: {pair.tutorGender}</p>}
+                    </div>
+                    <div className="bg-orange-50 rounded-xl p-4">
+                      <p className="text-xs font-bold text-orange-600 uppercase tracking-wide mb-2">👨‍🎓 Student</p>
+                      <p className="font-semibold text-gray-800">{pair.studentName ?? '—'}</p>
+                      <p className="text-sm text-gray-500">{pair.studentEmail ?? '—'}</p>
+                      <p className="text-sm text-gray-500">{pair.studentPhone ?? '—'}</p>
+                      <p className="text-sm text-gray-400">{pair.studentArea ?? '—'}</p>
+                      <p className="text-xs text-gray-400 mt-1">Grade: {pair.studentGrade ?? '—'}</p>
+                      <p className="text-xs text-gray-400">Subjects: {pair.studentSubjects ?? '—'}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
       </main>
     </div>
