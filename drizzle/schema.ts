@@ -192,17 +192,17 @@ export const tutorProfiles = mysqlTable("tutor_profiles", {
   mode: mysqlEnum("mode", ["home_tuition", "online", "both"]).default("both").notNull(),
   bio: text("bio"),
   // Education & Work Experience
-  education: text("education"),        // e.g. "B.Tech IIT Bombay (2015-2019), M.Sc Mathematics Delhi University (2019-2021)"
-  workExperience: text("workExperience"), // e.g. "Senior Maths Tutor at Byju's (2021-2023), Freelance tutor (2023-present)"
+  education: text("education"),
+  workExperience: text("workExperience"),
   // Location
   latitude: decimal("latitude", { precision: 10, scale: 7 }),
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
   fullAddress: text("fullAddress"),
   area: varchar("area", { length: 128 }),
   // Personal details
-  gender: mysqlEnum("gender", ["male", "female", "other"]),  // Tutor's gender
+  gender: mysqlEnum("gender", ["male", "female", "other"]),
   // Payment
-  upiId: varchar("upiId", { length: 64 }),              // Tutor's UPI ID for receiving payment
+  upiId: varchar("upiId", { length: 64 }),
   // Phone verification
   phoneVerified: mysqlEnum("phoneVerified", ["yes", "no"]).default("no").notNull(),
   // Status
@@ -222,8 +222,6 @@ export const tutorInterests = mysqlTable("tutor_interests", {
   tutorProfileId: int("tutorProfileId").notNull(),    // FK → tutor_profiles.id
   studentProfileId: int("studentProfileId").notNull(), // FK → student_profiles.id
   message: text("message"),
-  // Interest goes directly to student — no admin gate
-  // student accepts or declines directly
   status: mysqlEnum("status", ["pending", "accepted", "declined"]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -251,11 +249,11 @@ export const studentProfiles = mysqlTable("student_profiles", {
   subjects: varchar("subjects", { length: 512 }).notNull(),
   mode: mysqlEnum("mode", ["home_tuition", "online", "both"]).notNull(),
   // Schedule
-  demoTime: varchar("demoTime", { length: 128 }),       // preferred demo class time
-  regularTime: varchar("regularTime", { length: 128 }), // preferred regular class time
-  daysPerWeek: varchar("daysPerWeek", { length: 128 }),  // e.g. "mon, tue, wed"
-  sessionsPerWeek: varchar("sessionsPerWeek", { length: 32 }), // e.g. "5"
-  sessionDuration: varchar("sessionDuration", { length: 64 }), // e.g. "1 hr"
+  demoTime: varchar("demoTime", { length: 128 }),
+  regularTime: varchar("regularTime", { length: 128 }),
+  daysPerWeek: varchar("daysPerWeek", { length: 128 }),
+  sessionsPerWeek: varchar("sessionsPerWeek", { length: 32 }),
+  sessionDuration: varchar("sessionDuration", { length: 64 }),
   // Budget
   budget: varchar("budget", { length: 64 }),
   specialRequirements: text("specialRequirements"),
@@ -286,8 +284,6 @@ export const studentDemoInterests = mysqlTable("student_demo_interests", {
   studentProfileId: int("studentProfileId").notNull(),  // FK → student_profiles.id
   tutorProfileId: int("tutorProfileId").notNull(),       // FK → tutor_profiles.id
   message: text("message"),
-  // Interest goes directly to tutor — no admin gate
-  // tutor accepts or declines directly
   status: mysqlEnum("status", ["pending", "confirmed", "cancelled"]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -298,8 +294,6 @@ export type InsertStudentDemoInterest = typeof studentDemoInterests.$inferInsert
 
 /**
  * OTP Verifications — stores one-time passcodes for phone number verification.
- * A new row is created each time an OTP is requested; old rows are invalidated
- * by checking expiresAt. The phone field stores the E.164 number being verified.
  */
 export const otpVerifications = mysqlTable("otp_verifications", {
   id: int("id").autoincrement().primaryKey(),
@@ -322,27 +316,19 @@ export const demoSlots = mysqlTable("demo_slots", {
   studentDemoInterestId: int("studentDemoInterestId").notNull().unique(), // FK → student_demo_interests.id
   studentProfileId: int("studentProfileId").notNull(),   // FK → student_profiles.id
   tutorProfileId: int("tutorProfileId").notNull(),        // FK → tutor_profiles.id
-  scheduledDate: varchar("scheduledDate", { length: 32 }),  // e.g. "2024-08-15"
-  scheduledTime: varchar("scheduledTime", { length: 32 }),  // e.g. "10:00 AM"
-  // Mode comes from the student's registered preference (home_tuition / online / both)
+  scheduledDate: varchar("scheduledDate", { length: 32 }),
+  scheduledTime: varchar("scheduledTime", { length: 32 }),
   mode: mysqlEnum("mode", ["home_tuition", "online", "both"]).default("online").notNull(),
   notes: text("notes"),
   status: mysqlEnum("status", ["pending_schedule", "scheduled", "completed", "cancelled"]).default("pending_schedule").notNull(),
-  // Which party initiated: tutor_to_student (tutor interest) or student_to_tutor (student demo interest)
   interestDirection: mysqlEnum("interestDirection", ["tutor_to_student", "student_to_tutor"]).default("student_to_tutor").notNull(),
-  // For tutor-initiated: parent must accept before scheduling is unlocked
   parentAccepted: mysqlEnum("parentAccepted", ["yes", "no", "pending"]).default("pending").notNull(),
-  // Tutor confirms they are coming for the demo
   tutorConfirmedComing: mysqlEnum("tutorConfirmedComing", ["yes", "no", "pending"]).default("pending").notNull(),
-  // Tutor's suggested reschedule (when they can't make the parent's chosen time)
   tutorSuggestedDate: varchar("tutorSuggestedDate", { length: 32 }),
   tutorSuggestedTime: varchar("tutorSuggestedTime", { length: 32 }),
-  // Parent's response to tutor's reschedule suggestion
   parentRescheduleResponse: mysqlEnum("parentRescheduleResponse", ["accepted", "declined"]),
-  // Post-demo proceed intent: both parties express yes/no to continue
   tutorProceedIntent: mysqlEnum("tutorProceedIntent", ["yes", "no"]),
   studentProceedIntent: mysqlEnum("studentProceedIntent", ["yes", "no"]),
-  // Demo cancellation by parent — triggers ₹350 cancellation fee
   demoCancelledBy: mysqlEnum("demoCancelledBy", ["parent"]),
   demoCancelledAt: timestamp("demoCancelledAt"),
   demoCancellationFeeCleared: boolean("demoCancellationFeeCleared").default(false).notNull(),
@@ -362,7 +348,6 @@ export const confirmedMatches = mysqlTable("confirmed_matches", {
   demoSlotId: int("demoSlotId").notNull().unique(),       // FK → demo_slots.id
   tutorProfileId: int("tutorProfileId").notNull(),        // FK → tutor_profiles.id
   studentProfileId: int("studentProfileId").notNull(),    // FK → student_profiles.id
-  // Snapshot of contact details at time of match (for admin records)
   tutorName: varchar("tutorName", { length: 128 }),
   tutorEmail: varchar("tutorEmail", { length: 320 }),
   tutorPhone: varchar("tutorPhone", { length: 20 }),
@@ -372,12 +357,8 @@ export const confirmedMatches = mysqlTable("confirmed_matches", {
   studentArea: varchar("studentArea", { length: 128 }),
   studentGrade: varchar("studentGrade", { length: 64 }),
   studentSubjects: text("studentSubjects"),
-  // Payment amount from student's registered budget (shown to parent on payment request)
   paymentAmount: varchar("paymentAmount", { length: 64 }),
-  // Admin sets this to 'got_a_class' once both parties confirmed and class is arranged
-  // classStatus values: matched | got_a_class | cancellation_requested | cancelled
   classStatus: varchar("classStatus", { length: 32 }).default("matched"),
-  // Cancellation request fields
   cancellationRequestedBy: mysqlEnum("cancellationRequestedBy", ["tutor", "parent"]),
   cancellationRequestedAt: timestamp("cancellationRequestedAt"),
   cancellationNote: text("cancellationNote"),
@@ -399,12 +380,9 @@ export const sessionLogs = mysqlTable("session_logs", {
   studentProfileId: int("studentProfileId").notNull(),
   tutorName: varchar("tutorName", { length: 128 }),
   studentName: varchar("studentName", { length: 128 }),
-  // Uploaded completed sheet (S3 key / URL)
   uploadedSheetUrl: text("uploadedSheetUrl"),
   uploadedAt: timestamp("uploadedAt"),
-  // Payment status: pending → sheet_uploaded → parent_paid → payment_processed
   paymentStatus: mysqlEnum("paymentStatus", ["pending", "sheet_uploaded", "parent_paid", "payment_processed"]).default("pending").notNull(),
-  // Parent payment tracking
   parentPaid: boolean("parentPaid").default(false).notNull(),
   parentPaidAt: timestamp("parentPaidAt"),
   parentPaymentNote: varchar("parentPaymentNote", { length: 256 }),
