@@ -544,3 +544,105 @@ export async function sendTutorFeePaidEmail(data: {
     console.warn("[Email] Failed to send tutor fee-paid email:", err);
   }
 }
+
+/**
+ * Send "We found a student for you!" email to a tutor from Smart Pairs.
+ */
+export async function sendSmartPairEmailToTutor(data: {
+  tutorEmail: string;
+  tutorName: string;
+  studentName: string;
+  studentGrade: string;
+  studentSubjects: string;
+  studentArea: string;
+  distanceKm: number;
+}): Promise<void> {
+  const html = `
+    <div style="font-family: 'Poppins', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+      <div style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 32px 40px; text-align: center;">
+        <h1 style="color: #fff; margin: 0; font-size: 26px; font-weight: 700;">🎉 Great News, ${data.tutorName}!</h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 15px;">EduNest has found a student for you</p>
+      </div>
+      <div style="padding: 32px 40px;">
+        <p style="color: #374151; font-size: 15px; line-height: 1.6;">Hi <strong>${data.tutorName}</strong>,</p>
+        <p style="color: #374151; font-size: 15px; line-height: 1.6;">We found a student who is looking for a tutor matching your profile. Here are the details:</p>
+        <div style="background: #fff7ed; border-left: 4px solid #f97316; border-radius: 8px; padding: 20px 24px; margin: 20px 0;">
+          <p style="margin: 0 0 8px; color: #92400e; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Student Details</p>
+          <p style="margin: 4px 0; color: #374151; font-size: 15px;"><strong>Name:</strong> ${data.studentName}</p>
+          <p style="margin: 4px 0; color: #374151; font-size: 15px;"><strong>Grade:</strong> ${data.studentGrade}</p>
+          <p style="margin: 4px 0; color: #374151; font-size: 15px;"><strong>Subjects:</strong> ${data.studentSubjects}</p>
+          <p style="margin: 4px 0; color: #374151; font-size: 15px;"><strong>Area:</strong> ${data.studentArea}</p>
+          <p style="margin: 4px 0; color: #374151; font-size: 15px;"><strong>Distance:</strong> ~${data.distanceKm} km from you</p>
+        </div>
+        <p style="color: #374151; font-size: 15px; line-height: 1.6;">Our team will be in touch shortly to connect you. If you have any questions, feel free to reply to this email or call us at <strong>+91-8618635627</strong>.</p>
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="https://edunest.courses" style="display: inline-block; background: #f97316; color: #fff; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 8px; text-decoration: none;">View Your Dashboard →</a>
+        </div>
+        <p style="color: #9ca3af; font-size: 13px; text-align: center; margin-top: 24px;">EduNest · Bengaluru · <a href="https://edunest.courses" style="color: #f97316;">edunest.courses</a></p>
+      </div>
+    </div>
+  `;
+  const resend = getResend();
+  if (!resend) return;
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL_RESEND,
+      to: data.tutorEmail,
+      subject: `🎉 We found a student for you, ${data.tutorName}! — EduNest`,
+      html,
+    });
+  } catch (err) {
+    console.warn('[Email] Failed to send smart pair tutor email:', err);
+  }
+}
+
+/**
+ * Send "We found a tutor for you!" email to a student/parent from Smart Pairs.
+ */
+export async function sendSmartPairEmailToStudent(data: {
+  studentEmail: string;
+  studentName: string;
+  tutorName: string;
+  tutorSubjects: string;
+  tutorArea: string;
+  tutorQualification: string;
+  distanceKm: number;
+}): Promise<void> {
+  const html = `
+    <div style="font-family: 'Poppins', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+      <div style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 32px 40px; text-align: center;">
+        <h1 style="color: #fff; margin: 0; font-size: 26px; font-weight: 700;">🎉 Great News, ${data.studentName}!</h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 15px;">EduNest has found a tutor for you</p>
+      </div>
+      <div style="padding: 32px 40px;">
+        <p style="color: #374151; font-size: 15px; line-height: 1.6;">Hi <strong>${data.studentName}</strong>,</p>
+        <p style="color: #374151; font-size: 15px; line-height: 1.6;">We found a verified tutor near you who matches your requirements. Here are the details:</p>
+        <div style="background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 20px 24px; margin: 20px 0;">
+          <p style="margin: 0 0 8px; color: #1e40af; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Tutor Details</p>
+          <p style="margin: 4px 0; color: #374151; font-size: 15px;"><strong>Name:</strong> ${data.tutorName}</p>
+          <p style="margin: 4px 0; color: #374151; font-size: 15px;"><strong>Subjects:</strong> ${data.tutorSubjects}</p>
+          <p style="margin: 4px 0; color: #374151; font-size: 15px;"><strong>Area:</strong> ${data.tutorArea}</p>
+          ${data.tutorQualification ? `<p style="margin: 4px 0; color: #374151; font-size: 15px;"><strong>Qualification:</strong> ${data.tutorQualification}</p>` : ''}
+          <p style="margin: 4px 0; color: #374151; font-size: 15px;"><strong>Distance:</strong> ~${data.distanceKm} km from you</p>
+        </div>
+        <p style="color: #374151; font-size: 15px; line-height: 1.6;">Our team will be in touch shortly to schedule a free demo class. If you have any questions, feel free to reply to this email or call us at <strong>+91-8618635627</strong>.</p>
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="https://edunest.courses" style="display: inline-block; background: #f97316; color: #fff; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 8px; text-decoration: none;">View Your Dashboard →</a>
+        </div>
+        <p style="color: #9ca3af; font-size: 13px; text-align: center; margin-top: 24px;">EduNest · Bengaluru · <a href="https://edunest.courses" style="color: #f97316;">edunest.courses</a></p>
+      </div>
+    </div>
+  `;
+  const resend = getResend();
+  if (!resend) return;
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL_RESEND,
+      to: data.studentEmail,
+      subject: `🎉 We found a tutor for you, ${data.studentName}! — EduNest`,
+      html,
+    });
+  } catch (err) {
+    console.warn('[Email] Failed to send smart pair student email:', err);
+  }
+}

@@ -269,7 +269,7 @@ export default function NearbyTutors() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locError, setLocError] = useState("");
   const [locLoading, setLocLoading] = useState(false);
-  const [radiusKm, setRadiusKm] = useState(10);
+  const [radiusKm, setRadiusKm] = useState(30);
   const [selectedTutor, setSelectedTutor] = useState<TutorRow | null>(null);
 
   // Check if student has a profile
@@ -496,6 +496,8 @@ export default function NearbyTutors() {
                     <option value={10}>10 km</option>
                     <option value={15}>15 km</option>
                     <option value={20}>20 km</option>
+                    <option value={25}>25 km</option>
+                    <option value={30}>30 km</option>
                   </select>
                   <button
                     onClick={() => refetch()}

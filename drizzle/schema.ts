@@ -416,3 +416,21 @@ export const sessionLogs = mysqlTable("session_logs", {
 export type SessionLog = typeof sessionLogs.$inferSelect;
 export type InsertSessionLog = typeof sessionLogs.$inferInsert;
 
+/**
+ * Smart Pair Contacts — tracks when admin has contacted a tutor+student pair
+ * from the Smart Pairs tab, to avoid duplicate outreach.
+ */
+export const smartPairContacts = mysqlTable("smart_pair_contacts", {
+  id: int("id").autoincrement().primaryKey(),
+  tutorProfileId: int("tutorProfileId").notNull(),
+  studentProfileId: int("studentProfileId").notNull(),
+  contactedAt: timestamp("contactedAt").defaultNow().notNull(),
+  contactedBy: varchar("contactedBy", { length: 128 }),
+  notes: text("notes"),
+  tutorEmailSentAt: timestamp("tutorEmailSentAt"),
+  studentEmailSentAt: timestamp("studentEmailSentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SmartPairContact = typeof smartPairContacts.$inferSelect;
+export type InsertSmartPairContact = typeof smartPairContacts.$inferInsert;

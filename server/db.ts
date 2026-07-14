@@ -1,6 +1,6 @@
 import { and, desc, eq, ne, notInArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile, StudentDemoInterest, studentDemoInterests, OtpVerification, otpVerifications, DemoSlot, demoSlots, ConfirmedMatch, confirmedMatches, SessionLog, sessionLogs } from "../drizzle/schema";
+import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile, StudentDemoInterest, studentDemoInterests, OtpVerification, otpVerifications, DemoSlot, demoSlots, ConfirmedMatch, confirmedMatches, SessionLog, sessionLogs, smartPairContacts, SmartPairContact } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1293,3 +1293,61 @@ export async function getSmartPairs() {
   return pairs;
 }
 
+
+/**
+ * Mark a tutor+student pair as contacted by admin.
+ */
+export async function markSmartPairContacted(tutorProfileId: number, studentProfileId: number, contactedBy: string, notes?: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.insert(smartPairContacts).values({
+    tutorProfileId,
+    studentProfileId,
+    contactedBy,
+    notes: notes ?? null,
+    contactedAt: new Date(),
+  });
+}
+
+/**
+ * Get all smart pair contact records.
+ */
+export async function getSmartPairContacts(): Promise<SmartPairContact[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(smartPairContacts).orderBy(desc(smartPairContacts.contactedAt));
+}
+
+/**
+ * Record that an email was sent to the tutor in a smart pair.
+ */
+export async function markSmartPairTutorEmailSent(tutorProfileId: number, studentProfileId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const rows = await db.select().from(smartPairContacts)
+    .where(and(eq(smartPairContacts.tutorProfileId, tutorProfileId), eq(smartPairContacts.studentProfileId, studentProfileId)))
+    .orderBy(desc(smartPairContacts.contactedAt))
+    .limit(1);
+  if (rows.length > 0) {
+    await db.update(smartPairContacts)
+      .set({ tutorEmailSentAt: new Date() })
+      .where(eq(smartPairContacts.id, rows[0].id));
+  }
+}
+
+/**
+ * Record that an email was sent to the student in a smart pair.
+ */
+export async function markSmartPairStudentEmailSent(tutorProfileId: number, studentProfileId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const rows = await db.select().from(smartPairContacts)
+    .where(and(eq(smartPairContacts.tutorProfileId, tutorProfileId), eq(smartPairContacts.studentProfileId, studentProfileId)))
+    .orderBy(desc(smartPairContacts.contactedAt))
+    .limit(1);
+  if (rows.length > 0) {
+    await db.update(smartPairContacts)
+      .set({ studentEmailSentAt: new Date() })
+      .where(eq(smartPairContacts.id, rows[0].id));
+  }
+}
