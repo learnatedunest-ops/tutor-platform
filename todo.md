@@ -455,3 +455,16 @@
 - [x] Add distance display on student cards in Tutor Dashboard Find Students tab
 - [x] Fix missing Admin Smart Pairs tab (backend + frontend)
 - [x] 20/20 tests passing
+
+## Round 44 — Smart Pairs Contacted Tracking + Bot Seed Profiles
+
+- [x] DB: add smart_pair_contacts table (tutorProfileId, studentProfileId, contactedAt, contactedBy, notes)
+- [x] DB: run db:push for schema changes
+- [x] Backend: smartPairs.markContacted tRPC procedure (admin only)
+- [x] Backend: smartPairs.listContacted tRPC procedure (admin only)
+- [x] Backend: smartPairs.sendPairEmail tRPC procedure — sends "We found a match for you!" email to tutor or student
+- [x] Frontend: Admin Smart Pairs tab — "Mark as Contacted" button per pair (green if already contacted, shows date)
+- [x] Frontend: Admin Smart Pairs tab — "Email Tutor" and "Email Parent" send links on each card
+- [x] Seed 100 bot tutor profiles across major Bengaluru areas (realistic names, subjects, lat/lng)
+- [x] Seed 100 bot student/parent profiles across major Bengaluru areas (realistic names, subjects, budgets, lat/lng)
+- [x] 20/20 tests passing, 0 TypeScript errors
