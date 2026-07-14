@@ -646,3 +646,42 @@ export async function sendSmartPairEmailToStudent(data: {
     console.warn('[Email] Failed to send smart pair student email:', err);
   }
 }
+
+/** Admin: notify parent/student that payment has been confirmed and processed */
+export async function sendPaymentConfirmedToParentEmail(data: {
+  parentEmail: string;
+  parentName: string;
+  tutorName: string;
+}) {
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f9fafb; padding: 32px 0;">
+      <div style="max-width: 520px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.07);">
+        <div style="background: linear-gradient(135deg, #1e3a5f 0%, #f97316 100%); padding: 32px 32px 24px; text-align: center;">
+          <h1 style="color: #fff; font-size: 26px; font-weight: 800; margin: 0;">&#x2705; Payment Confirmed</h1>
+          <p style="color: rgba(255,255,255,0.85); font-size: 14px; margin: 8px 0 0;">EduNest &mdash; Your Tuition Partner</p>
+        </div>
+        <div style="padding: 32px;">
+          <p style="color: #374151; font-size: 15px; line-height: 1.6;">Hi <strong>${data.parentName}</strong>,</p>
+          <p style="color: #374151; font-size: 15px; line-height: 1.6;">Great news! Your payment for tuition sessions with <strong>${data.tutorName}</strong> has been confirmed and processed by EduNest. Thank you for your trust!</p>
+          <p style="color: #374151; font-size: 15px; line-height: 1.6;">If you have any questions, feel free to reply to this email or call us at <strong>+91-8618635627</strong>.</p>
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="https://edunest.courses" style="display: inline-block; background: #f97316; color: #fff; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 8px; text-decoration: none;">View Your Dashboard &rarr;</a>
+          </div>
+          <p style="color: #9ca3af; font-size: 13px; text-align: center; margin-top: 24px;">EduNest &middot; Bengaluru &middot; <a href="https://edunest.courses" style="color: #f97316;">edunest.courses</a></p>
+        </div>
+      </div>
+    </div>
+  `;
+  const resend = getResend();
+  if (!resend) return;
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL_RESEND,
+      to: data.parentEmail,
+      subject: `Payment Confirmed — EduNest`,
+      html,
+    });
+  } catch (err) {
+    console.warn('[Email] Failed to send payment confirmed to parent email:', err);
+  }
+}

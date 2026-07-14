@@ -218,6 +218,11 @@ export default function Admin() {
     onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to reset status'),
   });
 
+  const adminMarkAsPaidMutation = trpc.sessionLog.adminMarkAsPaid.useMutation({
+    onSuccess: () => { refetchSessionLogs(); toast.success('✅ Marked as Paid! Both tutor and parent have been notified.'); },
+    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to mark as paid'),
+  });
+
   // Cancellation Requests
   const { data: cancellationRequests, isLoading: loadingCancellations, refetch: refetchCancellations } =
     trpc.confirmedMatch.listCancellationRequests.useQuery(undefined, { enabled: isAdmin });
@@ -1379,6 +1384,22 @@ export default function Admin() {
                         >
                           {approvePaymentMutation.isPending ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={13} />}
                           ✅ Approve & Notify Tutor
+                        </button>
+                      )}
+                      {/* Admin force-mark as paid (bypasses parent step) — available when sheet uploaded but parent hasn't marked yet */}
+                      {log.uploadedSheetUrl && (log.paymentStatus === 'sheet_uploaded' || log.paymentStatus === 'parent_paid') && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Mark this session as PAID for both ${log.tutorName ?? 'tutor'} and ${log.studentName ?? 'student'}? Both will receive a notification email.`)) {
+                              adminMarkAsPaidMutation.mutate({ logId: log.id });
+                            }
+                          }}
+                          disabled={adminMarkAsPaidMutation.isPending}
+                          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-colors disabled:opacity-50"
+                          style={{ background: 'linear-gradient(135deg, oklch(0.55 0.18 145), oklch(0.45 0.18 145))' }}
+                        >
+                          {adminMarkAsPaidMutation.isPending ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <span>💰</span>}
+                          Mark as Paid (Both Parties)
                         </button>
                       )}
                       {/* Undo payment (reset to sheet_uploaded) */}

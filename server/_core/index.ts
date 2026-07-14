@@ -12,7 +12,7 @@ import { serveStatic, setupVite } from "./vite";
 import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-import { requestIdMiddleware, securityLogger } from "./security";
+import { requestIdMiddleware, securityLogger, enhancedSecurityLogger } from "./security";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function isPortAvailable(port: number): Promise<boolean> {
@@ -116,6 +116,7 @@ async function startServer() {
   // ── Request tracing & security event logging ────────────────────────────────
   app.use(requestIdMiddleware);
   app.use(securityLogger);
+  app.use(enhancedSecurityLogger); // WAF-style IP blocking for repeated attacks
 
   // ── Security headers via Helmet ──────────────────────────────────────────
   app.use(

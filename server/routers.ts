@@ -1589,6 +1589,47 @@ export const appRouter = router({
     /** Admin: list all session logs */
     listAll: adminProcedure.query(async () => getAllSessionLogs()),
 
+    /** Admin: force-mark payment as paid (bypasses parent step) — sets parent_paid then payment_processed */
+    adminMarkAsPaid: adminProcedure
+      .input(z.object({ logId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        const log = await getSessionLogById(input.logId);
+        if (!log) throw new Error('Session log not found');
+        // Allow marking paid from any non-processed status (sheet_uploaded or parent_paid)
+        if (log.paymentStatus === 'payment_processed') throw new Error('Payment already processed');
+        if (!log.uploadedSheetUrl) throw new Error('Sheet must be uploaded before marking as paid');
+        // Directly set to payment_processed
+        await updateSessionLogPaymentStatus(input.logId, 'payment_processed');
+        // Email tutor
+        const { getTutorProfileById } = await import('./db');
+        const tutorProfile = await getTutorProfileById(log.tutorProfileId).catch(() => null);
+        if (tutorProfile?.email) {
+          await sendTutorFeePaidEmail({
+            tutorEmail: tutorProfile.email,
+            tutorName: tutorProfile.name,
+            studentName: log.studentName ?? 'your student',
+            upiId: (tutorProfile as any).upiId ?? null,
+            amount: null,
+          }).catch(() => {});
+        }
+        // Email student/parent
+        const { getStudentProfileById } = await import('./db');
+        const studentProfile = await getStudentProfileById(log.studentProfileId).catch(() => null);
+        if (studentProfile?.email) {
+          const { sendPaymentConfirmedToParentEmail } = await import('./email');
+          await sendPaymentConfirmedToParentEmail({
+            parentEmail: studentProfile.email,
+            parentName: studentProfile.name ?? 'Parent',
+            tutorName: tutorProfile?.name ?? 'your tutor',
+          }).catch(() => {});
+        }
+        await notifyOwner({
+          title: '✅ Admin Marked Payment as Paid',
+          content: `Admin force-marked session log #${input.logId} (${log.studentName ?? 'unknown'} ↔ ${log.tutorName ?? 'tutor'}) as payment_processed.`,
+        }).catch(() => {});
+        return { success: true };
+      }),
+
     /** Admin: approve payment — sets payment_processed and emails tutor */
     approvePayment: adminProcedure
       .input(z.object({ logId: z.number().int().positive() }))
