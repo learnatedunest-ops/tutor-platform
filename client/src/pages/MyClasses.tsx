@@ -19,6 +19,38 @@ import {
   Phone, Mail, MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+
+/** Reusable button that fetches a presigned S3 URL before opening the sheet */
+function ViewSheetButton({ logId, label = 'View Submitted Sheet', className }: { logId: number; label?: string; className?: string }) {
+  const [loading, setLoading] = useState(false);
+  const utils = trpc.useUtils();
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const result = await utils.sessionLog.getSignedSheetUrl.fetch({ logId });
+      if (result?.url) {
+        window.open(result.url, '_blank', 'noopener,noreferrer');
+      } else {
+        alert('Sheet URL not available.');
+      }
+    } catch {
+      alert('Failed to open sheet. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className={className ?? 'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors disabled:opacity-60'}
+    >
+      {loading ? <Loader2 size={13} className="animate-spin" /> : <ExternalLink size={13} />}
+      {loading ? 'Opening...' : label}
+    </button>
+  );
+}
 
 export default function MyClasses() {
   const [, navigate] = useLocation();
@@ -187,15 +219,8 @@ export default function MyClasses() {
                       )}
 
                       {/* View uploaded sheet */}
-                      {log?.uploadedSheetUrl && (
-                        <a
-                          href={log.uploadedSheetUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
-                        >
-                          <ExternalLink size={13} /> View Submitted Sheet
-                        </a>
+                      {log?.uploadedSheetUrl && log?.id && (
+                        <ViewSheetButton logId={log.id} />
                       )}
                     </div>
 

@@ -239,10 +239,10 @@ export default function Admin() {
     trpc.cancelledClasses.list.useQuery(undefined, { enabled: isAdmin && activeTab === 'cancelledClasses' });
 
   // Smart Pairs (unmatched student+tutor within 10km, gender match, subject overlap)
-  const { data: smartPairsList, isLoading: loadingSmartPairs } =
-    trpc.smartPairs.list.useQuery(undefined, { enabled: isAdmin && activeTab === 'smartPairs' });
+  const { data: smartPairsList, isLoading: loadingSmartPairs, refetch: refetchSmartPairs, dataUpdatedAt: smartPairsUpdatedAt } =
+    trpc.smartPairs.list.useQuery(undefined, { enabled: isAdmin && activeTab === 'smartPairs', refetchInterval: 5 * 60 * 1000 });
   const { data: smartPairContactsList, refetch: refetchSmartPairContacts } =
-    trpc.smartPairs.listContacted.useQuery(undefined, { enabled: isAdmin && activeTab === 'smartPairs' });
+    trpc.smartPairs.listContacted.useQuery(undefined, { enabled: isAdmin && activeTab === 'smartPairs', refetchInterval: 5 * 60 * 1000 });
   const markContactedMutation = trpc.smartPairs.markContacted.useMutation({
     onSuccess: () => { void refetchSmartPairContacts(); toast.success('✅ Pair marked as contacted!'); },
     onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to mark as contacted'),
@@ -1638,7 +1638,7 @@ export default function Admin() {
                   <h2 className="text-xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>🧠 Smart Pairs</h2>
                   <p className="text-sm text-gray-500 mt-0.5">Unmatched student–tutor pairs within 10 km · gender preference met · subject overlap</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => setShowOnlyUncontacted(v => !v)}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors cursor-pointer ${
@@ -1649,7 +1649,19 @@ export default function Admin() {
                   >
                     {showOnlyUncontacted ? '🔴 Fresh Leads Only' : '🟢 Show All Pairs'}
                   </button>
-                  <span className="text-sm text-gray-500">{filteredPairs.length} / {smartPairsList?.length ?? 0} shown</span>
+                  <button
+                    onClick={() => { void refetchSmartPairs(); void refetchSmartPairContacts(); }}
+                    disabled={loadingSmartPairs}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {loadingSmartPairs ? <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block" /> : '🔄'} Refresh
+                  </button>
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm text-gray-500">{filteredPairs.length} / {smartPairsList?.length ?? 0} shown</span>
+                    {smartPairsUpdatedAt > 0 && (
+                      <span className="text-xs text-gray-400">Updated {new Date(smartPairsUpdatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })} · auto-refreshes every 5 min</span>
+                    )}
+                  </div>
                 </div>
               </div>
               {loadingSmartPairs ? (

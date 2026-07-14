@@ -18,6 +18,37 @@ import {
   CreditCard, ExternalLink,
 } from "lucide-react";
 
+/** Reusable button that fetches a presigned S3 URL before opening the sheet */
+function ViewSheetButton({ logId, label = 'View Session Sheet', className }: { logId: number; label?: string; className?: string }) {
+  const [loading, setLoading] = useState(false);
+  const utils = trpc.useUtils();
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const result = await utils.sessionLog.getSignedSheetUrl.fetch({ logId });
+      if (result?.url) {
+        window.open(result.url, '_blank', 'noopener,noreferrer');
+      } else {
+        alert('Sheet URL not available.');
+      }
+    } catch {
+      alert('Failed to open sheet. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className={className ?? 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-60'}
+    >
+      {loading ? <Loader2 size={12} className="animate-spin" /> : <ExternalLink size={12} />}
+      {loading ? 'Opening...' : label}
+    </button>
+  );
+}
+
 function formatDate(date: Date | string) {
   return new Date(date).toLocaleString("en-IN", {
     day: "2-digit", month: "short", year: "numeric",
@@ -935,15 +966,8 @@ export default function StudentPortal() {
                                 ? '📋 Session Sheet Ready — Please Pay'
                                 : '⏳ Awaiting Session Sheet from Tutor'}
                             </span>
-                            {match.uploadedSheetUrl && (
-                              <a
-                                href={match.uploadedSheetUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                              >
-                                <ExternalLink size={12} /> View Session Sheet
-                              </a>
+                            {match.uploadedSheetUrl && match.sessionLogId && (
+                              <ViewSheetButton logId={match.sessionLogId} />
                             )}
                           </div>
 

@@ -6,7 +6,7 @@
  *  - Upload completed sheet (image/PDF, max 10 MB)
  *  - Payment status badge (shown only after upload)
  */
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -19,6 +19,37 @@ import {
   Loader2, BookOpen, User, CheckCircle2, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+/** Reusable button that fetches a presigned S3 URL before opening the sheet */
+function ViewSheetButton({ logId, label = 'View Uploaded Sheet', className }: { logId: number; label?: string; className?: string }) {
+  const [loading, setLoading] = React.useState(false);
+  const utils = trpc.useUtils();
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const result = await utils.sessionLog.getSignedSheetUrl.fetch({ logId });
+      if (result?.url) {
+        window.open(result.url, '_blank', 'noopener,noreferrer');
+      } else {
+        alert('Sheet URL not available.');
+      }
+    } catch {
+      alert('Failed to open sheet. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className={className ?? 'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-60'}
+    >
+      {loading ? <Loader2 size={13} className="animate-spin" /> : <ExternalLink size={13} />}
+      {loading ? 'Opening...' : label}
+    </button>
+  );
+}
 
 export default function OngoingClasses() {
   const [, navigate] = useLocation();
@@ -227,15 +258,8 @@ export default function OngoingClasses() {
                           )}
 
                           {/* View uploaded sheet */}
-                          {log.uploadedSheetUrl && (
-                            <a
-                              href={log.uploadedSheetUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                            >
-                              <ExternalLink size={13} /> View Uploaded Sheet
-                            </a>
+                          {log.uploadedSheetUrl && log.id && (
+                            <ViewSheetButton logId={log.id} />
                           )}
                         </>
                       ) : (
