@@ -128,8 +128,13 @@ async function startServer() {
           scriptSrc: [
             "'self'",
             "'unsafe-inline'", // Required for Vite HMR in dev; tightened in prod
+            "'unsafe-eval'", // Required for Google Tag Manager
             "https://fonts.googleapis.com",
             "https://maps.googleapis.com",
+            "https://www.googletagmanager.com",
+            "https://www.google-analytics.com",
+            "https://ssl.google-analytics.com",
+            "https://tagmanager.google.com",
           ],
           styleSrc: [
             "'self'",
@@ -143,6 +148,11 @@ async function startServer() {
             "https://api.manus.im",
             "https://*.manus.space",
             "wss:", // WebSocket for Vite HMR
+            "https://www.google-analytics.com",
+            "https://analytics.google.com",
+            "https://stats.g.doubleclick.net",
+            "https://region1.google-analytics.com",
+            "https://www.googletagmanager.com",
           ],
           frameSrc: ["'none'"],
           objectSrc: ["'none'"],
