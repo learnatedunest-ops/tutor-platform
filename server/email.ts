@@ -59,12 +59,15 @@ export async function sendInquiryEmail(data: {
   area?: string;
   message: string;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) return;
+  const transport = getGmailTransport();
+  if (!transport) {
+    console.warn("[Email] Gmail SMTP not configured — inquiry email not sent");
+    return;
+  }
 
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL_RESEND,
+    await transport.sendMail({
+      from: FROM_EMAIL_GMAIL,
       to: OWNER_EMAIL,
       subject: `📩 New Inquiry from ${data.name} — EduNest`,
       html: `
@@ -95,6 +98,7 @@ export async function sendInquiryEmail(data: {
         </div>
       `,
     });
+    console.log(`[Email] Inquiry email sent via Gmail SMTP to owner`);
   } catch (err) {
     console.warn("[Email] Failed to send inquiry email:", err);
   }
@@ -111,12 +115,15 @@ export async function sendTutorApplicationEmail(data: {
   mode: string;
   about?: string;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) return;
+  const transport = getGmailTransport();
+  if (!transport) {
+    console.warn("[Email] Gmail SMTP not configured — tutor application email not sent");
+    return;
+  }
 
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL_RESEND,
+    await transport.sendMail({
+      from: FROM_EMAIL_GMAIL,
       to: OWNER_EMAIL,
       subject: `🎓 New Tutor Application from ${data.name} — EduNest`,
       html: `
@@ -150,6 +157,7 @@ export async function sendTutorApplicationEmail(data: {
         </div>
       `,
     });
+    console.log(`[Email] Tutor application email sent via Gmail SMTP to owner`);
   } catch (err) {
     console.warn("[Email] Failed to send tutor application email:", err);
   }
@@ -168,12 +176,15 @@ export async function sendDemoBookingEmail(data: {
   mode: string;
   message?: string;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) return;
+  const transport = getGmailTransport();
+  if (!transport) {
+    console.warn("[Email] Gmail SMTP not configured — demo booking email not sent");
+    return;
+  }
 
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL_RESEND,
+    await transport.sendMail({
+      from: FROM_EMAIL_GMAIL,
       to: OWNER_EMAIL,
       subject: `📚 Demo Class Booked with ${data.tutorName} — EduNest`,
       html: `
@@ -212,6 +223,7 @@ export async function sendDemoBookingEmail(data: {
         </div>
       `,
     });
+    console.log(`[Email] Demo booking email sent via Gmail SMTP to owner`);
   } catch (err) {
     console.warn("[Email] Failed to send demo booking email:", err);
   }

@@ -1,7 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { ENV } from "./_core/env";
-import { notifyOwner } from "./_core/notification";
 import { sendContactRevealToStudent, sendContactRevealToTutor, sendDemoBookingEmail, sendInquiryEmail, sendOtpEmail, sendParentPayNowEmail, sendSmartPairEmailToTutor, sendSmartPairEmailToStudent, sendTutorApplicationEmail, sendTutorFeePaidEmail } from "./email";
 import { notifyAdminDemoScheduled, notifyAdminSheetUploaded, notifyAdminParentPaid, notifyAdminCancellationRequested } from "./whatsapp";
 import { systemRouter } from "./_core/systemRouter";
@@ -221,10 +220,6 @@ export const appRouter = router({
       .input(inquirySchema)
       .mutation(async ({ input }) => {
         await createInquiry(input);
-        await notifyOwner({
-          title: `📩 New Inquiry from ${input.name}`,
-          content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Role:** ${input.role}\n**Subject:** ${input.subject ?? "—"}\n**Area:** ${input.area ?? "—"}\n\n**Message:**\n${input.message}\n\nView all inquiries at https://edunest.courses/admin`,
-        }).catch(() => {/* non-blocking */});
         await sendInquiryEmail(input).catch((err) => console.error("[Email] Failed to send inquiry email:", err));
         return { success: true };
       }),
@@ -245,10 +240,6 @@ export const appRouter = router({
       .input(tutorApplicationSchema)
       .mutation(async ({ input }) => {
         await createTutorApplication(input);
-        await notifyOwner({
-          title: `🎓 New Tutor Application from ${input.name}`,
-          content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Qualification:** ${input.qualification}\n**Subjects:** ${input.subjects}\n**Experience:** ${input.experience}\n**Area:** ${input.area}\n**Mode:** ${input.mode.replace("_", " ")}\n\n**About:**\n${input.about ?? "—"}\n\nView all applications at https://edunest.courses/admin`,
-        }).catch(() => {/* non-blocking */});
         await sendTutorApplicationEmail(input).catch((err) => console.error("[Email] Failed to send tutor application email:", err));
         return { success: true };
       }),
@@ -269,10 +260,6 @@ export const appRouter = router({
       .input(demoBookingSchema)
       .mutation(async ({ input }) => {
         await createDemoBooking(input);
-        await notifyOwner({
-          title: `📚 Demo Class Booked with ${input.tutorName}`,
-          content: `**Student:** ${input.studentName}\n**Email:** ${input.studentEmail}\n**Phone:** ${input.studentPhone}\n**Grade:** ${input.grade}\n**Subject:** ${input.subject}\n**Tutor:** ${input.tutorName} (${input.tutorSubject})\n**Date:** ${input.preferredDate}\n**Time:** ${input.preferredTime}\n**Mode:** ${input.mode.replace("_", " ")}\n\n**Message:** ${input.message ?? "—"}\n\nManage at https://edunest.courses/admin`,
-        }).catch((err) => console.error("[Notify] Failed to send owner notification:", err));
         await sendDemoBookingEmail(input).catch((err) => console.error("[Email] Failed to send demo booking email:", err));
         return { success: true };
       }),
@@ -346,10 +333,6 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await createStudentRequirement(input);
-        await notifyOwner({
-          title: `👨‍🎓 New Tutor Requirement from ${input.name}`,
-          content: `**Name:** ${input.name}\n**Email:** ${input.email}\n**Phone:** ${input.phone}\n**Role:** ${input.role}\n**Grade:** ${input.grade} (${input.board})\n**Subjects:** ${input.subjects}\n**Area:** ${input.area}\n**Mode:** ${input.mode.replace("_", " ")}\n**Budget:** ${input.budget ?? "—"}\n**Preferred Time:** ${input.preferredTime ?? "—"}\n\n**Notes:** ${input.additionalNotes ?? "—"}\n\nMatch a tutor at https://edunest.courses/admin`,
-        }).catch(() => {/* non-blocking */});
         return { success: true };
       }),
 
@@ -413,11 +396,6 @@ export const appRouter = router({
           longitude: input.longitude?.toString(),
           status: "pending",
         });
-        // Notify Amogha
-        await notifyOwner({
-          title: `👨‍🏫 New Tutor Profile: ${input.name}`,
-          content: `**Name:** ${input.name}\n**Subjects:** ${input.subjects}\n**Experience:** ${input.experience}\n**Mode:** ${input.mode}\n**Location:** ${input.fullAddress ?? input.area ?? 'Not provided'}\n\nReview at https://edunest.courses/admin`,
-        }).catch(() => {});
         return { success: true, profile };
       }),
 
@@ -511,10 +489,6 @@ export const appRouter = router({
           longitude: input.longitude?.toString(),
           isActive: "yes",
         });
-        await notifyOwner({
-          title: `🎓 New Student Requirement: ${input.name}`,
-          content: `**Name:** ${input.name}\n**Grade:** ${input.grade} (${input.board})\n**Subjects:** ${input.subjects}\n**Mode:** ${input.mode}\n**Location:** ${input.fullAddress ?? input.area ?? 'Not provided'}\n\nReview at https://edunest.courses/admin`,
-        }).catch(() => {});
         return { success: true, profile };
       }),
 
@@ -560,11 +534,6 @@ export const appRouter = router({
           throw new Error("Only approved tutors can express interest.");
         }
         const interest = await createTutorInterest(myProfile.id, input.studentProfileId, input.message);
-        // Notify owner for records only (no approval needed)
-        await notifyOwner({
-          title: `🎯 New Tutor Interest: ${myProfile.name}`,
-          content: `**Tutor:** ${myProfile.name} (${myProfile.phone})\n**Student Profile ID:** ${input.studentProfileId}\n**Message:** ${input.message ?? 'No message'}\n\nInterest is now visible to the student directly.`,
-        }).catch(() => {});
         return { success: true, interest };
       }),
 
@@ -619,10 +588,6 @@ export const appRouter = router({
             // Slot already exists (e.g. from a previous attempt) — ensure parentAccepted=yes
             await updateDemoSlotParentAccepted(existing.id, "yes");
           }
-          await notifyOwner({
-            title: `✅ Student Accepted Tutor Interest`,
-            content: `Student Profile #${myProfile.id} accepted tutor interest #${input.interestId}. A demo slot has been created. Parent will set the timing.`,
-          }).catch(() => {});
         }
         return { success: true };
       }),
@@ -669,10 +634,6 @@ export const appRouter = router({
         // Generate a unique 8-char referral code
         const code = Math.random().toString(36).substring(2, 10).toUpperCase();
         await createReferral({ ...input, referralCode: code });
-        await notifyOwner({
-          title: `🎁 New Referral from ${input.referrerName}`,
-          content: `**Referrer:** ${input.referrerName} (${input.referrerEmail})\n**Referred:** ${input.refereeName} (${input.refereeEmail})\n**Code:** ${code}\n\nManage at https://edunest.courses/admin`,
-        }).catch(() => {/* non-blocking */});
         return { success: true, referralCode: code };
       }),
 
@@ -705,11 +666,6 @@ export const appRouter = router({
         const existing = await getStudentDemoInterestByPair(studentProfile.id, input.tutorProfileId);
         if (existing) return { success: true, status: existing.status, alreadyExists: true };
         await createStudentDemoInterest(studentProfile.id, input.tutorProfileId, input.message);
-        // Notify owner for records only (no approval needed)
-        await notifyOwner({
-          title: `📚 New Student Interest`,
-          content: `Student **${studentProfile.name}** (${studentProfile.email}) has shown interest in Tutor Profile #${input.tutorProfileId}.\n\nInterest is now visible to the tutor directly.`,
-        }).catch(() => {/* non-blocking */});
         return { success: true, status: "pending", alreadyExists: false };
       }),
 
@@ -775,10 +731,6 @@ export const appRouter = router({
               "student_to_tutor"
             );
           }
-          await notifyOwner({
-            title: `✅ Tutor Accepted Student Interest`,
-            content: `Tutor Profile #${myProfile.id} accepted student interest #${input.interestId}. A demo slot has been created. Parent will set the timing.`,
-          }).catch(() => {});
         }
         return { success: true };
       }),
@@ -921,11 +873,6 @@ export const appRouter = router({
         if (slot.demoCancelledBy) throw new Error('Cancellation already submitted.');
         // Mark as cancelled with fee pending
         await cancelDemoByParent(input.slotId);
-        // Notify admin via owner notification
-        await notifyOwner({
-          title: `⚠️ Demo Cancelled by Parent — ₹350 Fee Pending`,
-          content: `**Student:** ${profile.name} (${profile.phone})\n**Slot ID:** ${input.slotId}\n\nParent cancelled the scheduled demo. A ₹350 cancellation fee is pending. Please collect and clear it in Admin → Cancelled Demos.`,
-        }).catch(() => {});
         return { success: true };
       }),
 
@@ -966,10 +913,6 @@ export const appRouter = router({
         }
         await updateDemoSlotParentAccepted(input.slotId, input.response);
         if (input.response === "yes") {
-          await notifyOwner({
-            title: `✅ Parent Accepted Tutor Interest`,
-            content: `Student Profile #${profile.id} accepted the tutor's interest. They can now schedule the demo.`,
-          }).catch(() => {});
         }
         return { success: true };
       }),
@@ -1014,11 +957,6 @@ export const appRouter = router({
             studentSubjects: profile.subjects,
           }).catch(() => {});
         }
-        // Notify owner
-        await notifyOwner({
-          title: `📅 Demo Slot Scheduled`,
-          content: `Student Profile #${profile.id} scheduled a demo on **${input.scheduledDate}** at **${input.scheduledTime}**.\nTutor Profile ID: ${slot.tutorProfileId}\nNotes: ${input.notes ?? 'None'}`,
-        }).catch(() => {});
         // WhatsApp alert to admin
         if (tProfile && profile) {
           const studentName = profile.studentName ?? profile.name;
@@ -1049,11 +987,6 @@ export const appRouter = router({
         if (!slot) throw new Error("Demo slot not found or access denied.");
         await updateDemoSlotTutorConfirmedComing(input.slotId, input.response);
         if (input.response === "yes") {
-          // Notify owner
-          await notifyOwner({
-            title: `🚗 Tutor Confirmed Coming for Demo`,
-            content: `Tutor Profile #${profile.id} confirmed they are coming for the demo on ${slot.scheduledDate ?? 'TBD'} at ${slot.scheduledTime ?? 'TBD'}.\nStudent Profile ID: ${slot.studentProfileId}`,
-          }).catch(() => {});
         }
         return { success: true };
       }),
@@ -1072,10 +1005,6 @@ export const appRouter = router({
         const slot = slots.find(s => s.id === input.slotId);
         if (!slot) throw new Error("Demo slot not found or access denied.");
         await updateDemoSlotTutorReschedule(input.slotId, input.suggestedDate, input.suggestedTime);
-        await notifyOwner({
-          title: `🔄 Tutor Suggested Reschedule`,
-          content: `Tutor Profile #${profile.id} suggested rescheduling the demo to ${input.suggestedDate} at ${input.suggestedTime}. Student Profile ID: ${slot.studentProfileId}`,
-        }).catch(() => {});
         return { success: true };
       }),
 
@@ -1180,11 +1109,6 @@ export const appRouter = router({
           }).catch(() => {});
         }
 
-        // Notify owner
-        await notifyOwner({
-          title: `✅ Admin Manually Started Class`,
-          content: `Admin manually marked Demo Slot #${input.slotId} as class started. Tutor Profile #${updatedSlot.tutorProfileId} ↔ Student Profile #${updatedSlot.studentProfileId}. Contact details shared with both parties.`,
-        }).catch(() => {});
 
         const newMatch = await getConfirmedMatchBySlotId(input.slotId);
         return { success: true, matchId: newMatch?.id ?? null, alreadyExisted: false };
@@ -1288,11 +1212,6 @@ export const appRouter = router({
               }).catch(() => {});
             }
 
-            // Notify owner
-            await notifyOwner({
-              title: `🎉 New Confirmed Match!`,
-              content: `Tutor Profile #${updatedSlot.tutorProfileId} and Student Profile #${updatedSlot.studentProfileId} have both agreed to continue after their demo class. Admin can now mark this as a confirmed class.`,
-            }).catch(() => {});
 
             return { success: true, matched: true };
           }
@@ -1345,10 +1264,6 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await requestMatchCancellation(input.matchId, input.requestedBy, input.note);
-        await notifyOwner({
-          title: `⚠️ Class Cancellation Requested`,
-          content: `A ${input.requestedBy} has requested cancellation for Match #${input.matchId}. Note: ${input.note ?? 'No reason given'}. Please review and approve in Admin → Cancellation Requests.`,
-        }).catch(() => {});
         // WhatsApp alert to admin — look up both parties
         const allMatches = await getAllConfirmedMatches();
         const theMatch = allMatches.find(m => m.id === input.matchId);
@@ -1467,11 +1382,6 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await updateSessionLogSheet(input.logId, input.uploadedSheetUrl);
-        // Notify owner
-        await notifyOwner({
-          title: "📋 Session Sheet Uploaded",
-          content: `A tutor has uploaded their completed session log sheet (Log #${input.logId}). Please review and approve payment.`,
-        }).catch(() => {});
         return { success: true };
       }),
 
@@ -1521,11 +1431,6 @@ export const appRouter = router({
         });
         await updateSessionLogSheet(log.id, url);
 
-        // Notify owner
-        await notifyOwner({
-          title: '📋 Session Sheet Uploaded',
-          content: `Tutor uploaded session log sheet for match #${input.matchId}. Please review and approve payment.`,
-        }).catch(() => {});
 
         // Email parent/student to pay now + WhatsApp alert to admin
         const { getStudentProfileById } = await import('./db');
@@ -1568,11 +1473,6 @@ export const appRouter = router({
         if (!profile || log.studentProfileId !== profile.id) throw new Error('Not authorised');
         if (log.paymentStatus !== 'sheet_uploaded') throw new Error('Sheet must be uploaded before payment can be marked');
         await markSessionLogParentPaid(input.logId, input.note);
-        // Notify admin
-        await notifyOwner({
-          title: '💰 Parent Marked Payment — Awaiting Approval',
-          content: `Parent for session log #${input.logId} (${log.studentName ?? 'unknown'}) has marked payment as done via UPI. Please verify and approve in Admin → Session Payments.`,
-        }).catch(() => {});
         // WhatsApp alert to admin
         const { getTutorProfileById: getTutorProfById } = await import('./db');
         const tutorProfForPayment = await getTutorProfById(log.tutorProfileId).catch(() => null);
@@ -1623,10 +1523,6 @@ export const appRouter = router({
             tutorName: tutorProfile?.name ?? 'your tutor',
           }).catch(() => {});
         }
-        await notifyOwner({
-          title: '✅ Admin Marked Payment as Paid',
-          content: `Admin force-marked session log #${input.logId} (${log.studentName ?? 'unknown'} ↔ ${log.tutorName ?? 'tutor'}) as payment_processed.`,
-        }).catch(() => {});
         return { success: true };
       }),
 
@@ -1770,11 +1666,6 @@ export const appRouter = router({
           input.notes,
         );
 
-        // Notify owner
-        await notifyOwner({
-          title: `📅 Admin Scheduled Demo from Smart Pairs`,
-          content: `Admin scheduled a demo for Tutor Profile #${input.tutorProfileId} (${input.tutorName ?? ''}) and Student Profile #${input.studentProfileId} (${input.studentName ?? ''}) on ${input.scheduledDate} at ${input.scheduledTime}. Demo Slot ID: ${slot.id}.`,
-        }).catch(() => {});
 
         // Send notification emails to both parties if emails are provided
         if (input.tutorEmail && input.tutorName && input.studentName) {
