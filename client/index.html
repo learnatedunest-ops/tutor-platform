@@ -42,27 +42,25 @@
     <!-- Canonical -->
     <link rel="canonical" href="https://edunest.courses/" />
 
+    <!-- Performance: DNS prefetch & preconnect for critical third-party origins -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+    <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+    <link rel="dns-prefetch" href="https://maps.googleapis.com" />
 
-    <!-- Google Analytics 4
-         HOW TO SET UP:
-         1. Go to https://analytics.google.com and sign in with learn.at.edunest@gmail.com
-         2. Click Admin (gear icon) > Create > Property
-         3. Name it "EduNest", timezone = India (IST), currency = INR
-         4. Choose Web platform, enter https://edunest.courses
-         5. Copy the Measurement ID (looks like G-XXXXXXXXXX)
-         6. Replace BOTH instances of G-XXXXXXXXXX below with your real ID
-         7. Save a checkpoint and click Publish
-    -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BT9E4JWJ1P"></script>
+    <!-- Google Fonts: display=swap prevents render-blocking (improves FCP/LCP) -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Google Analytics 4: loaded after page render (defer) to avoid blocking FCP -->
     <script>
+      // Initialise dataLayer immediately so gtag calls before script loads are queued
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-BT9E4JWJ1P');
+      gtag('config', 'G-BT9E4JWJ1P', { send_page_view: true });
     </script>
+    <script defer src="https://www.googletagmanager.com/gtag/js?id=G-BT9E4JWJ1P"></script>
   </head>
 
   <body>

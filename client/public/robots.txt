@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Block private/admin pages from indexing
+Disallow: /admin
+Disallow: /tutor-dashboard
+Disallow: /student-portal
+Disallow: /my-classes
+Disallow: /ongoing-classes
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://edunest.courses/sitemap.xml
