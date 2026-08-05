@@ -58,10 +58,33 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  // Static assets with long-term caching (1 year for hashed files)
+  app.use(
+    express.static(distPath, {
+      setHeaders(res, filePath) {
+        // HTML files must never be cached (they reference hashed assets)
+        if (filePath.endsWith(".html")) {
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        }
+        // Fonts: cache for 1 year
+        else if (/\.(woff2?|ttf|otf|eot)$/.test(filePath)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+        // Images: cache for 30 days
+        else if (/\.(png|jpg|jpeg|gif|webp|svg|ico)$/.test(filePath)) {
+          res.setHeader("Cache-Control", "public, max-age=2592000");
+        }
+        // JS/CSS with Vite content hash: cache for 1 year
+        else if (/\.(js|css)$/.test(filePath)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      },
+    })
+  );
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }

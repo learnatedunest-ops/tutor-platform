@@ -232,6 +232,9 @@ export default function Home() {
                 alt="Tutor with student"
                 className="relative z-10 rounded-3xl w-full object-cover shadow-2xl"
                 style={{ maxHeight: "480px", transform: "rotate(-1deg)" }}
+                width="600"
+                height="480"
+                fetchPriority="high"
               />
               {/* Floating badge — bottom left */}
               <div className="absolute -bottom-5 -left-5 z-20 bg-white rounded-2xl p-4 shadow-2xl" style={{ minWidth: "160px" }}>
@@ -372,6 +375,9 @@ export default function Home() {
                   alt="Student learning"
                   className="relative z-10 rounded-3xl w-full object-cover shadow-xl"
                   style={{ maxHeight: "420px" }}
+                  width="560"
+                  height="420"
+                  loading="lazy"
                 />
               </div>
               <div>
@@ -434,6 +440,9 @@ export default function Home() {
                   alt="Tutor teaching"
                   className="relative z-10 rounded-3xl w-full object-cover shadow-xl"
                   style={{ maxHeight: "420px" }}
+                  width="560"
+                  height="420"
+                  loading="lazy"
                 />
               </div>
             </div>
