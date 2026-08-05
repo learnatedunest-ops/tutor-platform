@@ -7,6 +7,7 @@ import { Link } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ArrowRight, BookOpen, Users, Star } from "lucide-react";
+import SEO from "@/components/SEO";
 
 const subjectCategories = [
   {
@@ -149,6 +150,12 @@ export default function Subjects() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "oklch(0.99 0.005 80)" }}>
+      <SEO
+        title="Subjects We Teach in Bengaluru | Maths, Science, English & More — EduNest"
+        description="Find home tutors for all subjects in Bengaluru — Maths, Physics, Chemistry, Biology, English, Hindi, JEE, NEET, and more. CBSE, ICSE, IB boards covered."
+        keywords="maths tutor Bengaluru, physics tutor Bengaluru, chemistry tutor Bengaluru, biology tutor Bengaluru, English tutor Bengaluru, JEE tutor Bengaluru, NEET tutor Bengaluru, science tutor Bengaluru, all subjects home tutor Bengaluru, CBSE tutor, ICSE tutor"
+        url="https://edunest.courses/subjects"
+      />
       <Navbar />
 
       {/* Hero */}

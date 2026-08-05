@@ -7,6 +7,7 @@ import { Link } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Target, Eye, Heart, ArrowRight } from "lucide-react";
+import SEO from "@/components/SEO";
 
 const team = [
   { name: "Amogha Amange", role: "Founder & CEO", initials: "AA", color: "#F47920" },
@@ -24,6 +25,12 @@ const values = [
 export default function About() {
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO
+        title="About EduNest | Best Home Tuition Platform in Bengaluru"
+        description="EduNest is Bengaluru's trusted home tuition platform connecting students with 200+ verified tutors. Learn about our mission, team, and commitment to quality education."
+        keywords="about EduNest, home tuition platform Bengaluru, best tutor platform Bengaluru, verified tutors Bengaluru, EduNest mission, tuition service Bengaluru"
+        url="https://edunest.courses/about"
+      />
       <Navbar />
 
       {/* Hero */}

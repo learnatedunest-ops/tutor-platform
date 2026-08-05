@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import {
   Star,
   CheckCircle2,
@@ -172,6 +173,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ fontFamily: "'Nunito', sans-serif" }}>
+      <SEO
+        title="EduNest — Best Home Tuition & Verified Tutors in Bengaluru"
+        description="Find verified home tutors in Bengaluru for CBSE, ICSE, IB and all boards. Free demo class. Serving Koramangala, Indiranagar, HSR Layout, Whitefield, Jayanagar & 15+ areas."
+        keywords="home tutor Bengaluru, best home tuition Bengaluru, verified tutors Bengaluru, tutor near me Bengaluru, CBSE tutor Bengaluru, free demo class tutor, home tuition Koramangala, home tuition Indiranagar, home tuition HSR Layout"
+        url="https://edunest.courses"
+      />
       <Navbar />
 
       {/* ── HERO ─────────────────────────────────────────────────────────────── */}

@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import LoginWall from "@/components/LoginWall";
+import SEO from "@/components/SEO";
 import {
   CheckCircle2,
   ArrowRight,
@@ -141,6 +142,12 @@ export default function BecomeTutor() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO
+        title="Become a Home Tutor in Bengaluru | Tutor Jobs — EduNest"
+        description="Register as a home tutor in Bengaluru on EduNest. Get student leads near you, flexible timings, earn ₹500–₹2000/hour. Join 200+ verified tutors. Free registration."
+        keywords="home tutor jobs Bengaluru, become a tutor Bengaluru, tutor registration Bengaluru, online teaching jobs Bengaluru, part time tutor jobs Bengaluru, private tutor Bengaluru, tuition teacher jobs Bengaluru, CBSE tutor jobs, ICSE tutor jobs, physics tutor jobs Bengaluru, maths tutor jobs Bengaluru"
+        url="https://edunest.courses/become-tutor"
+      />
       <Navbar />
 
       {/* Hero */}

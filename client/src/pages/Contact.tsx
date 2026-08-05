@@ -11,6 +11,7 @@ import Footer from "@/components/Footer";
 import { Phone, Mail, MapPin, Clock, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import SEO from "@/components/SEO";
 
 const inputClass =
   "w-full px-4 py-3 rounded-xl border text-sm outline-none focus:ring-2 transition-all";
@@ -65,6 +66,12 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO
+        title="Contact EduNest | Find Home Tutors in Bengaluru"
+        description="Contact EduNest to find a home tutor in Bengaluru or register as a tutor. Call +91-8618635627 or fill in the form. We respond within 24 hours."
+        keywords="contact EduNest, home tutor Bengaluru contact, find tutor Bengaluru, tutor enquiry Bengaluru, EduNest phone number, home tuition enquiry Bengaluru"
+        url="https://edunest.courses/contact"
+      />
       <Navbar />
 
       {/* Hero */}
