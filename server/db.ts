@@ -1418,3 +1418,108 @@ export async function adminCreateDemoSlotForPair(
     .limit(1);
   return rows[0]!;
 }
+
+// ─── Admin: Hold / Unhold ─────────────────────────────────────────────────────
+
+export async function holdTutorProfile(id: number, reason: string, adminName: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(tutorProfiles)
+    .set({ holdStatus: "held", holdReason: reason, heldAt: new Date(), heldBy: adminName })
+    .where(eq(tutorProfiles.id, id));
+}
+
+export async function unholdTutorProfile(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(tutorProfiles)
+    .set({ holdStatus: "active", holdReason: null, heldAt: null, heldBy: null })
+    .where(eq(tutorProfiles.id, id));
+}
+
+export async function holdStudentProfile(id: number, reason: string, adminName: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(studentProfiles)
+    .set({ holdStatus: "held", holdReason: reason, heldAt: new Date(), heldBy: adminName })
+    .where(eq(studentProfiles.id, id));
+}
+
+export async function unholdStudentProfile(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(studentProfiles)
+    .set({ holdStatus: "active", holdReason: null, heldAt: null, heldBy: null })
+    .where(eq(studentProfiles.id, id));
+}
+
+export async function getAllHeldProfiles(): Promise<{ tutors: TutorProfile[]; students: StudentProfile[] }> {
+  const db = await getDb();
+  if (!db) return { tutors: [], students: [] };
+  const [heldTutors, heldStudents] = await Promise.all([
+    db.select().from(tutorProfiles).where(eq(tutorProfiles.holdStatus, "held")),
+    db.select().from(studentProfiles).where(eq(studentProfiles.holdStatus, "held")),
+  ]);
+  return { tutors: heldTutors, students: heldStudents };
+}
+
+// ─── Admin: Manual Registration ───────────────────────────────────────────────
+
+export async function adminCreateTutorProfile(data: {
+  name: string; email: string; phone: string; qualification: string;
+  subjects: string; experience: string; boards?: string; languages?: string;
+  mode: "home_tuition" | "online" | "both"; bio?: string; area?: string;
+  gender?: "male" | "female" | "other"; upiId?: string;
+}): Promise<TutorProfile> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const openId = `admin_tutor_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  await db.insert(users).values({
+    openId, name: data.name, email: data.email,
+    loginMethod: "admin_created", role: "user", userRole: "tutor",
+  });
+  const userRows = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  const userId = userRows[0]!.id;
+  await db.insert(tutorProfiles).values({
+    userId, name: data.name, email: data.email, phone: data.phone,
+    qualification: data.qualification, subjects: data.subjects, experience: data.experience,
+    boards: data.boards ?? "CBSE, ICSE", languages: data.languages ?? "English, Kannada",
+    mode: data.mode, bio: data.bio ?? null, area: data.area ?? null,
+    gender: data.gender ?? null, upiId: data.upiId ?? null,
+    status: "approved", phoneVerified: "yes", createdByAdmin: "yes",
+  });
+  const rows = await db.select().from(tutorProfiles).where(eq(tutorProfiles.userId, userId)).limit(1);
+  return rows[0]!;
+}
+
+export async function adminCreateStudentProfile(data: {
+  name: string; email: string; phone: string; role: "student" | "parent";
+  studentName?: string; grade: string; board: "CBSE" | "ICSE" | "State" | "IB" | "IGCSE" | "Other";
+  subjects: string; mode: "home_tuition" | "online" | "both"; area?: string;
+  budget?: string; demoTime?: string; regularTime?: string; daysPerWeek?: string;
+  sessionsPerWeek?: string; sessionDuration?: string; specialRequirements?: string;
+  tutorGenderPreference?: "male" | "female" | "no_preference";
+}): Promise<StudentProfile> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const openId = `admin_student_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  await db.insert(users).values({
+    openId, name: data.name, email: data.email,
+    loginMethod: "admin_created", role: "user", userRole: "student",
+  });
+  const userRows = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  const userId = userRows[0]!.id;
+  await db.insert(studentProfiles).values({
+    userId, name: data.name, email: data.email, phone: data.phone, role: data.role,
+    studentName: data.studentName ?? null, grade: data.grade, board: data.board,
+    subjects: data.subjects, mode: data.mode, area: data.area ?? null,
+    budget: data.budget ?? null, demoTime: data.demoTime ?? null,
+    regularTime: data.regularTime ?? null, daysPerWeek: data.daysPerWeek ?? null,
+    sessionsPerWeek: data.sessionsPerWeek ?? null, sessionDuration: data.sessionDuration ?? null,
+    specialRequirements: data.specialRequirements ?? null,
+    tutorGenderPreference: data.tutorGenderPreference ?? "no_preference",
+    phoneVerified: "yes", isActive: "yes", createdByAdmin: "yes",
+  });
+  const rows = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, userId)).limit(1);
+  return rows[0]!;
+}

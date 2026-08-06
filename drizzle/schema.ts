@@ -11,6 +11,11 @@ export const users = mysqlTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   userRole: mysqlEnum("userRole", ["tutor", "student"]),
+  // Hold / suspend — admin can block login for any reason
+  holdStatus: mysqlEnum("holdStatus", ["active", "held"]).default("active").notNull(),
+  holdReason: text("holdReason"),
+  heldAt: timestamp("heldAt"),
+  heldBy: varchar("heldBy", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -207,6 +212,13 @@ export const tutorProfiles = mysqlTable("tutor_profiles", {
   phoneVerified: mysqlEnum("phoneVerified", ["yes", "no"]).default("no").notNull(),
   // Status
   status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  // Hold / suspend — admin can put tutor on hold for any reason
+  holdStatus: mysqlEnum("holdStatus", ["active", "held"]).default("active").notNull(),
+  holdReason: text("holdReason"),
+  heldAt: timestamp("heldAt"),
+  heldBy: varchar("heldBy", { length: 128 }),
+  // Admin created flag
+  createdByAdmin: mysqlEnum("createdByAdmin", ["yes", "no"]).default("no").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -268,6 +280,13 @@ export const studentProfiles = mysqlTable("student_profiles", {
   phoneVerified: mysqlEnum("phoneVerified", ["yes", "no"]).default("no").notNull(),
   // Status
   isActive: mysqlEnum("isActive", ["yes", "no"]).default("yes").notNull(),
+  // Hold / suspend — admin can put student/parent on hold for any reason
+  holdStatus: mysqlEnum("holdStatus", ["active", "held"]).default("active").notNull(),
+  holdReason: text("holdReason"),
+  heldAt: timestamp("heldAt"),
+  heldBy: varchar("heldBy", { length: 128 }),
+  // Admin created flag
+  createdByAdmin: mysqlEnum("createdByAdmin", ["yes", "no"]).default("no").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

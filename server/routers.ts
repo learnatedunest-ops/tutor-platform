@@ -107,6 +107,13 @@ import {
   markSmartPairTutorEmailSent,
   markSmartPairStudentEmailSent,
   adminCreateDemoSlotForPair,
+  holdTutorProfile,
+  unholdTutorProfile,
+  holdStudentProfile,
+  unholdStudentProfile,
+  getAllHeldProfiles,
+  adminCreateTutorProfile,
+  adminCreateStudentProfile,
 } from "./db";
 import { z } from "zod";
 
@@ -1692,6 +1699,93 @@ export const appRouter = router({
         }
 
         return { success: true, slotId: slot.id };
+      }),
+  }),
+
+  // ── Admin: Hold Management & Manual Registration ───────────────────────────────────
+  adminManage: router({
+    // Hold a tutor profile
+    holdTutor: adminProcedure
+      .input(z.object({ id: z.number(), reason: z.string().min(3).max(500) }))
+      .mutation(async ({ ctx, input }) => {
+        await holdTutorProfile(input.id, input.reason, ctx.user.name ?? 'Admin');
+        return { success: true };
+      }),
+
+    // Unhold a tutor profile
+    unholdTutor: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await unholdTutorProfile(input.id);
+        return { success: true };
+      }),
+
+    // Hold a student/parent profile
+    holdStudent: adminProcedure
+      .input(z.object({ id: z.number(), reason: z.string().min(3).max(500) }))
+      .mutation(async ({ ctx, input }) => {
+        await holdStudentProfile(input.id, input.reason, ctx.user.name ?? 'Admin');
+        return { success: true };
+      }),
+
+    // Unhold a student/parent profile
+    unholdStudent: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await unholdStudentProfile(input.id);
+        return { success: true };
+      }),
+
+    // Get all currently held profiles
+    getHeldProfiles: adminProcedure.query(async () => getAllHeldProfiles()),
+
+    // Admin manually creates a tutor profile (bypasses OAuth)
+    createTutor: adminProcedure
+      .input(z.object({
+        name: z.string().min(2).max(128),
+        email: z.string().email(),
+        phone: z.string().min(10).max(20),
+        qualification: z.string().min(2).max(256),
+        subjects: z.string().min(2).max(512),
+        experience: z.string().min(1).max(64),
+        boards: z.string().max(256).optional(),
+        languages: z.string().max(256).optional(),
+        mode: z.enum(['home_tuition', 'online', 'both']),
+        bio: z.string().max(2000).optional(),
+        area: z.string().max(128).optional(),
+        gender: z.enum(['male', 'female', 'other']).optional(),
+        upiId: z.string().max(64).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const profile = await adminCreateTutorProfile(input);
+        return { success: true, profile };
+      }),
+
+    // Admin manually creates a student/parent profile (bypasses OAuth)
+    createStudent: adminProcedure
+      .input(z.object({
+        name: z.string().min(2).max(128),
+        email: z.string().email(),
+        phone: z.string().min(10).max(20),
+        role: z.enum(['student', 'parent']),
+        studentName: z.string().max(128).optional(),
+        grade: z.string().min(1).max(64),
+        board: z.enum(['CBSE', 'ICSE', 'State', 'IB', 'IGCSE', 'Other']),
+        subjects: z.string().min(2).max(512),
+        mode: z.enum(['home_tuition', 'online', 'both']),
+        area: z.string().max(128).optional(),
+        budget: z.string().max(64).optional(),
+        demoTime: z.string().max(128).optional(),
+        regularTime: z.string().max(128).optional(),
+        daysPerWeek: z.string().max(128).optional(),
+        sessionsPerWeek: z.string().max(32).optional(),
+        sessionDuration: z.string().max(64).optional(),
+        specialRequirements: z.string().max(2000).optional(),
+        tutorGenderPreference: z.enum(['male', 'female', 'no_preference']).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const profile = await adminCreateStudentProfile(input);
+        return { success: true, profile };
       }),
   }),
 });

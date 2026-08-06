@@ -15,7 +15,7 @@ import {
   BookOpen, Clock, CheckCircle2, XCircle, Calendar,
   GraduationCap, MapPin, User, LogIn, RefreshCw, Phone, Mail,
   Home, FileText, Edit2, Save, X, CalendarCheck, Loader2,
-  CreditCard, ExternalLink,
+  CreditCard, ExternalLink, ShieldAlert,
 } from "lucide-react";
 
 /** Reusable button that fetches a presigned S3 URL before opening the sheet */
@@ -273,6 +273,32 @@ export default function StudentPortal() {
   }
 
   if (!user) return null;
+
+  // Hold check — admin has put this student/parent on hold
+  if ((myProfile as any)?.holdStatus === "held") {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: "oklch(0.97 0.005 80)" }}>
+          <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center border-2 border-red-200">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-red-100">
+              <ShieldAlert size={32} className="text-red-600" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2 text-red-700" style={{ fontFamily: "'Poppins', sans-serif" }}>Account On Hold</h1>
+            <p className="text-gray-500 mb-4" style={{ fontFamily: "'Nunito', sans-serif" }}>Your account has been temporarily put on hold by the EduNest team. You cannot access the portal or take any actions until the hold is removed.</p>
+            {(myProfile as any).holdReason && (
+              <div className="bg-red-50 rounded-xl p-4 mb-4 text-left">
+                <p className="text-xs font-bold text-red-600 mb-1">Reason:</p>
+                <p className="text-sm text-red-700">{(myProfile as any).holdReason}</p>
+              </div>
+            )}
+            <p className="text-sm text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>Please contact EduNest at <a href="tel:+918618635627" className="text-orange-600 font-semibold">+91-8618635627</a> or <a href="mailto:learn.at.edunest@gmail.com" className="text-orange-600 font-semibold">learn.at.edunest@gmail.com</a>.</p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   const pendingCount   = myBookings?.filter(b => b.status === "pending").length ?? 0;
   const pendingDemoCount = pendingSlots.length;

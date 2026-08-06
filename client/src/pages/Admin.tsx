@@ -82,7 +82,15 @@ function ViewSheetButton({ logId }: { logId: number }) {
 
 export default function Admin() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs" | "cancellations" | "cancelledDemos" | "cancelledClasses" | "smartPairs">("inquiries");
+  const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs" | "cancellations" | "cancelledDemos" | "cancelledClasses" | "smartPairs" | "addUser" | "holdManagement">("inquiries");
+  // Add User form state
+  const [addUserType, setAddUserType] = useState<"tutor" | "student">("tutor");
+  const [addTutorForm, setAddTutorForm] = useState({ name: "", email: "", phone: "", qualification: "", subjects: "", experience: "", boards: "CBSE, ICSE", languages: "English, Kannada", mode: "both" as "home_tuition" | "online" | "both", bio: "", area: "", gender: "" as "male" | "female" | "other" | "", upiId: "" });
+  const [addStudentForm, setAddStudentForm] = useState({ name: "", email: "", phone: "", role: "parent" as "student" | "parent", studentName: "", grade: "", board: "CBSE" as "CBSE" | "ICSE" | "State" | "IB" | "IGCSE" | "Other", subjects: "", mode: "home_tuition" as "home_tuition" | "online" | "both", area: "", budget: "", demoTime: "", regularTime: "", daysPerWeek: "", sessionsPerWeek: "", sessionDuration: "", specialRequirements: "", tutorGenderPreference: "no_preference" as "male" | "female" | "no_preference" });
+  // Hold management state
+  const [holdReason, setHoldReason] = useState("");
+  const [holdTargetId, setHoldTargetId] = useState<number | null>(null);
+  const [holdTargetType, setHoldTargetType] = useState<"tutor" | "student" | null>(null);
   const [tutorForm, setTutorForm] = useState<typeof EMPTY_TUTOR>(EMPTY_TUTOR);
   const [editingTutorId, setEditingTutorId] = useState<number | null>(null);
   const [showTutorForm, setShowTutorForm] = useState(false);
@@ -264,6 +272,36 @@ export default function Admin() {
     onSuccess: (data) => toast.success(`📅 Demo slot #${data.slotId} created! Both parties will see it in their dashboards.`),
     onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to create demo slot'),
   });
+
+  // ── Admin Manage: Hold / Register ──────────────────────────────────────────
+  const utils = trpc.useUtils();
+  const { data: heldProfiles, refetch: refetchHeld } = trpc.adminManage.getHeldProfiles.useQuery(
+    undefined, { enabled: isAdmin && activeTab === 'holdManagement' }
+  );
+  const holdTutorMutation = trpc.adminManage.holdTutor.useMutation({
+    onSuccess: () => { toast.success('Tutor put on hold'); setHoldReason(''); setHoldTargetId(null); setHoldTargetType(null); utils.tutorProfile.listAll.invalidate(); refetchHeld(); },
+    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to hold tutor'),
+  });
+  const unholdTutorMutation = trpc.adminManage.unholdTutor.useMutation({
+    onSuccess: () => { toast.success('Tutor hold removed'); utils.tutorProfile.listAll.invalidate(); refetchHeld(); },
+    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to unhold tutor'),
+  });
+  const holdStudentMutation = trpc.adminManage.holdStudent.useMutation({
+    onSuccess: () => { toast.success('Student/Parent put on hold'); setHoldReason(''); setHoldTargetId(null); setHoldTargetType(null); utils.studentProfile.listAll.invalidate(); refetchHeld(); },
+    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to hold student'),
+  });
+  const unholdStudentMutation = trpc.adminManage.unholdStudent.useMutation({
+    onSuccess: () => { toast.success('Student/Parent hold removed'); utils.studentProfile.listAll.invalidate(); refetchHeld(); },
+    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to unhold student'),
+  });
+  const adminCreateTutorMutation = trpc.adminManage.createTutor.useMutation({
+    onSuccess: () => { toast.success('Tutor profile created successfully!'); setAddTutorForm({ name: '', email: '', phone: '', qualification: '', subjects: '', experience: '', boards: 'CBSE, ICSE', languages: 'English, Kannada', mode: 'both', bio: '', area: '', gender: '', upiId: '' }); utils.tutorProfile.listAll.invalidate(); },
+    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to create tutor'),
+  });
+  const adminCreateStudentMutation = trpc.adminManage.createStudent.useMutation({
+    onSuccess: () => { toast.success('Student/Parent profile created successfully!'); setAddStudentForm({ name: '', email: '', phone: '', role: 'parent', studentName: '', grade: '', board: 'CBSE', subjects: '', mode: 'home_tuition', area: '', budget: '', demoTime: '', regularTime: '', daysPerWeek: '', sessionsPerWeek: '', sessionDuration: '', specialRequirements: '', tutorGenderPreference: 'no_preference' }); utils.studentProfile.listAll.invalidate(); },
+    onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to create student'),
+  });
   const [showOnlyUncontacted, setShowOnlyUncontacted] = useState(true);
   const [demoModalPair, setDemoModalPair] = useState<null | {
     tutorProfileId: number; studentProfileId: number;
@@ -397,7 +435,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["inquiries", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs", "cancellations", "cancelledDemos", "cancelledClasses", "smartPairs"] as const).map(tab => (
+          {(["inquiries", "tutors", "referrals", "tutorProfiles", "studentProfiles", "interests", "demoInterests", "demoSlots", "confirmedMatches", "sessionLogs", "cancellations", "cancelledDemos", "cancelledClasses", "smartPairs", "addUser", "holdManagement"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -430,6 +468,10 @@ export default function Admin() {
                 <span className="flex items-center gap-2">🚫 Cancelled Classes <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "cancelledClasses" ? "bg-white/30" : "bg-red-100 text-red-700"}`}>{cancelledClassesList?.length ?? 0}</span></span>
               ) : tab === "smartPairs" ? (
                 <span className="flex items-center gap-2">🧠 Smart Pairs <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "smartPairs" ? "bg-white/30" : "bg-green-100 text-green-700"}`}>{smartPairsList?.length ?? 0}</span></span>
+              ) : tab === "addUser" ? (
+                <span className="flex items-center gap-2"><Plus size={15} /> Add User</span>
+              ) : tab === "holdManagement" ? (
+                <span className="flex items-center gap-2"><ShieldAlert size={15} /> Hold Management {(heldProfiles?.tutors?.length ?? 0) + (heldProfiles?.students?.length ?? 0) > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "holdManagement" ? "bg-white/30" : "bg-red-100 text-red-700"}`}>{(heldProfiles?.tutors?.length ?? 0) + (heldProfiles?.students?.length ?? 0)} held</span>}</span>
               ) : (
                 <span className="flex items-center gap-2"><UserCheck size={15} /> Manage Tutors <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
               )}
@@ -1845,6 +1887,222 @@ export default function Admin() {
             </div>
           );
         })()}
+
+        {/* ── Add User Tab ─────────────────────────────────────────────────────────────── */}
+        {activeTab === "addUser" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-gray-800 text-xl" style={{ fontFamily: "'Poppins', sans-serif" }}>Add User Manually</h2>
+              <div className="flex gap-2">
+                <button onClick={() => setAddUserType("tutor")} className={`px-5 py-2 rounded-xl font-semibold text-sm transition-all ${addUserType === "tutor" ? "text-white shadow-sm" : "bg-white text-gray-500"}`} style={addUserType === "tutor" ? { backgroundColor: "oklch(0.68 0.18 50)" } : {}}>
+                  <span className="flex items-center gap-2"><GraduationCap size={15} /> Add Tutor</span>
+                </button>
+                <button onClick={() => setAddUserType("student")} className={`px-5 py-2 rounded-xl font-semibold text-sm transition-all ${addUserType === "student" ? "text-white shadow-sm" : "bg-white text-gray-500"}`} style={addUserType === "student" ? { backgroundColor: "oklch(0.68 0.18 50)" } : {}}>
+                  <span className="flex items-center gap-2"><Users size={15} /> Add Student/Parent</span>
+                </button>
+              </div>
+            </div>
+
+            {addUserType === "tutor" && (
+              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                <h3 className="font-bold text-gray-700 mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>New Tutor Profile</h3>
+                <form onSubmit={(e) => { e.preventDefault(); adminCreateTutorMutation.mutate({ ...addTutorForm, gender: addTutorForm.gender || undefined, bio: addTutorForm.bio || undefined, area: addTutorForm.area || undefined, upiId: addTutorForm.upiId || undefined }); }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Full Name *</label><input required className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.name} onChange={e => setAddTutorForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Rahul Sharma" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Email *</label><input required type="email" className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.email} onChange={e => setAddTutorForm(f => ({ ...f, email: e.target.value }))} placeholder="tutor@email.com" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Phone *</label><input required className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.phone} onChange={e => setAddTutorForm(f => ({ ...f, phone: e.target.value }))} placeholder="+91 98765 43210" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Qualification *</label><input required className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.qualification} onChange={e => setAddTutorForm(f => ({ ...f, qualification: e.target.value }))} placeholder="e.g. B.Tech, M.Sc" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Subjects *</label><input required className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.subjects} onChange={e => setAddTutorForm(f => ({ ...f, subjects: e.target.value }))} placeholder="e.g. Maths, Physics" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Experience *</label><select required className="w-full px-3 py-2 rounded-xl border text-sm outline-none bg-white" value={addTutorForm.experience} onChange={e => setAddTutorForm(f => ({ ...f, experience: e.target.value }))}><option value="">Select</option><option>Less than 1 year</option><option>1-3 years</option><option>3-5 years</option><option>5+ years</option></select></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Teaching Mode *</label><select required className="w-full px-3 py-2 rounded-xl border text-sm outline-none bg-white" value={addTutorForm.mode} onChange={e => setAddTutorForm(f => ({ ...f, mode: e.target.value as typeof addTutorForm.mode }))}><option value="home_tuition">Home Tuition</option><option value="online">Online</option><option value="both">Both</option></select></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Area in Bengaluru</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.area} onChange={e => setAddTutorForm(f => ({ ...f, area: e.target.value }))} placeholder="e.g. Koramangala" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Boards</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.boards} onChange={e => setAddTutorForm(f => ({ ...f, boards: e.target.value }))} placeholder="CBSE, ICSE" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Languages</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.languages} onChange={e => setAddTutorForm(f => ({ ...f, languages: e.target.value }))} placeholder="English, Kannada" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Gender</label><select className="w-full px-3 py-2 rounded-xl border text-sm outline-none bg-white" value={addTutorForm.gender} onChange={e => setAddTutorForm(f => ({ ...f, gender: e.target.value as typeof addTutorForm.gender }))}><option value="">Not specified</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">UPI ID</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.upiId} onChange={e => setAddTutorForm(f => ({ ...f, upiId: e.target.value }))} placeholder="tutor@upi" /></div>
+                  <div className="md:col-span-2"><label className="block text-xs font-semibold text-gray-600 mb-1">Bio / About</label><textarea rows={3} className="w-full px-3 py-2 rounded-xl border text-sm outline-none resize-none" value={addTutorForm.bio} onChange={e => setAddTutorForm(f => ({ ...f, bio: e.target.value }))} placeholder="Brief description of teaching style and experience..." /></div>
+                  <div className="md:col-span-2">
+                    <button type="submit" disabled={adminCreateTutorMutation.isPending} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-60" style={{ backgroundColor: "oklch(0.68 0.18 50)" }}>
+                      {adminCreateTutorMutation.isPending ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : <><Plus size={16} /> Create Tutor Profile</>}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {addUserType === "student" && (
+              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                <h3 className="font-bold text-gray-700 mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>New Student / Parent Profile</h3>
+                <form onSubmit={(e) => { e.preventDefault(); adminCreateStudentMutation.mutate({ ...addStudentForm, studentName: addStudentForm.studentName || undefined, area: addStudentForm.area || undefined, budget: addStudentForm.budget || undefined, demoTime: addStudentForm.demoTime || undefined, regularTime: addStudentForm.regularTime || undefined, daysPerWeek: addStudentForm.daysPerWeek || undefined, sessionsPerWeek: addStudentForm.sessionsPerWeek || undefined, sessionDuration: addStudentForm.sessionDuration || undefined, specialRequirements: addStudentForm.specialRequirements || undefined }); }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Full Name *</label><input required className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.name} onChange={e => setAddStudentForm(f => ({ ...f, name: e.target.value }))} placeholder="Parent or student name" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Email *</label><input required type="email" className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.email} onChange={e => setAddStudentForm(f => ({ ...f, email: e.target.value }))} placeholder="parent@email.com" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Phone *</label><input required className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.phone} onChange={e => setAddStudentForm(f => ({ ...f, phone: e.target.value }))} placeholder="+91 98765 43210" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Role *</label><select required className="w-full px-3 py-2 rounded-xl border text-sm outline-none bg-white" value={addStudentForm.role} onChange={e => setAddStudentForm(f => ({ ...f, role: e.target.value as "student" | "parent" }))}><option value="parent">Parent</option><option value="student">Student</option></select></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Student Name (if parent)</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.studentName} onChange={e => setAddStudentForm(f => ({ ...f, studentName: e.target.value }))} placeholder="Child's name" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Grade / Class *</label><input required className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.grade} onChange={e => setAddStudentForm(f => ({ ...f, grade: e.target.value }))} placeholder="e.g. Class 10, Grade 8" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Board *</label><select required className="w-full px-3 py-2 rounded-xl border text-sm outline-none bg-white" value={addStudentForm.board} onChange={e => setAddStudentForm(f => ({ ...f, board: e.target.value as typeof addStudentForm.board }))}><option>CBSE</option><option>ICSE</option><option>State</option><option>IB</option><option>IGCSE</option><option>Other</option></select></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Subjects Needed *</label><input required className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.subjects} onChange={e => setAddStudentForm(f => ({ ...f, subjects: e.target.value }))} placeholder="e.g. Maths, Science" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Mode *</label><select required className="w-full px-3 py-2 rounded-xl border text-sm outline-none bg-white" value={addStudentForm.mode} onChange={e => setAddStudentForm(f => ({ ...f, mode: e.target.value as typeof addStudentForm.mode }))}><option value="home_tuition">Home Tuition</option><option value="online">Online</option><option value="both">Both</option></select></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Area in Bengaluru</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.area} onChange={e => setAddStudentForm(f => ({ ...f, area: e.target.value }))} placeholder="e.g. Koramangala" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Budget</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.budget} onChange={e => setAddStudentForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. ₹2000-3000/month" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Demo Time Preference</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.demoTime} onChange={e => setAddStudentForm(f => ({ ...f, demoTime: e.target.value }))} placeholder="e.g. Weekday evenings" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Regular Class Time</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.regularTime} onChange={e => setAddStudentForm(f => ({ ...f, regularTime: e.target.value }))} placeholder="e.g. Mon/Wed/Fri 5-6pm" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Days Per Week</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.daysPerWeek} onChange={e => setAddStudentForm(f => ({ ...f, daysPerWeek: e.target.value }))} placeholder="e.g. 3 days" /></div>
+                  <div><label className="block text-xs font-semibold text-gray-600 mb-1">Tutor Gender Preference</label><select className="w-full px-3 py-2 rounded-xl border text-sm outline-none bg-white" value={addStudentForm.tutorGenderPreference} onChange={e => setAddStudentForm(f => ({ ...f, tutorGenderPreference: e.target.value as typeof addStudentForm.tutorGenderPreference }))}><option value="no_preference">No Preference</option><option value="male">Male Tutor</option><option value="female">Female Tutor</option></select></div>
+                  <div className="md:col-span-2"><label className="block text-xs font-semibold text-gray-600 mb-1">Special Requirements</label><textarea rows={3} className="w-full px-3 py-2 rounded-xl border text-sm outline-none resize-none" value={addStudentForm.specialRequirements} onChange={e => setAddStudentForm(f => ({ ...f, specialRequirements: e.target.value }))} placeholder="Any special needs or notes..." /></div>
+                  <div className="md:col-span-2">
+                    <button type="submit" disabled={adminCreateStudentMutation.isPending} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-60" style={{ backgroundColor: "oklch(0.68 0.18 50)" }}>
+                      {adminCreateStudentMutation.isPending ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : <><Plus size={16} /> Create Student Profile</>}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Hold Management Tab ──────────────────────────────────────────────────────────── */}
+        {activeTab === "holdManagement" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-gray-800 text-xl" style={{ fontFamily: "'Poppins', sans-serif" }}>Hold Management</h2>
+              <span className="text-sm text-gray-500">Put any tutor or student/parent on hold for any reason. They will see a hold notice on their dashboard.</span>
+            </div>
+
+            {/* Hold a Tutor */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+              <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2" style={{ fontFamily: "'Poppins', sans-serif" }}><GraduationCap size={18} style={{ color: "oklch(0.68 0.18 50)" }} /> Hold a Tutor</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="border-b"><th className="text-left py-2 px-3 text-gray-500 font-semibold">Name</th><th className="text-left py-2 px-3 text-gray-500 font-semibold">Email</th><th className="text-left py-2 px-3 text-gray-500 font-semibold">Status</th><th className="text-left py-2 px-3 text-gray-500 font-semibold">Hold Reason</th><th className="text-left py-2 px-3 text-gray-500 font-semibold">Action</th></tr></thead>
+                  <tbody>
+                    {(tutorProfiles ?? []).map((tp: { id: number; name: string; email: string; holdStatus: string | null; holdReason: string | null }) => (
+                      <tr key={tp.id} className={`border-b hover:bg-gray-50 ${tp.holdStatus === 'held' ? 'bg-red-50' : ''}`}>
+                        <td className="py-2 px-3 font-medium">{tp.name}</td>
+                        <td className="py-2 px-3 text-gray-500">{tp.email}</td>
+                        <td className="py-2 px-3">
+                          {tp.holdStatus === 'held'
+                            ? <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">ON HOLD</span>
+                            : <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">Active</span>}
+                        </td>
+                        <td className="py-2 px-3 text-gray-500 text-xs max-w-xs truncate">{tp.holdReason ?? '—'}</td>
+                        <td className="py-2 px-3">
+                          {tp.holdStatus === 'held' ? (
+                            <button onClick={() => unholdTutorMutation.mutate({ id: tp.id })} disabled={unholdTutorMutation.isPending} className="px-3 py-1 rounded-lg text-xs font-bold bg-green-100 text-green-700 hover:bg-green-200 transition-colors">
+                              Remove Hold
+                            </button>
+                          ) : (
+                            <button onClick={() => { setHoldTargetId(tp.id); setHoldTargetType('tutor'); setHoldReason(''); }} className="px-3 py-1 rounded-lg text-xs font-bold bg-red-100 text-red-700 hover:bg-red-200 transition-colors">
+                              Put on Hold
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Hold a Student/Parent */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+              <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2" style={{ fontFamily: "'Poppins', sans-serif" }}><Users size={18} style={{ color: "oklch(0.68 0.18 50)" }} /> Hold a Student / Parent</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="border-b"><th className="text-left py-2 px-3 text-gray-500 font-semibold">Name</th><th className="text-left py-2 px-3 text-gray-500 font-semibold">Email</th><th className="text-left py-2 px-3 text-gray-500 font-semibold">Grade</th><th className="text-left py-2 px-3 text-gray-500 font-semibold">Status</th><th className="text-left py-2 px-3 text-gray-500 font-semibold">Hold Reason</th><th className="text-left py-2 px-3 text-gray-500 font-semibold">Action</th></tr></thead>
+                  <tbody>
+                    {(studentProfilesList ?? []).map(sp => (
+                      <tr key={sp.id} className={`border-b hover:bg-gray-50 ${sp.holdStatus === 'held' ? 'bg-red-50' : ''}`}>
+                        <td className="py-2 px-3 font-medium">{sp.name}</td>
+                        <td className="py-2 px-3 text-gray-500">{sp.email}</td>
+                        <td className="py-2 px-3 text-gray-500">{sp.grade}</td>
+                        <td className="py-2 px-3">
+                          {sp.holdStatus === 'held'
+                            ? <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">ON HOLD</span>
+                            : <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">Active</span>}
+                        </td>
+                        <td className="py-2 px-3 text-gray-500 text-xs max-w-xs truncate">{sp.holdReason ?? '—'}</td>
+                        <td className="py-2 px-3">
+                          {sp.holdStatus === 'held' ? (
+                            <button onClick={() => unholdStudentMutation.mutate({ id: sp.id })} disabled={unholdStudentMutation.isPending} className="px-3 py-1 rounded-lg text-xs font-bold bg-green-100 text-green-700 hover:bg-green-200 transition-colors">
+                              Remove Hold
+                            </button>
+                          ) : (
+                            <button onClick={() => { setHoldTargetId(sp.id); setHoldTargetType('student'); setHoldReason(''); }} className="px-3 py-1 rounded-lg text-xs font-bold bg-red-100 text-red-700 hover:bg-red-200 transition-colors">
+                              Put on Hold
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Currently Held */}
+            {((heldProfiles?.tutors?.length ?? 0) + (heldProfiles?.students?.length ?? 0)) > 0 && (
+              <div className="bg-red-50 rounded-2xl p-6 border border-red-100">
+                <h3 className="font-bold text-red-700 mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>🛑 Currently On Hold ({(heldProfiles?.tutors?.length ?? 0) + (heldProfiles?.students?.length ?? 0)} profiles)</h3>
+                <div className="space-y-3">
+                  {heldProfiles?.tutors?.map(tp => (
+                    <div key={tp.id} className="bg-white rounded-xl p-4 border border-red-200 flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold text-gray-800">{tp.name} <span className="text-xs text-gray-400">(Tutor)</span></div>
+                        <div className="text-xs text-red-600 mt-0.5">Reason: {tp.holdReason}</div>
+                        <div className="text-xs text-gray-400">Held by: {tp.heldBy} · {tp.heldAt ? new Date(tp.heldAt).toLocaleString('en-IN') : ''}</div>
+                      </div>
+                      <button onClick={() => unholdTutorMutation.mutate({ id: tp.id })} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-100 text-green-700 hover:bg-green-200">Remove Hold</button>
+                    </div>
+                  ))}
+                  {heldProfiles?.students?.map(sp => (
+                    <div key={sp.id} className="bg-white rounded-xl p-4 border border-red-200 flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold text-gray-800">{sp.name} <span className="text-xs text-gray-400">(Student/Parent)</span></div>
+                        <div className="text-xs text-red-600 mt-0.5">Reason: {sp.holdReason}</div>
+                        <div className="text-xs text-gray-400">Held by: {sp.heldBy} · {sp.heldAt ? new Date(sp.heldAt).toLocaleString('en-IN') : ''}</div>
+                      </div>
+                      <button onClick={() => unholdStudentMutation.mutate({ id: sp.id })} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-100 text-green-700 hover:bg-green-200">Remove Hold</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Hold Reason Modal */}
+        {holdTargetId !== null && holdTargetType !== null && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+              <h3 className="font-bold text-gray-800 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>🛑 Put on Hold</h3>
+              <p className="text-sm text-gray-500 mb-4">Please provide a reason for putting this {holdTargetType} on hold. They will see this reason on their dashboard.</p>
+              <textarea
+                className="w-full px-4 py-3 rounded-xl border text-sm outline-none resize-none mb-4"
+                rows={4}
+                placeholder="e.g. Payment dispute pending, Complaint under review, Verification required..."
+                value={holdReason}
+                onChange={e => setHoldReason(e.target.value)}
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    if (!holdReason.trim()) { toast.error('Please enter a reason'); return; }
+                    if (holdTargetType === 'tutor') holdTutorMutation.mutate({ id: holdTargetId, reason: holdReason });
+                    else holdStudentMutation.mutate({ id: holdTargetId, reason: holdReason });
+                  }}
+                  disabled={holdTutorMutation.isPending || holdStudentMutation.isPending}
+                  className="flex-1 py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-60"
+                  style={{ backgroundColor: "oklch(0.55 0.2 25)" }}
+                >
+                  {holdTutorMutation.isPending || holdStudentMutation.isPending ? 'Holding...' : 'Confirm Hold'}
+                </button>
+                <button onClick={() => { setHoldTargetId(null); setHoldTargetType(null); setHoldReason(''); }} className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 text-sm">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </main>
     </div>
