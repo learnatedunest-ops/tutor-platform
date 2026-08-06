@@ -1470,6 +1470,7 @@ export async function adminCreateTutorProfile(data: {
   subjects: string; experience: string; boards?: string; languages?: string;
   mode: "home_tuition" | "online" | "both"; bio?: string; area?: string;
   gender?: "male" | "female" | "other"; upiId?: string;
+  fullAddress?: string; latitude?: string; longitude?: string;
 }): Promise<TutorProfile> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -1486,6 +1487,9 @@ export async function adminCreateTutorProfile(data: {
     boards: data.boards ?? "CBSE, ICSE", languages: data.languages ?? "English, Kannada",
     mode: data.mode, bio: data.bio ?? null, area: data.area ?? null,
     gender: data.gender ?? null, upiId: data.upiId ?? null,
+    fullAddress: data.fullAddress ?? null,
+    latitude: data.latitude ?? null,
+    longitude: data.longitude ?? null,
     status: "approved", phoneVerified: "yes", createdByAdmin: "yes",
   });
   const rows = await db.select().from(tutorProfiles).where(eq(tutorProfiles.userId, userId)).limit(1);
@@ -1499,6 +1503,7 @@ export async function adminCreateStudentProfile(data: {
   budget?: string; demoTime?: string; regularTime?: string; daysPerWeek?: string;
   sessionsPerWeek?: string; sessionDuration?: string; specialRequirements?: string;
   tutorGenderPreference?: "male" | "female" | "no_preference";
+  fullAddress?: string; latitude?: string; longitude?: string;
 }): Promise<StudentProfile> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -1518,6 +1523,9 @@ export async function adminCreateStudentProfile(data: {
     sessionsPerWeek: data.sessionsPerWeek ?? null, sessionDuration: data.sessionDuration ?? null,
     specialRequirements: data.specialRequirements ?? null,
     tutorGenderPreference: data.tutorGenderPreference ?? "no_preference",
+    fullAddress: data.fullAddress ?? null,
+    latitude: data.latitude ?? null,
+    longitude: data.longitude ?? null,
     phoneVerified: "yes", isActive: "yes", createdByAdmin: "yes",
   });
   const rows = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, userId)).limit(1);

@@ -85,8 +85,8 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState<"inquiries" | "tutors" | "referrals" | "tutorProfiles" | "studentProfiles" | "interests" | "demoInterests" | "demoSlots" | "confirmedMatches" | "sessionLogs" | "cancellations" | "cancelledDemos" | "cancelledClasses" | "smartPairs" | "addUser" | "holdManagement">("inquiries");
   // Add User form state
   const [addUserType, setAddUserType] = useState<"tutor" | "student">("tutor");
-  const [addTutorForm, setAddTutorForm] = useState({ name: "", email: "", phone: "", qualification: "", subjects: "", experience: "", boards: "CBSE, ICSE", languages: "English, Kannada", mode: "both" as "home_tuition" | "online" | "both", bio: "", area: "", gender: "" as "male" | "female" | "other" | "", upiId: "" });
-  const [addStudentForm, setAddStudentForm] = useState({ name: "", email: "", phone: "", role: "parent" as "student" | "parent", studentName: "", grade: "", board: "CBSE" as "CBSE" | "ICSE" | "State" | "IB" | "IGCSE" | "Other", subjects: "", mode: "home_tuition" as "home_tuition" | "online" | "both", area: "", budget: "", demoTime: "", regularTime: "", daysPerWeek: "", sessionsPerWeek: "", sessionDuration: "", specialRequirements: "", tutorGenderPreference: "no_preference" as "male" | "female" | "no_preference" });
+  const [addTutorForm, setAddTutorForm] = useState({ name: "", email: "", phone: "", qualification: "", subjects: "", experience: "", boards: "CBSE, ICSE", languages: "English, Kannada", mode: "both" as "home_tuition" | "online" | "both", bio: "", area: "", gender: "" as "male" | "female" | "other" | "", upiId: "", fullAddress: "", latitude: "", longitude: "" });
+  const [addStudentForm, setAddStudentForm] = useState({ name: "", email: "", phone: "", role: "parent" as "student" | "parent", studentName: "", grade: "", board: "CBSE" as "CBSE" | "ICSE" | "State" | "IB" | "IGCSE" | "Other", subjects: "", mode: "home_tuition" as "home_tuition" | "online" | "both", area: "", budget: "", demoTime: "", regularTime: "", daysPerWeek: "", sessionsPerWeek: "", sessionDuration: "", specialRequirements: "", tutorGenderPreference: "no_preference" as "male" | "female" | "no_preference", fullAddress: "", latitude: "", longitude: "" });
   // Hold management state
   const [holdReason, setHoldReason] = useState("");
   const [holdTargetId, setHoldTargetId] = useState<number | null>(null);
@@ -295,11 +295,11 @@ export default function Admin() {
     onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to unhold student'),
   });
   const adminCreateTutorMutation = trpc.adminManage.createTutor.useMutation({
-    onSuccess: () => { toast.success('Tutor profile created successfully!'); setAddTutorForm({ name: '', email: '', phone: '', qualification: '', subjects: '', experience: '', boards: 'CBSE, ICSE', languages: 'English, Kannada', mode: 'both', bio: '', area: '', gender: '', upiId: '' }); utils.tutorProfile.listAll.invalidate(); },
+    onSuccess: () => { toast.success('Tutor profile created successfully!'); setAddTutorForm({ name: '', email: '', phone: '', qualification: '', subjects: '', experience: '', boards: 'CBSE, ICSE', languages: 'English, Kannada', mode: 'both', bio: '', area: '', gender: '', upiId: '', fullAddress: '', latitude: '', longitude: '' }); utils.tutorProfile.listAll.invalidate(); },
     onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to create tutor'),
   });
   const adminCreateStudentMutation = trpc.adminManage.createStudent.useMutation({
-    onSuccess: () => { toast.success('Student/Parent profile created successfully!'); setAddStudentForm({ name: '', email: '', phone: '', role: 'parent', studentName: '', grade: '', board: 'CBSE', subjects: '', mode: 'home_tuition', area: '', budget: '', demoTime: '', regularTime: '', daysPerWeek: '', sessionsPerWeek: '', sessionDuration: '', specialRequirements: '', tutorGenderPreference: 'no_preference' }); utils.studentProfile.listAll.invalidate(); },
+    onSuccess: () => { toast.success('Student/Parent profile created successfully!'); setAddStudentForm({ name: '', email: '', phone: '', role: 'parent', studentName: '', grade: '', board: 'CBSE', subjects: '', mode: 'home_tuition', area: '', budget: '', demoTime: '', regularTime: '', daysPerWeek: '', sessionsPerWeek: '', sessionDuration: '', specialRequirements: '', tutorGenderPreference: 'no_preference', fullAddress: '', latitude: '', longitude: '' }); utils.studentProfile.listAll.invalidate(); },
     onError: (err: { message?: string }) => toast.error(err.message ?? 'Failed to create student'),
   });
   const [showOnlyUncontacted, setShowOnlyUncontacted] = useState(true);
@@ -473,7 +473,7 @@ export default function Admin() {
               ) : tab === "holdManagement" ? (
                 <span className="flex items-center gap-2"><ShieldAlert size={15} /> Hold Management {(heldProfiles?.tutors?.length ?? 0) + (heldProfiles?.students?.length ?? 0) > 0 && <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "holdManagement" ? "bg-white/30" : "bg-red-100 text-red-700"}`}>{(heldProfiles?.tutors?.length ?? 0) + (heldProfiles?.students?.length ?? 0)} held</span>}</span>
               ) : (
-                <span className="flex items-center gap-2"><UserCheck size={15} /> Manage Tutors <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
+                <span className="flex items-center gap-2"><UserCheck size={15} /> Public Tutor Listing <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${activeTab === "tutors" ? "bg-white/30" : "bg-gray-100"}`}>{adminTutors?.length ?? 0}</span></span>
               )}
             </button>
           ))}
@@ -1919,6 +1919,18 @@ export default function Admin() {
                   <div><label className="block text-xs font-semibold text-gray-600 mb-1">Languages</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.languages} onChange={e => setAddTutorForm(f => ({ ...f, languages: e.target.value }))} placeholder="English, Kannada" /></div>
                   <div><label className="block text-xs font-semibold text-gray-600 mb-1">Gender</label><select className="w-full px-3 py-2 rounded-xl border text-sm outline-none bg-white" value={addTutorForm.gender} onChange={e => setAddTutorForm(f => ({ ...f, gender: e.target.value as typeof addTutorForm.gender }))}><option value="">Not specified</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
                   <div><label className="block text-xs font-semibold text-gray-600 mb-1">UPI ID</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.upiId} onChange={e => setAddTutorForm(f => ({ ...f, upiId: e.target.value }))} placeholder="tutor@upi" /></div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Full Address <span className="text-gray-400 font-normal">(as shared on WhatsApp)</span></label>
+                    <input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.fullAddress} onChange={e => setAddTutorForm(f => ({ ...f, fullAddress: e.target.value }))} placeholder="e.g. 12, 3rd Cross, Koramangala 5th Block, Bengaluru 560095" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Latitude <span className="text-gray-400 font-normal">(from Google Maps)</span></label>
+                    <input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.latitude} onChange={e => setAddTutorForm(f => ({ ...f, latitude: e.target.value }))} placeholder="e.g. 12.9352" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Longitude <span className="text-gray-400 font-normal">(from Google Maps)</span></label>
+                    <input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addTutorForm.longitude} onChange={e => setAddTutorForm(f => ({ ...f, longitude: e.target.value }))} placeholder="e.g. 77.6245" />
+                  </div>
                   <div className="md:col-span-2"><label className="block text-xs font-semibold text-gray-600 mb-1">Bio / About</label><textarea rows={3} className="w-full px-3 py-2 rounded-xl border text-sm outline-none resize-none" value={addTutorForm.bio} onChange={e => setAddTutorForm(f => ({ ...f, bio: e.target.value }))} placeholder="Brief description of teaching style and experience..." /></div>
                   <div className="md:col-span-2">
                     <button type="submit" disabled={adminCreateTutorMutation.isPending} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-60" style={{ backgroundColor: "oklch(0.68 0.18 50)" }}>
@@ -1949,6 +1961,18 @@ export default function Admin() {
                   <div><label className="block text-xs font-semibold text-gray-600 mb-1">Days Per Week</label><input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.daysPerWeek} onChange={e => setAddStudentForm(f => ({ ...f, daysPerWeek: e.target.value }))} placeholder="e.g. 3 days" /></div>
                   <div><label className="block text-xs font-semibold text-gray-600 mb-1">Tutor Gender Preference</label><select className="w-full px-3 py-2 rounded-xl border text-sm outline-none bg-white" value={addStudentForm.tutorGenderPreference} onChange={e => setAddStudentForm(f => ({ ...f, tutorGenderPreference: e.target.value as typeof addStudentForm.tutorGenderPreference }))}><option value="no_preference">No Preference</option><option value="male">Male Tutor</option><option value="female">Female Tutor</option></select></div>
                   <div className="md:col-span-2"><label className="block text-xs font-semibold text-gray-600 mb-1">Special Requirements</label><textarea rows={3} className="w-full px-3 py-2 rounded-xl border text-sm outline-none resize-none" value={addStudentForm.specialRequirements} onChange={e => setAddStudentForm(f => ({ ...f, specialRequirements: e.target.value }))} placeholder="Any special needs or notes..." /></div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Full Address <span className="text-gray-400 font-normal">(as shared on WhatsApp)</span></label>
+                    <input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.fullAddress} onChange={e => setAddStudentForm(f => ({ ...f, fullAddress: e.target.value }))} placeholder="e.g. 12, 3rd Cross, Koramangala 5th Block, Bengaluru 560095" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Latitude <span className="text-gray-400 font-normal">(from Google Maps)</span></label>
+                    <input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.latitude} onChange={e => setAddStudentForm(f => ({ ...f, latitude: e.target.value }))} placeholder="e.g. 12.9352" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Longitude <span className="text-gray-400 font-normal">(from Google Maps)</span></label>
+                    <input className="w-full px-3 py-2 rounded-xl border text-sm outline-none" value={addStudentForm.longitude} onChange={e => setAddStudentForm(f => ({ ...f, longitude: e.target.value }))} placeholder="e.g. 77.6245" />
+                  </div>
                   <div className="md:col-span-2">
                     <button type="submit" disabled={adminCreateStudentMutation.isPending} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-60" style={{ backgroundColor: "oklch(0.68 0.18 50)" }}>
                       {adminCreateStudentMutation.isPending ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : <><Plus size={16} /> Create Student Profile</>}

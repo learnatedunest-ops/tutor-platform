@@ -1755,6 +1755,9 @@ export const appRouter = router({
         area: z.string().max(128).optional(),
         gender: z.enum(['male', 'female', 'other']).optional(),
         upiId: z.string().max(64).optional(),
+        fullAddress: z.string().max(500).optional(),
+        latitude: z.string().max(32).optional(),
+        longitude: z.string().max(32).optional(),
       }))
       .mutation(async ({ input }) => {
         const profile = await adminCreateTutorProfile(input);
@@ -1782,6 +1785,9 @@ export const appRouter = router({
         sessionDuration: z.string().max(64).optional(),
         specialRequirements: z.string().max(2000).optional(),
         tutorGenderPreference: z.enum(['male', 'female', 'no_preference']).optional(),
+        fullAddress: z.string().max(500).optional(),
+        latitude: z.string().max(32).optional(),
+        longitude: z.string().max(32).optional(),
       }))
       .mutation(async ({ input }) => {
         const profile = await adminCreateStudentProfile(input);
