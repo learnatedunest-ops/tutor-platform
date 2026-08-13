@@ -1,6 +1,6 @@
 import { and, desc, eq, ne, notInArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile, StudentDemoInterest, studentDemoInterests, OtpVerification, otpVerifications, DemoSlot, demoSlots, ConfirmedMatch, confirmedMatches, SessionLog, sessionLogs, smartPairContacts, SmartPairContact } from "../drizzle/schema";
+import { DemoBooking, demoBookings, InsertDemoBooking, InsertInquiry, InsertStudentRequirement, InsertTutor, InsertTutorApplication, inquiries, InsertUser, StudentRequirement, studentRequirements, tutorApplications, tutors, Tutor, User, users, TutorInterest, tutorInterests, StudentProfile, studentProfiles, TutorProfile, tutorProfiles, InsertTutorProfile, InsertStudentProfile, StudentDemoInterest, studentDemoInterests, OtpVerification, otpVerifications, DemoSlot, demoSlots, ConfirmedMatch, confirmedMatches, SessionLog, sessionLogs, SessionLogEntry, sessionLogEntries, smartPairContacts, SmartPairContact } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1095,6 +1095,50 @@ export async function getSessionLogById(id: number): Promise<SessionLog | null> 
   return rows[0] ?? null;
 }
 
+/** List online entries for a session log, newest session first. */
+export async function getSessionLogEntries(sessionLogId: number): Promise<SessionLogEntry[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sessionLogEntries)
+    .where(eq(sessionLogEntries.sessionLogId, sessionLogId))
+    .orderBy(desc(sessionLogEntries.sessionDate), desc(sessionLogEntries.id));
+}
+
+/** Tutor: add a completed class entry to an online session log. */
+export async function createSessionLogEntry(data: {
+  sessionLogId: number;
+  sessionDate: string;
+  duration: string;
+  topicsCovered: string;
+  homeworkNotes?: string;
+  tutorNotes?: string;
+}): Promise<SessionLogEntry> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(sessionLogEntries).values({
+    sessionLogId: data.sessionLogId,
+    sessionDate: data.sessionDate,
+    duration: data.duration,
+    topicsCovered: data.topicsCovered,
+    homeworkNotes: data.homeworkNotes ?? null,
+    tutorNotes: data.tutorNotes ?? null,
+  });
+  const rows = await db.select().from(sessionLogEntries)
+    .where(eq(sessionLogEntries.sessionLogId, data.sessionLogId))
+    .orderBy(desc(sessionLogEntries.id))
+    .limit(1);
+  return rows[0]!;
+}
+
+/** Tutor: submit a completed online log for payment processing. */
+export async function submitOnlineSessionLog(sessionLogId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(sessionLogs)
+    .set({ onlineSubmittedAt: new Date(), paymentStatus: "sheet_uploaded" })
+    .where(eq(sessionLogs.id, sessionLogId));
+}
+
 /** Update session log with uploaded sheet URL */
 export async function updateSessionLogSheet(id: number, uploadedSheetUrl: string): Promise<void> {
   const db = await getDb();
@@ -1503,6 +1547,7 @@ export async function adminCreateTutorProfile(data: {
 export async function adminCreateStudentProfile(data: {
   name: string; email: string; phone: string; role: "student" | "parent";
   studentName?: string; grade: string; board: "CBSE" | "ICSE" | "State" | "IB" | "IGCSE" | "Other";
+  stream?: string;
   subjects: string; mode: "home_tuition" | "online" | "both"; area?: string;
   budget?: string; demoTime?: string; regularTime?: string; daysPerWeek?: string;
   sessionsPerWeek?: string; sessionDuration?: string; specialRequirements?: string;
@@ -1520,7 +1565,7 @@ export async function adminCreateStudentProfile(data: {
   const userId = userRows[0]!.id;
   await db.insert(studentProfiles).values({
     userId, name: data.name, email: data.email, phone: data.phone, role: data.role,
-    studentName: data.studentName ?? null, grade: data.grade, board: data.board,
+    studentName: data.studentName ?? null, grade: data.grade, board: data.board, stream: data.stream ?? null,
     subjects: data.subjects, mode: data.mode, area: data.area ?? null,
     budget: data.budget ?? null, demoTime: data.demoTime ?? null,
     regularTime: data.regularTime ?? null, daysPerWeek: data.daysPerWeek ?? null,

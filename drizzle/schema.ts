@@ -134,6 +134,7 @@ export const studentRequirements = mysqlTable("student_requirements", {
   studentName: varchar("studentName", { length: 128 }),  // if parent is registering
   grade: varchar("grade", { length: 64 }).notNull(),
   board: mysqlEnum("board", ["CBSE", "ICSE", "State", "IB", "IGCSE", "Other"]).notNull(),
+  stream: varchar("stream", { length: 128 }),
   // Requirement details
   subjects: varchar("subjects", { length: 512 }).notNull(),
   area: varchar("area", { length: 128 }).notNull(),
@@ -258,6 +259,7 @@ export const studentProfiles = mysqlTable("student_profiles", {
   // Academic requirement
   grade: varchar("grade", { length: 64 }).notNull(),
   board: mysqlEnum("board", ["CBSE", "ICSE", "State", "IB", "IGCSE", "Other"]).notNull(),
+  stream: varchar("stream", { length: 128 }),
   subjects: varchar("subjects", { length: 512 }).notNull(),
   mode: mysqlEnum("mode", ["home_tuition", "online", "both"]).notNull(),
   // Schedule
@@ -401,6 +403,7 @@ export const sessionLogs = mysqlTable("session_logs", {
   studentName: varchar("studentName", { length: 128 }),
   uploadedSheetUrl: text("uploadedSheetUrl"),
   uploadedAt: timestamp("uploadedAt"),
+  onlineSubmittedAt: timestamp("onlineSubmittedAt"),
   paymentStatus: mysqlEnum("paymentStatus", ["pending", "sheet_uploaded", "parent_paid", "payment_processed"]).default("pending").notNull(),
   parentPaid: boolean("parentPaid").default(false).notNull(),
   parentPaidAt: timestamp("parentPaidAt"),
@@ -412,6 +415,26 @@ export const sessionLogs = mysqlTable("session_logs", {
 
 export type SessionLog = typeof sessionLogs.$inferSelect;
 export type InsertSessionLog = typeof sessionLogs.$inferInsert;
+
+/**
+ * Online session-log entries recorded by a tutor for a confirmed class.
+ * These provide a digital alternative to downloading, completing, and uploading
+ * a paper session-log sheet.
+ */
+export const sessionLogEntries = mysqlTable("session_log_entries", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionLogId: int("sessionLogId").notNull(),
+  sessionDate: varchar("sessionDate", { length: 32 }).notNull(),
+  duration: varchar("duration", { length: 64 }).notNull(),
+  topicsCovered: text("topicsCovered").notNull(),
+  homeworkNotes: text("homeworkNotes"),
+  tutorNotes: text("tutorNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SessionLogEntry = typeof sessionLogEntries.$inferSelect;
+export type InsertSessionLogEntry = typeof sessionLogEntries.$inferInsert;
 
 /**
  * Smart Pair Contacts — tracks when admin has contacted a tutor+student pair

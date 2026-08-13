@@ -162,6 +162,20 @@
       "when": 1785985796929,
       "tag": "0022_hot_doomsday",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1786621053215,
+      "tag": "0023_solid_saracen",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1786621548594,
+      "tag": "0024_simple_rogue",
+      "breakpoints": true
     }
   ]
 }

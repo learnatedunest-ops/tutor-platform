@@ -479,3 +479,14 @@
 ## Round 49 — Coordinate Privacy
 
 - [x] Hide latitude and longitude from tutor and parent/student registration and all user-facing post-registration views; preserve them for admin-only matching workflows
+
+## Round 50 — Requirement, Schedule, Matching, and Session Log Enhancements
+
+- [x] Add Undergraduate and Postgraduate grade options; show a required Stream field instead of Board for Undergraduate requirements
+- [x] Clarify budget as monthly tuition for 20 sessions
+- [x] Automatically set and lock session duration from the selected regular-class time; calculate and lock sessions per week and estimated monthly sessions from preferred days
+- [x] Show the locked session summary after demo time, regular-class time, and preferred days are selected
+- [x] Add an online session-log entry flow for tutors as an alternative to downloading and uploading a log sheet
+- [x] Keep other tutor matches visible to parents/students while hiding details of their ongoing tutor from search results
+- [x] Rank tutor and parent/student search results by subject and grade compatibility before distance; add filters and sorting to both searches
+- [x] Replace user-facing "Demo Confirmed" wording with "Demo Scheduled" for tutor, parent/student, and admin experiences

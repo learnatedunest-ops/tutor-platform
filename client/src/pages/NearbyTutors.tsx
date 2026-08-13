@@ -76,7 +76,7 @@ function BookDemoButton({ tutorProfileId }: { tutorProfileId: number }) {
       return (
         <div className="w-full space-y-2">
           <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm" style={{ backgroundColor: "oklch(0.96 0.04 145)", color: "oklch(0.45 0.14 145)", fontFamily: "'Poppins', sans-serif" }}>
-            <CheckCircle2 size={14} /> Demo Class Confirmed!
+            <CheckCircle2 size={14} /> Demo Scheduled!
           </div>
           <Link
             href="/parent-dashboard"
@@ -271,6 +271,10 @@ export default function NearbyTutors() {
   const [locLoading, setLocLoading] = useState(false);
   const [radiusKm, setRadiusKm] = useState(30);
   const [selectedTutor, setSelectedTutor] = useState<TutorRow | null>(null);
+  const [subjectFilter, setSubjectFilter] = useState("");
+  const [modeFilter, setModeFilter] = useState<"all" | "home_tuition" | "online" | "both">("all");
+  const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
+  const [sortBy, setSortBy] = useState<"best_match" | "distance" | "experience">("best_match");
 
   // Check if student has a profile
   const { data: myProfile, isLoading: profileLoading } = trpc.studentProfile.getMyProfile.useQuery(
@@ -291,7 +295,6 @@ export default function NearbyTutors() {
     { enabled: isAuthenticated }
   );
   const activeTutorIdSet = new Set<number>(activeTutorIds ?? []);
-  const hasActiveClass = (activeTutorIds ?? []).length > 0;
 
   // Get confirmed matches for the student (to show active class cards with cancel option)
   const { data: myConfirmedMatches, refetch: refetchMatches } = trpc.confirmedMatch.getMineForStudent.useQuery(
@@ -653,18 +656,19 @@ export default function NearbyTutors() {
           </div>
         )}
 
-        {/* Block browsing if active class exists */}
-        {hasActiveClass && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center mb-4">
-            <p className="text-base font-bold text-amber-800 mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>You already have an active class</p>
-            <p className="text-sm text-amber-700">You can only browse new tutors once your current class is cancelled by EduNest. If you'd like to change tutors, request a cancellation above.</p>
-          </div>
-        )}
-
-        {location && nearbyTutors && nearbyTutors.length > 0 && !hasActiveClass && (
+        {location && nearbyTutors && nearbyTutors.length > 0 && (
           <div className="space-y-4">
             {(() => {
-              const filteredTutors = nearbyTutors.filter((t: any) => !activeTutorIdSet.has(t.id));
+              const filteredTutors = nearbyTutors
+                .filter((t: any) => !activeTutorIdSet.has(t.id))
+                .filter((t: any) => !subjectFilter.trim() || `${t.subjects ?? ""} ${t.qualification ?? ""}`.toLowerCase().includes(subjectFilter.trim().toLowerCase()))
+                .filter((t: any) => modeFilter === "all" || t.mode === "both" || t.mode === modeFilter)
+                .filter((t: any) => genderFilter === "all" || t.gender === genderFilter)
+                .sort((a: any, b: any) => {
+                  if (sortBy === "distance") return Number(a.distKm) - Number(b.distKm);
+                  if (sortBy === "experience") return (parseFloat(b.experience) || 0) - (parseFloat(a.experience) || 0);
+                  return Number(b.matchScore ?? 0) - Number(a.matchScore ?? 0) || Number(a.distKm) - Number(b.distKm);
+                });
               if (!filteredTutors.length) return (
                 <div className="text-center py-8">
                   <MapPin size={40} className="mx-auto mb-3 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
@@ -673,6 +677,12 @@ export default function NearbyTutors() {
                 </div>
               );
               return (<>
+            <div className="rounded-2xl border p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.99 0.005 80)" }}>
+              <input value={subjectFilter} onChange={e => setSubjectFilter(e.target.value)} placeholder="Filter by subject" className="rounded-xl border px-3 py-2 text-sm" style={{ borderColor: "oklch(0.88 0.005 80)" }} />
+              <select value={modeFilter} onChange={e => setModeFilter(e.target.value as typeof modeFilter)} className="rounded-xl border px-3 py-2 text-sm bg-white" style={{ borderColor: "oklch(0.88 0.005 80)" }}><option value="all">All teaching modes</option><option value="home_tuition">Home tuition</option><option value="online">Online</option></select>
+              <select value={genderFilter} onChange={e => setGenderFilter(e.target.value as typeof genderFilter)} className="rounded-xl border px-3 py-2 text-sm bg-white" style={{ borderColor: "oklch(0.88 0.005 80)" }}><option value="all">All tutors</option><option value="female">Female tutors</option><option value="male">Male tutors</option></select>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="rounded-xl border px-3 py-2 text-sm bg-white" style={{ borderColor: "oklch(0.88 0.005 80)" }}><option value="best_match">Sort: Best match</option><option value="distance">Sort: Nearest</option><option value="experience">Sort: Experience</option></select>
+            </div>
             <p className="text-sm font-semibold" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>
               {filteredTutors.length} tutor{filteredTutors.length !== 1 ? "s" : ""} found within {radiusKm} km
             </p>
@@ -718,6 +728,11 @@ export default function NearbyTutors() {
                   </div>
 
                   <div className="flex flex-wrap gap-2 mb-3">
+                    {Number(tutor.matchScore ?? 0) > 0 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "#DCFCE7", color: "#15803D", fontFamily: "'Poppins', sans-serif" }}>
+                        Best match{tutor.matchReasons?.length ? ` · ${tutor.matchReasons[0]}` : ""}
+                      </span>
+                    )}
                     <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "oklch(0.97 0.03 50)", color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>
                       <ModeLabel mode={tutor.mode} />
                     </span>

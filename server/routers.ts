@@ -6,6 +6,7 @@ import { notifyAdminDemoScheduled, notifyAdminSheetUploaded, notifyAdminParentPa
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { redactPrivateLocation } from "./profilePrivacy";
+import { scoreStudentMatch, scoreTutorMatch } from "./matching";
 
 import {
   createDemoBooking,
@@ -92,6 +93,9 @@ import {
   getOrCreateSessionLog,
   getSessionLogByMatchId,
   getSessionLogById,
+  getSessionLogEntries,
+  createSessionLogEntry,
+  submitOnlineSessionLog,
   updateSessionLogSheet,
   updateSessionLogPaymentStatus,
   markSessionLogParentPaid,
@@ -333,6 +337,7 @@ export const appRouter = router({
         studentName: z.string().max(128).optional(),
         grade: z.string().min(1).max(64),
         board: z.enum(["CBSE", "ICSE", "State", "IB", "IGCSE", "Other"]),
+        stream: z.string().max(128).optional(),
         subjects: z.string().min(2).max(512),
         area: z.string().min(2).max(128),
         mode: z.enum(["home_tuition", "online", "both"]),
@@ -448,12 +453,13 @@ export const appRouter = router({
             const dLon = (parseFloat(s.longitude!) - input.longitude) * Math.PI / 180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
             const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const compatibility = scoreStudentMatch(myProfile, s);
             // Strip all exact-location data and contact details from non-admin responses.
             const { phone: _p, fullAddress: _fa, email: _e, latitude: _lat, longitude: _lng, ...safeStudent } = s;
-            return { ...safeStudent, distKm: Math.round(distKm * 10) / 10 };
+            return { ...safeStudent, ...compatibility, distKm: Math.round(distKm * 10) / 10 };
           })
           .filter(s => s.distKm <= input.radiusKm)
-          .sort((a, b) => a.distKm - b.distKm);
+          .sort((a, b) => b.matchScore - a.matchScore || a.distKm - b.distKm);
       }),
   }),
 
@@ -476,6 +482,7 @@ export const appRouter = router({
         studentName: z.string().max(128).optional(),
         grade: z.string().min(1).max(64),
         board: z.enum(["CBSE", "ICSE", "State", "IB", "IGCSE", "Other"]),
+        stream: z.string().max(128).optional(),
         subjects: z.string().min(2).max(512),
         mode: z.enum(["home_tuition", "online", "both"]),
         demoTime: z.string().max(128).optional(),
@@ -508,8 +515,9 @@ export const appRouter = router({
         longitude: z.number().min(-180).max(180),
         radiusKm: z.number().min(1).max(50).default(30),
       }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         const tutorList = await getApprovedTutorProfiles();
+        const student = await getStudentProfileByUserId(ctx.user.id);
         const R = 6371;
         return tutorList
           .filter(t => t.latitude && t.longitude)
@@ -520,12 +528,13 @@ export const appRouter = router({
             const dLon = (parseFloat(t.longitude!) - input.longitude) * Math.PI / 180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
             const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const compatibility = student ? scoreTutorMatch(student, t) : { matchScore: 0, matchReasons: [] };
             // Strip all exact-location data and contact details from non-admin responses.
             const { phone: _p, fullAddress: _fa, upiId: _u, latitude: _lat, longitude: _lng, ...safeTutor } = t;
-            return { ...safeTutor, distKm: Math.round(distKm * 10) / 10 };
+            return { ...safeTutor, ...compatibility, distKm: Math.round(distKm * 10) / 10 };
           })
           .filter(t => t.distKm <= input.radiusKm)
-          .sort((a, b) => a.distKm - b.distKm);
+          .sort((a, b) => b.matchScore - a.matchScore || a.distKm - b.distKm);
       }),
   }),
 
@@ -1346,6 +1355,90 @@ export const appRouter = router({
         return getSessionLogByMatchId(input.matchId);
       }),
 
+    /** Tutor or parent/student: view digital session entries for their own class. */
+    getOnlineEntries: protectedProcedure
+      .input(z.object({ matchId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        const log = await getSessionLogByMatchId(input.matchId);
+        if (!log) return [];
+        if (ctx.user.role !== "admin") {
+          const [tutor, student] = await Promise.all([
+            getTutorProfileByUserId(ctx.user.id),
+            getStudentProfileByUserId(ctx.user.id),
+          ]);
+          const isParticipant = tutor?.id === log.tutorProfileId || student?.id === log.studentProfileId;
+          if (!isParticipant) throw new Error("Not authorised to view this session log");
+        }
+        return getSessionLogEntries(log.id);
+      }),
+
+    /** Tutor: record one completed online teaching session. */
+    addOnlineEntry: protectedProcedure
+      .input(z.object({
+        matchId: z.number().int().positive(),
+        sessionDate: z.string().min(4).max(32),
+        duration: z.string().min(1).max(64),
+        topicsCovered: z.string().min(2).max(3000),
+        homeworkNotes: z.string().max(3000).optional(),
+        tutorNotes: z.string().max(3000).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const [tutor, match] = await Promise.all([
+          getTutorProfileByUserId(ctx.user.id),
+          getAllConfirmedMatches().then(all => all.find(item => item.id === input.matchId)),
+        ]);
+        if (!tutor || !match || match.tutorProfileId !== tutor.id) throw new Error("Not authorised to update this session log");
+        const log = await getOrCreateSessionLog(input.matchId, {
+          tutorProfileId: match.tutorProfileId,
+          studentProfileId: match.studentProfileId,
+          tutorName: match.tutorName,
+          studentName: match.studentName,
+        });
+        if (log.paymentStatus === "payment_processed") throw new Error("This session log has already been paid and is locked");
+        const entry = await createSessionLogEntry({ ...input, sessionLogId: log.id });
+        return { success: true, entry, logId: log.id };
+      }),
+
+    /** Tutor: submit recorded online sessions for parent payment and EduNest review. */
+    submitOnlineLog: protectedProcedure
+      .input(z.object({ matchId: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        const [tutor, match] = await Promise.all([
+          getTutorProfileByUserId(ctx.user.id),
+          getAllConfirmedMatches().then(all => all.find(item => item.id === input.matchId)),
+        ]);
+        if (!tutor || !match || match.tutorProfileId !== tutor.id) throw new Error("Not authorised to submit this session log");
+        const log = await getOrCreateSessionLog(input.matchId, {
+          tutorProfileId: match.tutorProfileId,
+          studentProfileId: match.studentProfileId,
+          tutorName: match.tutorName,
+          studentName: match.studentName,
+        });
+        const entries = await getSessionLogEntries(log.id);
+        if (entries.length === 0) throw new Error("Add at least one session before submitting the online log");
+        if (log.paymentStatus === "payment_processed") throw new Error("This session log has already been paid and is locked");
+        await submitOnlineSessionLog(log.id);
+
+        const student = await import("./db").then(m => m.getStudentProfileById(match.studentProfileId));
+        if (student?.email) {
+          await sendParentPayNowEmail({
+            parentEmail: student.email,
+            parentName: student.name ?? "Parent",
+            tutorName: tutor.name,
+            amount: student.budget ? String(student.budget) : null,
+          }).catch(() => {});
+        }
+        notifyAdminSheetUploaded({
+          tutorName: tutor.name,
+          tutorPhone: tutor.phone ?? "",
+          parentName: student?.name ?? "Parent",
+          parentPhone: student?.phone ?? "",
+          studentName: match.studentName ?? student?.studentName ?? "Student",
+          sheetUrl: "Online session log submitted",
+        }).catch(() => {});
+        return { success: true, logId: log.id, entryCount: entries.length };
+      }),
+
     /** Admin/Tutor/Student: get a presigned URL for the uploaded sheet */
     getSignedSheetUrl: protectedProcedure
       .input(z.object({ logId: z.number().int().positive() }))
@@ -1506,7 +1599,8 @@ export const appRouter = router({
         if (!log) throw new Error('Session log not found');
         // Allow marking paid from any non-processed status (sheet_uploaded or parent_paid)
         if (log.paymentStatus === 'payment_processed') throw new Error('Payment already processed');
-        if (!log.uploadedSheetUrl) throw new Error('Sheet must be uploaded before marking as paid');
+        const onlineEntries = await getSessionLogEntries(log.id);
+        if (!log.uploadedSheetUrl && onlineEntries.length === 0) throw new Error('An uploaded sheet or online session log is required before marking as paid');
         // Directly set to payment_processed
         await updateSessionLogPaymentStatus(input.logId, 'payment_processed');
         // Email tutor
@@ -1776,6 +1870,7 @@ export const appRouter = router({
         studentName: z.string().max(128).optional(),
         grade: z.string().min(1).max(64),
         board: z.enum(['CBSE', 'ICSE', 'State', 'IB', 'IGCSE', 'Other']),
+        stream: z.string().max(128).optional(),
         subjects: z.string().min(2).max(512),
         mode: z.enum(['home_tuition', 'online', 'both']),
         area: z.string().max(128).optional(),

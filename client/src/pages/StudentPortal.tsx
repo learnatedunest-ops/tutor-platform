@@ -423,7 +423,7 @@ export default function StudentPortal() {
                             "bg-orange-100 text-orange-700"
                           }`}>
                             {slot.status === "pending_schedule" ? "⏳ Awaiting Your Schedule" :
-                             slot.status === "scheduled" ? "📅 Demo Confirmed ✓" :
+                             slot.status === "scheduled" ? "📅 Demo Scheduled ✓" :
                              slot.status === "completed" ? "🎓 Demo Completed" : "❌ Cancelled"}
                           </span>
                         </div>

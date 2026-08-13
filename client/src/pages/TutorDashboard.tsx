@@ -152,6 +152,14 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: {
   const [isUploading, setIsUploading] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [cancelNote, setCancelNote] = useState("");
+  const [showOnlineLog, setShowOnlineLog] = useState(false);
+  const [onlineEntry, setOnlineEntry] = useState({
+    sessionDate: new Date().toISOString().slice(0, 10),
+    duration: "1 hr",
+    topicsCovered: "",
+    homeworkNotes: "",
+    tutorNotes: "",
+  });
 
   const requestCancellation = trpc.confirmedMatch.requestCancellation.useMutation({
     onSuccess: () => {
@@ -186,6 +194,27 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: {
     uploadedSheetUrl: (slot as any).uploadedSheetUrl as string | null,
   } : null;
   const log = inlineLog ?? (matchId ? mySessionLogs?.find((l: any) => l.matchId === matchId) : null);
+
+  const { data: onlineEntries = [], refetch: refetchOnlineEntries } = trpc.sessionLog.getOnlineEntries.useQuery(
+    { matchId: matchId ?? 0 },
+    { enabled: Boolean(matchId && showOnlineLog) }
+  );
+  const addOnlineEntry = trpc.sessionLog.addOnlineEntry.useMutation({
+    onSuccess: () => {
+      setOnlineEntry(prev => ({ ...prev, topicsCovered: "", homeworkNotes: "", tutorNotes: "" }));
+      refetchOnlineEntries();
+      onRefreshLogs();
+      toast.success("Online session entry saved.");
+    },
+    onError: error => toast.error(error.message || "Could not save the session entry."),
+  });
+  const submitOnlineLog = trpc.sessionLog.submitOnlineLog.useMutation({
+    onSuccess: data => {
+      onRefreshLogs();
+      toast.success(`Online session log submitted with ${data.entryCount} session${data.entryCount === 1 ? "" : "s"}.`);
+    },
+    onError: error => toast.error(error.message || "Could not submit the online session log."),
+  });
 
   const parentName = (slot as any).studentName as string | undefined;
   const childName = (slot as any).studentChildName as string | undefined;
@@ -349,6 +378,16 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: {
               </a>
             )}
 
+            {matchId && (!log || log.paymentStatus !== 'payment_processed') && (
+              <button
+                type="button"
+                onClick={() => setShowOnlineLog(open => !open)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+              >
+                <BookMarked size={13} /> {showOnlineLog ? 'Hide Online Log' : 'Enter Log Online'}
+              </button>
+            )}
+
             {/* Payment badge — tutor only sees sheet_uploaded and payment_processed; parent_paid is hidden */}
             {log && (log.paymentStatus === 'sheet_uploaded' || log.paymentStatus === 'parent_paid' || log.paymentStatus === 'payment_processed') && (
               <span className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold ${
@@ -390,6 +429,62 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: {
               <ViewSheetButton logId={log.id} />
             )}
           </div>
+
+          {showOnlineLog && matchId && (
+            <div className="rounded-xl border p-4 space-y-4" style={{ borderColor: "#BFDBFE", backgroundColor: "#EFF6FF" }}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-blue-900" style={{ fontFamily: "'Poppins', sans-serif" }}>Online Session Log</p>
+                  <p className="text-xs text-blue-700 mt-1">Add each completed class below. Submit the digital log when all sessions are entered.</p>
+                </div>
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-white text-blue-700">{onlineEntries.length} session{onlineEntries.length === 1 ? '' : 's'}</span>
+              </div>
+
+              {onlineEntries.length > 0 && (
+                <div className="max-h-40 overflow-y-auto rounded-lg border border-blue-100 bg-white divide-y divide-blue-50">
+                  {onlineEntries.map((entry: any) => (
+                    <div key={entry.id} className="px-3 py-2 text-xs text-gray-700">
+                      <div className="flex justify-between gap-3 font-semibold"><span>{entry.sessionDate}</span><span>{entry.duration}</span></div>
+                      <p className="mt-0.5">{entry.topicsCovered}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="text-xs font-semibold text-gray-700">Session date
+                  <input type="date" value={onlineEntry.sessionDate} onChange={e => setOnlineEntry(prev => ({ ...prev, sessionDate: e.target.value }))} className="mt-1 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm" />
+                </label>
+                <label className="text-xs font-semibold text-gray-700">Duration
+                  <input value={onlineEntry.duration} onChange={e => setOnlineEntry(prev => ({ ...prev, duration: e.target.value }))} placeholder="e.g. 1 hr" className="mt-1 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm" />
+                </label>
+              </div>
+              <label className="block text-xs font-semibold text-gray-700">Topics covered
+                <textarea rows={2} value={onlineEntry.topicsCovered} onChange={e => setOnlineEntry(prev => ({ ...prev, topicsCovered: e.target.value }))} placeholder="What was taught in this class?" className="mt-1 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm resize-none" />
+              </label>
+              <label className="block text-xs font-semibold text-gray-700">Homework / next steps <span className="font-normal">(optional)</span>
+                <textarea rows={2} value={onlineEntry.homeworkNotes} onChange={e => setOnlineEntry(prev => ({ ...prev, homeworkNotes: e.target.value }))} placeholder="Homework, practice work, or next lesson plan" className="mt-1 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm resize-none" />
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={!onlineEntry.sessionDate || !onlineEntry.duration || onlineEntry.topicsCovered.trim().length < 2 || addOnlineEntry.isPending}
+                  onClick={() => addOnlineEntry.mutate({ matchId, ...onlineEntry, homeworkNotes: onlineEntry.homeworkNotes || undefined, tutorNotes: onlineEntry.tutorNotes || undefined })}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-60"
+                >
+                  {addOnlineEntry.isPending ? <Loader2 size={13} className="animate-spin" /> : <BookMarked size={13} />} Save Session
+                </button>
+                <button
+                  type="button"
+                  disabled={onlineEntries.length === 0 || submitOnlineLog.isPending || log?.paymentStatus === 'sheet_uploaded'}
+                  onClick={() => submitOnlineLog.mutate({ matchId })}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-60"
+                >
+                  {submitOnlineLog.isPending ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Submit Online Log for Payment
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Instructions */}
           {(!log || log.paymentStatus === 'pending') && (
@@ -473,6 +568,9 @@ export default function TutorDashboard() {
   const [locLoading, setLocLoading] = useState(false);
   const [radiusKm, setRadiusKm] = useState(10);
   const [activeTab, setActiveTab] = useState<'demos' | 'classes' | 'interests' | 'find'>('demos');
+  const [studentSubjectFilter, setStudentSubjectFilter] = useState("");
+  const [studentModeFilter, setStudentModeFilter] = useState<"all" | "home_tuition" | "online" | "both">("all");
+  const [studentSortBy, setStudentSortBy] = useState<"best_match" | "distance" | "budget">("best_match");
 
   // Get tutor's own profile
   const { data: myProfile, isLoading: profileLoading } = trpc.tutorProfile.getMyProfile.useQuery(
@@ -1241,7 +1339,15 @@ export default function TutorDashboard() {
 ) : (
                   <div className="space-y-3">
                     {(() => {
-                      const filteredStudents = (nearbyStudents ?? []).filter((s: any) => !activeStudentIdSet.has(s.id));
+                      const filteredStudents = (nearbyStudents ?? [])
+                        .filter((s: any) => !activeStudentIdSet.has(s.id))
+                        .filter((s: any) => !studentSubjectFilter.trim() || `${s.subjects ?? ""} ${s.grade ?? ""} ${s.stream ?? ""}`.toLowerCase().includes(studentSubjectFilter.trim().toLowerCase()))
+                        .filter((s: any) => studentModeFilter === "all" || s.mode === "both" || s.mode === studentModeFilter)
+                        .sort((a: any, b: any) => {
+                          if (studentSortBy === "distance") return Number(a.distKm) - Number(b.distKm);
+                          if (studentSortBy === "budget") return (parseFloat(String(b.budget ?? "").replace(/[^0-9.]/g, "")) || 0) - (parseFloat(String(a.budget ?? "").replace(/[^0-9.]/g, "")) || 0);
+                          return Number(b.matchScore ?? 0) - Number(a.matchScore ?? 0) || Number(a.distKm) - Number(b.distKm);
+                        });
                       if (!filteredStudents.length) return (
                         <div className="bg-white rounded-2xl shadow-sm border p-8 text-center" style={{ borderColor: "oklch(0.92 0.005 80)" }}>
                           <MapPin size={40} className="mx-auto mb-3 opacity-30" style={{ color: "oklch(0.68 0.18 50)" }} />
@@ -1250,6 +1356,11 @@ export default function TutorDashboard() {
                         </div>
                       );
                       return (<>
+                    <div className="rounded-2xl border p-4 grid grid-cols-1 sm:grid-cols-3 gap-3" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.99 0.005 80)" }}>
+                      <input value={studentSubjectFilter} onChange={e => setStudentSubjectFilter(e.target.value)} placeholder="Filter by subject or grade" className="rounded-xl border px-3 py-2 text-sm" style={{ borderColor: "oklch(0.88 0.005 80)" }} />
+                      <select value={studentModeFilter} onChange={e => setStudentModeFilter(e.target.value as typeof studentModeFilter)} className="rounded-xl border px-3 py-2 text-sm bg-white" style={{ borderColor: "oklch(0.88 0.005 80)" }}><option value="all">All learning modes</option><option value="home_tuition">Home tuition</option><option value="online">Online</option></select>
+                      <select value={studentSortBy} onChange={e => setStudentSortBy(e.target.value as typeof studentSortBy)} className="rounded-xl border px-3 py-2 text-sm bg-white" style={{ borderColor: "oklch(0.88 0.005 80)" }}><option value="best_match">Sort: Best match</option><option value="distance">Sort: Nearest</option><option value="budget">Sort: Budget</option></select>
+                    </div>
                     <p className="text-sm font-semibold" style={{ color: "oklch(0.45 0.01 270)", fontFamily: "'Poppins', sans-serif" }}>
                       {filteredStudents.length} new student{filteredStudents.length !== 1 ? "s" : ""} within {radiusKm} km
                     </p>
@@ -1271,6 +1382,11 @@ export default function TutorDashboard() {
                                 )}
                               </div>
                               <div className="flex flex-wrap gap-1.5 mb-2">
+                                {Number(student.matchScore ?? 0) > 0 && (
+                                  <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-100">
+                                    Best match{student.matchReasons?.length ? ` · ${student.matchReasons[0]}` : ""}
+                                  </span>
+                                )}
                                 {student.subjects && (
                                   <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">
                                     {student.subjects}

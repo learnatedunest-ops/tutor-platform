@@ -31,8 +31,34 @@ const GRADES = [
   "Nursery", "LKG", "UKG",
   "Class 1", "Class 2", "Class 3", "Class 4", "Class 5",
   "Class 6", "Class 7", "Class 8", "Class 9", "Class 10",
-  "Class 11", "Class 12", "Undergraduate", "Other"
+  "Class 11", "Class 12", "Undergraduate", "Postgraduate", "Other"
 ];
+
+const HIGHER_EDUCATION_GRADES = new Set(["Undergraduate", "Postgraduate"]);
+
+function getDurationFromTimeRange(range: string): string {
+  const [start, end] = range.split(" - ");
+  if (!start || !end) return "";
+
+  const toMinutes = (time: string) => {
+    const match = time.match(/^(\d{1,2}):(\d{2})\s(AM|PM)$/);
+    if (!match) return null;
+    const [, hourText, minuteText, meridiem] = match;
+    let hour = Number(hourText) % 12;
+    if (meridiem === "PM") hour += 12;
+    return hour * 60 + Number(minuteText);
+  };
+
+  const startMinutes = toMinutes(start);
+  const endMinutes = toMinutes(end);
+  if (startMinutes === null || endMinutes === null) return "";
+  let duration = endMinutes - startMinutes;
+  if (duration <= 0) duration += 24 * 60;
+  const hours = Math.floor(duration / 60);
+  const minutes = duration % 60;
+  if (hours === 0) return `${minutes} min`;
+  return minutes ? `${hours} hr ${minutes} min` : `${hours} hr`;
+}
 
 const STEPS = [
   { id: 1, label: "Your Details" },
@@ -49,6 +75,7 @@ interface FormData {
   studentName: string;
   grade: string;
   board: "CBSE" | "ICSE" | "State" | "IB" | "IGCSE" | "Other";
+  stream: string;
   subjects: string;
   mode: "home_tuition" | "online" | "both";
   demoTime: string;
@@ -67,7 +94,7 @@ interface FormData {
 
 const INITIAL: FormData = {
   name: "", email: "", phone: "", role: "parent", studentName: "",
-  grade: "Class 5", board: "CBSE", subjects: "", mode: "home_tuition",
+  grade: "Class 5", board: "CBSE", stream: "", subjects: "", mode: "home_tuition",
   demoTime: "", regularTime: "", daysPerWeek: ["mon", "tue", "wed", "thu", "fri"],
   sessionsPerWeek: "5", sessionDuration: "1 hr", budget: "",
   specialRequirements: "", latitude: null, longitude: null, fullAddress: "", area: "",
@@ -189,6 +216,7 @@ export default function StudentSetup() {
         studentName: existingProfile.studentName ?? "",
         grade: existingProfile.grade,
         board: existingProfile.board,
+        stream: existingProfile.stream ?? "",
         subjects: existingProfile.subjects,
         mode: existingProfile.mode,
         demoTime: existingProfile.demoTime ?? "",
@@ -227,13 +255,34 @@ export default function StudentSetup() {
   const set = (key: keyof FormData, value: string | number | null | string[]) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
-  const toggleDay = (day: string) => {
+  const setGrade = (grade: string) => {
     setForm(prev => ({
       ...prev,
-      daysPerWeek: prev.daysPerWeek.includes(day)
-        ? prev.daysPerWeek.filter(d => d !== day)
-        : [...prev.daysPerWeek, day],
+      grade,
+      board: HIGHER_EDUCATION_GRADES.has(grade) ? "Other" : prev.board,
+      stream: HIGHER_EDUCATION_GRADES.has(grade) ? prev.stream : "",
     }));
+  };
+
+  const setRegularClassTime = (regularTime: string) => {
+    setForm(prev => ({
+      ...prev,
+      regularTime,
+      sessionDuration: getDurationFromTimeRange(regularTime),
+    }));
+  };
+
+  const toggleDay = (day: string) => {
+    setForm(prev => {
+      const daysPerWeek = prev.daysPerWeek.includes(day)
+        ? prev.daysPerWeek.filter(d => d !== day)
+        : [...prev.daysPerWeek, day];
+      return {
+        ...prev,
+        daysPerWeek,
+        sessionsPerWeek: String(daysPerWeek.length),
+      };
+    });
   };
 
   const handleSubmit = () => {
@@ -243,6 +292,10 @@ export default function StudentSetup() {
     }
     if (!form.name || !form.phone || !form.subjects || !form.grade) {
       toast.error("Please fill in all required fields.");
+      return;
+    }
+    if (HIGHER_EDUCATION_GRADES.has(form.grade) && !form.stream.trim()) {
+      toast.error("Please enter the student’s stream for the selected higher-education level.");
       return;
     }
     saveMutation.mutate({
@@ -467,16 +520,29 @@ export default function StudentSetup() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls} style={labelStyle}>Class / Grade *</label>
-                  <select className={inputCls} style={inputStyle} value={form.grade} onChange={e => set("grade", e.target.value)}>
+                  <select className={inputCls} style={inputStyle} value={form.grade} onChange={e => setGrade(e.target.value)}>
                     {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className={labelCls} style={labelStyle}>Board *</label>
-                  <select className={inputCls} style={inputStyle} value={form.board} onChange={e => set("board", e.target.value as FormData["board"])}>
-                    {["CBSE", "ICSE", "State", "IB", "IGCSE", "Other"].map(b => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                </div>
+                {HIGHER_EDUCATION_GRADES.has(form.grade) ? (
+                  <div>
+                    <label className={labelCls} style={labelStyle}>Stream *</label>
+                    <input
+                      className={inputCls}
+                      style={inputStyle}
+                      value={form.stream}
+                      onChange={e => set("stream", e.target.value)}
+                      placeholder="e.g. B.Com, Computer Science, MBA, M.Tech"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className={labelCls} style={labelStyle}>Board *</label>
+                    <select className={inputCls} style={inputStyle} value={form.board} onChange={e => set("board", e.target.value as FormData["board"])}>
+                      {["CBSE", "ICSE", "State", "IB", "IGCSE", "Other"].map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelCls} style={labelStyle}>Subjects Needed *</label>
@@ -505,11 +571,12 @@ export default function StudentSetup() {
                 </div>
               </div>
               <div>
-                <label className={labelCls} style={labelStyle}>Budget (per month)</label>
+                <label className={labelCls} style={labelStyle}>Monthly Budget (for up to 20 sessions)</label>
                 <div className="relative">
                   <IndianRupee size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "oklch(0.65 0.01 270)" }} />
                   <input className={inputCls} style={{ ...inputStyle, paddingLeft: "2rem" }} type="number" min="0" value={form.budget} onChange={e => set("budget", e.target.value.replace(/[^0-9]/g, ""))} placeholder="e.g. 3000" />
                 </div>
+                <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.01 270)", fontFamily: "'Nunito', sans-serif" }}>Enter the monthly tuition budget for approximately 20 sessions.</p>
               </div>
               <div>
                 <label className={labelCls} style={labelStyle}>Special Requirements</label>
@@ -545,19 +612,9 @@ export default function StudentSetup() {
                   <TimeRangePicker
                     label="Regular Class Time"
                     value={form.regularTime}
-                    onChange={v => set("regularTime", v)}
+                    onChange={setRegularClassTime}
                     placeholder="e.g. 04:30 PM - 05:30 PM"
                   />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls} style={labelStyle}>Sessions per Week</label>
-                  <input className={inputCls} style={inputStyle} value={form.sessionsPerWeek} onChange={e => set("sessionsPerWeek", e.target.value)} placeholder="e.g. 5" />
-                </div>
-                <div>
-                  <label className={labelCls} style={labelStyle}>Session Duration</label>
-                  <input className={inputCls} style={inputStyle} value={form.sessionDuration} onChange={e => set("sessionDuration", e.target.value)} placeholder="e.g. 1 hr" />
                 </div>
               </div>
               <div>
@@ -581,6 +638,18 @@ export default function StudentSetup() {
                   ))}
                 </div>
               </div>
+              {form.demoTime && form.regularTime.includes(" - ") && form.daysPerWeek.length > 0 && form.sessionDuration && (
+                <div className="rounded-xl border p-4 space-y-2" style={{ borderColor: "#FED7AA", backgroundColor: "#FFF7ED" }}>
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "#C2410C", fontFamily: "'Poppins', sans-serif" }}>Locked Schedule Summary</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm" style={{ color: "oklch(0.35 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>
+                    <p><strong>Session duration:</strong> {form.sessionDuration}</p>
+                    <p><strong>Sessions per week:</strong> {form.sessionsPerWeek}</p>
+                    <p><strong>Preferred days:</strong> {form.daysPerWeek.map(day => DAY_LABELS[day]).join(", ")}</p>
+                    <p><strong>Estimated monthly sessions:</strong> {Number(form.sessionsPerWeek) * 4}</p>
+                  </div>
+                  <p className="text-xs" style={{ color: "#9A3412" }}>Duration is calculated from the regular class time; weekly and monthly sessions are calculated from your preferred days.</p>
+                </div>
+              )}
             </div>
           )}
 
