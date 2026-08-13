@@ -569,8 +569,29 @@ export default function TutorDashboard() {
   const [radiusKm, setRadiusKm] = useState(10);
   const [activeTab, setActiveTab] = useState<'demos' | 'classes' | 'interests' | 'find'>('demos');
   const [studentSubjectFilter, setStudentSubjectFilter] = useState("");
+  const [studentLocalityFilter, setStudentLocalityFilter] = useState("");
   const [studentModeFilter, setStudentModeFilter] = useState<"all" | "home_tuition" | "online" | "both">("all");
   const [studentSortBy, setStudentSortBy] = useState<"best_match" | "distance" | "budget">("best_match");
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("edunest-tutor-student-search-filters") ?? "{}");
+      setStudentSubjectFilter(saved.subjectFilter ?? "");
+      setStudentLocalityFilter(saved.localityFilter ?? "");
+      setStudentModeFilter(saved.modeFilter ?? "all");
+      setStudentSortBy(saved.sortBy ?? "best_match");
+    } catch {
+      // Saved filters are optional; the search remains available without browser storage.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("edunest-tutor-student-search-filters", JSON.stringify({ subjectFilter: studentSubjectFilter, localityFilter: studentLocalityFilter, modeFilter: studentModeFilter, sortBy: studentSortBy }));
+    } catch {
+      // Search works normally when browser storage is unavailable.
+    }
+  }, [studentSubjectFilter, studentLocalityFilter, studentModeFilter, studentSortBy]);
 
   // Get tutor's own profile
   const { data: myProfile, isLoading: profileLoading } = trpc.tutorProfile.getMyProfile.useQuery(
@@ -1342,6 +1363,7 @@ export default function TutorDashboard() {
                       const filteredStudents = (nearbyStudents ?? [])
                         .filter((s: any) => !activeStudentIdSet.has(s.id))
                         .filter((s: any) => !studentSubjectFilter.trim() || `${s.subjects ?? ""} ${s.grade ?? ""} ${s.stream ?? ""}`.toLowerCase().includes(studentSubjectFilter.trim().toLowerCase()))
+                        .filter((s: any) => !studentLocalityFilter.trim() || String(s.area ?? "").toLowerCase().includes(studentLocalityFilter.trim().toLowerCase()))
                         .filter((s: any) => studentModeFilter === "all" || s.mode === "both" || s.mode === studentModeFilter)
                         .sort((a: any, b: any) => {
                           if (studentSortBy === "distance") return Number(a.distKm) - Number(b.distKm);
@@ -1356,8 +1378,9 @@ export default function TutorDashboard() {
                         </div>
                       );
                       return (<>
-                    <div className="rounded-2xl border p-4 grid grid-cols-1 sm:grid-cols-3 gap-3" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.99 0.005 80)" }}>
+                    <div className="rounded-2xl border p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" style={{ borderColor: "oklch(0.92 0.005 80)", backgroundColor: "oklch(0.99 0.005 80)" }}>
                       <input value={studentSubjectFilter} onChange={e => setStudentSubjectFilter(e.target.value)} placeholder="Filter by subject or grade" className="rounded-xl border px-3 py-2 text-sm" style={{ borderColor: "oklch(0.88 0.005 80)" }} />
+                      <input value={studentLocalityFilter} onChange={e => setStudentLocalityFilter(e.target.value)} placeholder="Filter by locality" className="rounded-xl border px-3 py-2 text-sm" style={{ borderColor: "oklch(0.88 0.005 80)" }} />
                       <select value={studentModeFilter} onChange={e => setStudentModeFilter(e.target.value as typeof studentModeFilter)} className="rounded-xl border px-3 py-2 text-sm bg-white" style={{ borderColor: "oklch(0.88 0.005 80)" }}><option value="all">All learning modes</option><option value="home_tuition">Home tuition</option><option value="online">Online</option></select>
                       <select value={studentSortBy} onChange={e => setStudentSortBy(e.target.value as typeof studentSortBy)} className="rounded-xl border px-3 py-2 text-sm bg-white" style={{ borderColor: "oklch(0.88 0.005 80)" }}><option value="best_match">Sort: Best match</option><option value="distance">Sort: Nearest</option><option value="budget">Sort: Budget</option></select>
                     </div>

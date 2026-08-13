@@ -1173,6 +1173,30 @@ export async function getAllSessionLogs(): Promise<SessionLog[]> {
   return db.select().from(sessionLogs).orderBy(desc(sessionLogs.createdAt));
 }
 
+/** Admin: list every tutor-recorded online session entry with its class details. */
+export async function getAllOnlineSessionLogEntries() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: sessionLogEntries.id,
+    sessionLogId: sessionLogEntries.sessionLogId,
+    matchId: sessionLogs.matchId,
+    sessionDate: sessionLogEntries.sessionDate,
+    duration: sessionLogEntries.duration,
+    topicsCovered: sessionLogEntries.topicsCovered,
+    homeworkNotes: sessionLogEntries.homeworkNotes,
+    tutorNotes: sessionLogEntries.tutorNotes,
+    createdAt: sessionLogEntries.createdAt,
+    tutorName: sessionLogs.tutorName,
+    studentName: sessionLogs.studentName,
+    paymentStatus: sessionLogs.paymentStatus,
+    onlineSubmittedAt: sessionLogs.onlineSubmittedAt,
+  })
+    .from(sessionLogEntries)
+    .leftJoin(sessionLogs, eq(sessionLogEntries.sessionLogId, sessionLogs.id))
+    .orderBy(desc(sessionLogEntries.sessionDate), desc(sessionLogEntries.id));
+}
+
 /** Get session logs for a tutor */
 export async function getSessionLogsByTutor(tutorProfileId: number): Promise<SessionLog[]> {
   const db = await getDb();

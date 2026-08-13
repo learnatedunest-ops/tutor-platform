@@ -100,6 +100,7 @@ import {
   updateSessionLogPaymentStatus,
   markSessionLogParentPaid,
   getAllSessionLogs,
+  getAllOnlineSessionLogEntries,
   getSessionLogsByTutor,
   getSessionLogsByStudent,
   updateUserRole,
@@ -1590,6 +1591,9 @@ export const appRouter = router({
 
     /** Admin: list all session logs */
     listAll: adminProcedure.query(async () => getAllSessionLogs()),
+
+    /** Admin: list all individual online session entries for review and export. */
+    listAllOnlineEntries: adminProcedure.query(async () => getAllOnlineSessionLogEntries()),
 
     /** Admin: force-mark payment as paid (bypasses parent step) — sets parent_paid then payment_processed */
     adminMarkAsPaid: adminProcedure

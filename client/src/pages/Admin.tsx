@@ -215,6 +215,9 @@ export default function Admin() {
 
   const { data: sessionLogsList, isLoading: loadingSessionLogs, refetch: refetchSessionLogs } =
     trpc.sessionLog.listAll.useQuery(undefined, { enabled: isAdmin });
+  const { data: onlineSessionEntries, refetch: refetchOnlineSessionEntries } =
+    trpc.sessionLog.listAllOnlineEntries.useQuery(undefined, { enabled: isAdmin && activeTab === "sessionLogs" });
+  const [onlineLogFilter, setOnlineLogFilter] = useState("");
 
   const approvePaymentMutation = trpc.sessionLog.approvePayment.useMutation({
     onSuccess: () => { refetchSessionLogs(); toast.success('✅ Payment approved and status updated!'); },
@@ -312,6 +315,42 @@ export default function Admin() {
   const [demoTime, setDemoTime] = useState('');
   const [demoMode, setDemoMode] = useState<'home_tuition' | 'online' | 'both'>('home_tuition');
   const [demoNotes, setDemoNotes] = useState('');
+
+  const filteredOnlineSessionEntries = (onlineSessionEntries ?? []).filter((entry: any) => {
+    const needle = onlineLogFilter.trim().toLowerCase();
+    if (!needle) return true;
+    return [entry.tutorName, entry.studentName, entry.sessionDate, entry.duration, entry.topicsCovered, entry.homeworkNotes]
+      .some(value => String(value ?? "").toLowerCase().includes(needle));
+  });
+
+  const exportOnlineSessionEntries = () => {
+    if (!filteredOnlineSessionEntries.length) {
+      toast.error("There are no online session entries to export.");
+      return;
+    }
+    const escapeCsv = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const header = ["Class ID", "Tutor", "Student / Parent", "Session Date", "Duration", "Topics Covered", "Homework / Next Steps", "Tutor Notes", "Payment Status", "Online Log Submitted"];
+    const rows = filteredOnlineSessionEntries.map((entry: any) => [
+      entry.matchId ? `C${entry.matchId}` : "",
+      entry.tutorName,
+      entry.studentName,
+      entry.sessionDate,
+      entry.duration,
+      entry.topicsCovered,
+      entry.homeworkNotes,
+      entry.tutorNotes,
+      entry.paymentStatus,
+      entry.onlineSubmittedAt ? new Date(entry.onlineSubmittedAt).toLocaleString("en-IN") : "",
+    ]);
+    const csv = [header, ...rows].map(row => row.map(escapeCsv).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `edunest-online-session-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${filteredOnlineSessionEntries.length} online session log${filteredOnlineSessionEntries.length === 1 ? "" : "s"} exported.`);
+  };
 
   if (loading) {
     return (
@@ -1346,9 +1385,31 @@ export default function Admin() {
               <h2 className="text-xl font-bold" style={{ fontFamily: "'Poppins', sans-serif", color: "oklch(0.14 0.02 270)" }}>
                 Session Logs & Payment Approval ({sessionLogsList?.length ?? 0})
               </h2>
-              <button onClick={() => refetchSessionLogs()} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-white border hover:bg-gray-50 transition-colors">
+              <button onClick={() => { refetchSessionLogs(); refetchOnlineSessionEntries(); }} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-white border hover:bg-gray-50 transition-colors">
                 <RefreshCw size={15} /> Refresh
               </button>
+            </div>
+            <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6" style={{ borderColor: "#BFDBFE" }}>
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                <div>
+                  <h3 className="font-bold text-base text-blue-950" style={{ fontFamily: "'Poppins', sans-serif" }}>Digital Session Log Entries</h3>
+                  <p className="text-xs text-blue-700 mt-1">Review every tutor-entered lesson and export the filtered report as a CSV file.</p>
+                </div>
+                <button onClick={exportOnlineSessionEntries} className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 transition-colors">Export CSV ({filteredOnlineSessionEntries.length})</button>
+              </div>
+              <input value={onlineLogFilter} onChange={e => setOnlineLogFilter(e.target.value)} placeholder="Filter by tutor, student, topic, date, or duration" className="w-full rounded-xl border border-blue-200 px-3 py-2 text-sm mb-3" />
+              {filteredOnlineSessionEntries.length === 0 ? (
+                <p className="text-sm text-gray-400 py-3 text-center">No online session entries match this filter yet.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-blue-100">
+                  <table className="w-full min-w-[850px] text-xs">
+                    <thead className="bg-blue-50 text-blue-900"><tr><th className="px-3 py-2 text-left">Class</th><th className="px-3 py-2 text-left">Tutor</th><th className="px-3 py-2 text-left">Student / Parent</th><th className="px-3 py-2 text-left">Date & Duration</th><th className="px-3 py-2 text-left">Topics</th><th className="px-3 py-2 text-left">Homework / Next Steps</th><th className="px-3 py-2 text-left">Status</th></tr></thead>
+                    <tbody className="divide-y divide-blue-50">
+                      {filteredOnlineSessionEntries.map((entry: any) => <tr key={entry.id} className="align-top"><td className="px-3 py-2 font-semibold">{entry.matchId ? `C${entry.matchId}` : "—"}</td><td className="px-3 py-2">{entry.tutorName ?? "—"}</td><td className="px-3 py-2">{entry.studentName ?? "—"}</td><td className="px-3 py-2 whitespace-nowrap">{entry.sessionDate}<br /><span className="text-gray-500">{entry.duration}</span></td><td className="px-3 py-2 max-w-xs whitespace-pre-wrap">{entry.topicsCovered}</td><td className="px-3 py-2 max-w-xs whitespace-pre-wrap">{entry.homeworkNotes || "—"}</td><td className="px-3 py-2"><span className="rounded-full bg-gray-100 px-2 py-0.5 font-semibold">{entry.paymentStatus.replace(/_/g, " ")}</span></td></tr>)}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
             {loadingSessionLogs ? (
               <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin" /></div>

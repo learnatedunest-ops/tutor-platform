@@ -490,3 +490,9 @@
 - [x] Keep other tutor matches visible to parents/students while hiding details of their ongoing tutor from search results
 - [x] Rank tutor and parent/student search results by subject and grade compatibility before distance; add filters and sorting to both searches
 - [x] Replace user-facing "Demo Confirmed" wording with "Demo Scheduled" for tutor, parent/student, and admin experiences
+
+## Round 51 — Digital Log Reporting and Saved Search Filters
+
+- [x] Add an admin view of online session-log entries with class, tutor, student/parent, date, duration, and learning details
+- [x] Add CSV export for filtered online session-log entries in the admin dashboard
+- [x] Persist subject and locality filters for parent/student tutor search and tutor student search
