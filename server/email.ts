@@ -301,8 +301,6 @@ export async function sendContactRevealToTutor(data: {
   studentPhone: string;
   studentArea: string;
   studentFullAddress?: string;
-  studentLat?: number;
-  studentLng?: number;
   studentGrade: string;
   studentSubjects: string;
   studentParentName?: string;
@@ -337,7 +335,7 @@ export async function sendContactRevealToTutor(data: {
                 <tr><td style="padding: 7px 0; color: #666;"><strong>Email</strong></td><td style="padding: 7px 0; color: #333;"><a href="mailto:${data.studentEmail}" style="color: #6C63FF;">${data.studentEmail}</a></td></tr>
                 <tr><td style="padding: 7px 0; color: #666;"><strong>Area</strong></td><td style="padding: 7px 0; color: #333;">${data.studentArea}</td></tr>
                 ${data.studentFullAddress ? `<tr><td style="padding: 7px 0; color: #666;"><strong>Address</strong></td><td style="padding: 7px 0; color: #333;">${data.studentFullAddress}</td></tr>` : ""}
-                ${(data.studentLat && data.studentLng) || data.studentFullAddress ? `<tr><td style="padding: 7px 0; color: #666;"><strong>Navigate</strong></td><td style="padding: 7px 0;"><a href="https://www.google.com/maps/dir/?api=1&destination=${data.studentLat && data.studentLng ? `${data.studentLat},${data.studentLng}` : encodeURIComponent(data.studentFullAddress ?? data.studentArea)}" target="_blank" style="display:inline-block;background:#4285F4;color:white;padding:7px 14px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:13px;">📍 Open in Google Maps</a></td></tr>` : ""}
+                ${data.studentFullAddress ? `<tr><td style="padding: 7px 0; color: #666;"><strong>Navigate</strong></td><td style="padding: 7px 0;"><a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(data.studentFullAddress)}" target="_blank" style="display:inline-block;background:#4285F4;color:white;padding:7px 14px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:13px;">📍 Open in Google Maps</a></td></tr>` : ""}
                 <tr><td style="padding: 7px 0; color: #666;"><strong>Grade</strong></td><td style="padding: 7px 0; color: #333;">${data.studentGrade}</td></tr>
                 <tr><td style="padding: 7px 0; color: #666;"><strong>Subjects</strong></td><td style="padding: 7px 0; color: #333;">${data.studentSubjects}</td></tr>
               </table>

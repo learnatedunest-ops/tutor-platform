@@ -475,3 +475,7 @@
 - [x] Smart Pairs: WhatsApp pre-filled message templates for tutor and student
 - [x] Smart Pairs: Admin "Move to Demo Slot" — admin creates demo slot for a pair without party involvement
 - [x] Backend: adminProcedure to create a demo slot for a smart pair
+
+## Round 49 — Coordinate Privacy
+
+- [x] Hide latitude and longitude from tutor and parent/student registration and all user-facing post-registration views; preserve them for admin-only matching workflows

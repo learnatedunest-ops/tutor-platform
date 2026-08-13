@@ -5,6 +5,8 @@ import { sendContactRevealToStudent, sendContactRevealToTutor, sendDemoBookingEm
 import { notifyAdminDemoScheduled, notifyAdminSheetUploaded, notifyAdminParentPaid, notifyAdminCancellationRequested } from "./whatsapp";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { redactPrivateLocation } from "./profilePrivacy";
+
 import {
   createDemoBooking,
   createInquiry,
@@ -371,7 +373,7 @@ export const appRouter = router({
   tutorProfile: router({
     // Get the logged-in tutor's own profile
     getMyProfile: protectedProcedure.query(async ({ ctx }) => {
-      return getTutorProfileByUserId(ctx.user.id);
+      return redactPrivateLocation(await getTutorProfileByUserId(ctx.user.id));
     }),
 
     // Create or update the logged-in tutor's profile
@@ -446,8 +448,8 @@ export const appRouter = router({
             const dLon = (parseFloat(s.longitude!) - input.longitude) * Math.PI / 180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
             const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            // Strip sensitive fields — phone and fullAddress are private until demo is confirmed
-            const { phone: _p, fullAddress: _fa, email: _e, ...safeStudent } = s;
+            // Strip all exact-location data and contact details from non-admin responses.
+            const { phone: _p, fullAddress: _fa, email: _e, latitude: _lat, longitude: _lng, ...safeStudent } = s;
             return { ...safeStudent, distKm: Math.round(distKm * 10) / 10 };
           })
           .filter(s => s.distKm <= input.radiusKm)
@@ -459,7 +461,7 @@ export const appRouter = router({
   studentProfile: router({
     // Get the logged-in student/parent's own profile
     getMyProfile: protectedProcedure.query(async ({ ctx }) => {
-      return getStudentProfileByUserId(ctx.user.id);
+      return redactPrivateLocation(await getStudentProfileByUserId(ctx.user.id));
     }),
     // Admin: list all student profiles
     listAll: adminProcedure.query(async () => getAllStudentProfiles()),
@@ -518,8 +520,8 @@ export const appRouter = router({
             const dLon = (parseFloat(t.longitude!) - input.longitude) * Math.PI / 180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
             const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            // Strip sensitive fields — phone and fullAddress are private until class is confirmed
-            const { phone: _p, fullAddress: _fa, upiId: _u, ...safeTutor } = t;
+            // Strip all exact-location data and contact details from non-admin responses.
+            const { phone: _p, fullAddress: _fa, upiId: _u, latitude: _lat, longitude: _lng, ...safeTutor } = t;
             return { ...safeTutor, distKm: Math.round(distKm * 10) / 10 };
           })
           .filter(t => t.distKm <= input.radiusKm)

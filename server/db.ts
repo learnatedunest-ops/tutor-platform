@@ -268,7 +268,11 @@ export async function upsertTutorProfile(
   if (!db) throw new Error("Database not available");
   const existing = await db.select().from(tutorProfiles).where(eq(tutorProfiles.userId, userId)).limit(1);
   if (existing.length > 0) {
-    await db.update(tutorProfiles).set({ ...data, updatedAt: new Date() }).where(eq(tutorProfiles.userId, userId));
+    const updateData = { ...data, updatedAt: new Date() } as Partial<InsertTutorProfile>;
+    if (data.latitude === undefined) delete updateData.latitude;
+    if (data.longitude === undefined) delete updateData.longitude;
+    if (data.fullAddress === undefined) delete updateData.fullAddress;
+    await db.update(tutorProfiles).set(updateData).where(eq(tutorProfiles.userId, userId));
   } else {
     await db.insert(tutorProfiles).values({ userId, ...data });
   }
@@ -318,7 +322,11 @@ export async function upsertStudentProfile(
   if (!db) throw new Error("Database not available");
   const existing = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, userId)).limit(1);
   if (existing.length > 0) {
-    await db.update(studentProfiles).set({ ...data, updatedAt: new Date() }).where(eq(studentProfiles.userId, userId));
+    const updateData = { ...data, updatedAt: new Date() } as Partial<InsertStudentProfile>;
+    if (data.latitude === undefined) delete updateData.latitude;
+    if (data.longitude === undefined) delete updateData.longitude;
+    if (data.fullAddress === undefined) delete updateData.fullAddress;
+    await db.update(studentProfiles).set(updateData).where(eq(studentProfiles.userId, userId));
   } else {
     await db.insert(studentProfiles).values({ userId, ...data });
   }
@@ -656,14 +664,13 @@ export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(Demo
       createdAt: demoSlots.createdAt,
       updatedAt: demoSlots.updatedAt,
       confirmedMatchId: confirmedMatches.id,
-      studentLat: studentProfiles.latitude,
-      studentLng: studentProfiles.longitude,
       studentName: studentProfiles.name,
       studentChildName: studentProfiles.studentName,
       studentGrade: studentProfiles.grade,
       studentSubjects: studentProfiles.subjects,
       studentBudget: studentProfiles.budget,
       studentArea: studentProfiles.area,
+      studentAddress: studentProfiles.fullAddress,
       studentRole: studentProfiles.role,
     })
     .from(demoSlots)
@@ -674,14 +681,13 @@ export async function getDemoSlotsByTutor(tutorProfileId: number): Promise<(Demo
   return rows.map(r => ({
     ...r,
     confirmedMatchId: r.confirmedMatchId ?? null,
-    studentLat: r.studentLat ?? null,
-    studentLng: r.studentLng ?? null,
     studentName: r.studentName ?? null,
     studentChildName: r.studentChildName ?? null,
     studentGrade: r.studentGrade ?? null,
     studentSubjects: r.studentSubjects ?? null,
     studentBudget: r.studentBudget ?? null,
     studentArea: r.studentArea ?? null,
+    studentAddress: r.studentAddress ?? null,
     studentRole: r.studentRole ?? null,
   }));
 }
@@ -890,8 +896,6 @@ export async function getConfirmedMatchesByTutor(tutorProfileId: number) {
       studentArea: studentProfiles.area,
       studentBudget: studentProfiles.budget,
       studentAddress: studentProfiles.fullAddress,
-      studentLatitude: studentProfiles.latitude,
-      studentLongitude: studentProfiles.longitude,
       // demo slot schedule info
       scheduledDate: demoSlots.scheduledDate,
       scheduledTime: demoSlots.scheduledTime,

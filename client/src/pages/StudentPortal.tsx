@@ -222,9 +222,6 @@ export default function StudentPortal() {
       sessionDuration: reqForm.sessionDuration || undefined,
       budget: reqForm.budget || undefined,
       specialRequirements: reqForm.specialRequirements || undefined,
-      latitude: myProfile.latitude ? Number(myProfile.latitude) : undefined,
-      longitude: myProfile.longitude ? Number(myProfile.longitude) : undefined,
-      fullAddress: myProfile.area ?? undefined,
       area: myProfile.area ?? undefined,
     });
   };

@@ -93,11 +93,11 @@ function LocationPicker({ onLocation }: { onLocation: (lat: number, lng: number,
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
           );
           const data = await res.json();
-          const address = data.display_name ?? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+          const address = data.display_name ?? "";
           onLocation(latitude, longitude, address);
           setStatus("success");
         } catch {
-          onLocation(latitude, longitude, `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+          onLocation(latitude, longitude, "");
           setStatus("success");
         }
       },
@@ -198,9 +198,9 @@ export default function StudentSetup() {
         sessionDuration: existingProfile.sessionDuration ?? "1 hr",
         budget: existingProfile.budget ?? "",
         specialRequirements: existingProfile.specialRequirements ?? "",
-        latitude: existingProfile.latitude ? parseFloat(existingProfile.latitude) : null,
-        longitude: existingProfile.longitude ? parseFloat(existingProfile.longitude) : null,
-        fullAddress: existingProfile.fullAddress ?? "",
+        latitude: null,
+        longitude: null,
+        fullAddress: "",
         area: existingProfile.area ?? "",
       }));
     }
@@ -250,6 +250,7 @@ export default function StudentSetup() {
       daysPerWeek: form.daysPerWeek.join(", "),
       latitude: form.latitude ?? undefined,
       longitude: form.longitude ?? undefined,
+      fullAddress: form.latitude !== null && form.longitude !== null ? form.fullAddress || undefined : undefined,
     });
   };
 
@@ -296,7 +297,7 @@ export default function StudentSetup() {
                 {existingProfile.regularTime && <p>⏰ <strong>Regular Time:</strong> {existingProfile.regularTime}</p>}
                 {existingProfile.daysPerWeek && <p>📅 <strong>Days:</strong> {existingProfile.daysPerWeek}</p>}
                 {existingProfile.budget && <p>💸 <strong>Budget:</strong> ₹{existingProfile.budget}/month</p>}
-                {existingProfile.fullAddress && <p>📍 <strong>Location:</strong> {existingProfile.fullAddress.split(",").slice(0, 3).join(", ")}</p>}
+                {existingProfile.hasPrivateLocation && <p>📍 <strong>Location:</strong> Saved privately for nearby matching</p>}
               </div>
             </div>
           )}
@@ -600,10 +601,11 @@ export default function StudentSetup() {
                   set("fullAddress", address);
                 }}
               />
-              {form.fullAddress && (
-                <div className="rounded-xl p-4" style={{ backgroundColor: "oklch(0.97 0.03 50)" }}>
-                  <p className="text-xs font-semibold mb-1" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>DETECTED ADDRESS</p>
-                  <p className="text-sm" style={{ color: "oklch(0.35 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>{form.fullAddress}</p>
+              {form.latitude !== null && form.longitude !== null && (
+                <div className="rounded-xl p-4" style={{ backgroundColor: "#F0FDF4" }}>
+                  <p className="text-sm font-semibold" style={{ color: "#15803D", fontFamily: "'Nunito', sans-serif" }}>
+                    Your precise location is saved securely for nearby matching and is visible only to EduNest administrators.
+                  </p>
                 </div>
               )}
               <div>

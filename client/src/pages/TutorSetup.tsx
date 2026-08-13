@@ -125,11 +125,11 @@ function LocationPicker({ onLocation }: { onLocation: (lat: number, lng: number,
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
           );
           const data = await res.json();
-          const address = data.display_name ?? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+          const address = data.display_name ?? "";
           onLocation(latitude, longitude, address);
           setStatus("success");
         } catch {
-          onLocation(latitude, longitude, `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+          onLocation(latitude, longitude, "");
           setStatus("success");
         }
       },
@@ -239,9 +239,9 @@ export default function TutorSetup() {
         bio: existingProfile.bio ?? "",
         education: existingProfile.education ?? "",
         workExperience: existingProfile.workExperience ?? "",
-        latitude: existingProfile.latitude ? parseFloat(existingProfile.latitude) : null,
-        longitude: existingProfile.longitude ? parseFloat(existingProfile.longitude) : null,
-        fullAddress: existingProfile.fullAddress ?? "",
+        latitude: null,
+        longitude: null,
+        fullAddress: "",
         area: existingProfile.area ?? "",
         upiId: (existingProfile as any).upiId ?? "",
         gender: (existingProfile as any).gender ?? "",
@@ -299,6 +299,7 @@ export default function TutorSetup() {
       subjects: form.subjects,
       latitude: form.latitude ?? undefined,
       longitude: form.longitude ?? undefined,
+      fullAddress: form.latitude !== null && form.longitude !== null ? form.fullAddress || undefined : undefined,
       gender: form.gender || undefined,
     });
   };
@@ -643,10 +644,11 @@ export default function TutorSetup() {
                   set("fullAddress", address);
                 }}
               />
-              {form.fullAddress && (
-                <div className="rounded-xl p-4" style={{ backgroundColor: "oklch(0.97 0.03 50)" }}>
-                  <p className="text-xs font-semibold mb-1" style={{ color: "oklch(0.68 0.18 50)", fontFamily: "'Poppins', sans-serif" }}>DETECTED ADDRESS</p>
-                  <p className="text-sm" style={{ color: "oklch(0.35 0.02 270)", fontFamily: "'Nunito', sans-serif" }}>{form.fullAddress}</p>
+              {(form.latitude !== null && form.longitude !== null || existingProfile?.hasPrivateLocation) && (
+                <div className="rounded-xl p-4" style={{ backgroundColor: "#F0FDF4" }}>
+                  <p className="text-sm font-semibold" style={{ color: "#15803D", fontFamily: "'Nunito', sans-serif" }}>
+                    Your precise location is saved securely for nearby matching and is visible only to EduNest administrators.
+                  </p>
                 </div>
               )}
               <div>

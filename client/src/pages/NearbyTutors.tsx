@@ -532,7 +532,7 @@ export default function NearbyTutors() {
             <div className="flex items-center gap-2 mt-3">
               <CheckCircle2 size={14} style={{ color: "#16A34A" }} />
               <p className="text-xs" style={{ color: "#15803D" }}>
-                Location active — {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+                Location active — used privately to find tutors near you
               </p>
               <button onClick={getLocation} className="text-xs underline ml-1" style={{ color: "oklch(0.68 0.18 50)" }}>Update</button>
             </div>

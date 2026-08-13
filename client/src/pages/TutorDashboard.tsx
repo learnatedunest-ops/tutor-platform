@@ -199,12 +199,7 @@ function MyClassCard({ slot, mySessionLogs, onRefreshLogs, onRefreshMatches }: {
   const area = (slot as any).studentArea as string | undefined;
   const phone = (slot as any).studentPhone as string | undefined;
   const addr = (slot as any).studentAddress as string | undefined;
-  // Support both studentLat/studentLng (old) and studentLatitude/studentLongitude (new enriched)
-  const lat = (slot as any).studentLat ?? (slot as any).studentLatitude as number | undefined;
-  const lng = (slot as any).studentLng ?? (slot as any).studentLongitude as number | undefined;
-  const mapsUrl = lat && lng
-    ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
-    : addr
+  const mapsUrl = addr
     ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`
     : null;
 
@@ -897,11 +892,7 @@ export default function TutorDashboard() {
                         {/* Student contact details once demo is scheduled */}
                         {(slot.status === "scheduled" || slot.status === "completed") && (() => {
                           const addr = (slot as any).studentAddress as string | undefined;
-                          const lat = (slot as any).studentLat as number | undefined;
-                          const lng = (slot as any).studentLng as number | undefined;
-                          const mapsUrl = lat && lng
-                            ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
-                            : addr
+                          const mapsUrl = addr
                             ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`
                             : null;
                           const parentName = (slot as any).studentName as string | undefined;
