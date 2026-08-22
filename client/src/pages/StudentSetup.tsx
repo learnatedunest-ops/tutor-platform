@@ -234,6 +234,13 @@ export default function StudentSetup() {
     }
   }, [existingProfile]);
 
+  // Role gate must run before any conditional return so React hook order remains stable.
+  useEffect(() => {
+    if (!roleLoading && isAuthenticated && userRole === "tutor") {
+      navigate("/tutor-setup");
+    }
+  }, [roleLoading, isAuthenticated, userRole, navigate]);
+
   const utils = trpc.useUtils();
   const setRoleMutation = trpc.auth.setRole.useMutation({
     onSuccess: () => { utils.auth.getRole.invalidate(); },
@@ -314,13 +321,6 @@ export default function StudentSetup() {
       </div>
     );
   }
-
-  // Role gate: if logged in but not a student, redirect to tutor setup
-  useEffect(() => {
-    if (!roleLoading && isAuthenticated && userRole === "tutor") {
-      navigate("/tutor-setup");
-    }
-  }, [roleLoading, isAuthenticated, userRole, navigate]);
 
   if (!isAuthenticated) {
     return <LoginWall role="student" />;

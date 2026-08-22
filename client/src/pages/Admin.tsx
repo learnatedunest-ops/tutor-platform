@@ -323,6 +323,23 @@ export default function Admin() {
       .some(value => String(value ?? "").toLowerCase().includes(needle));
   });
 
+  const groupedOnlineSessionEntries = filteredOnlineSessionEntries.reduce((groups: Record<string, any>, entry: any) => {
+    const key = String(entry.matchId ?? `session-log-${entry.sessionLogId}`);
+    if (!groups[key]) {
+      groups[key] = {
+        key,
+        matchId: entry.matchId,
+        tutorName: entry.tutorName,
+        studentName: entry.studentName,
+        paymentStatus: entry.paymentStatus,
+        onlineSubmittedAt: entry.onlineSubmittedAt,
+        entries: [],
+      };
+    }
+    groups[key].entries.push(entry);
+    return groups;
+  }, {});
+
   const exportOnlineSessionEntries = () => {
     if (!filteredOnlineSessionEntries.length) {
       toast.error("There are no online session entries to export.");
@@ -1401,13 +1418,27 @@ export default function Admin() {
               {filteredOnlineSessionEntries.length === 0 ? (
                 <p className="text-sm text-gray-400 py-3 text-center">No online session entries match this filter yet.</p>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-blue-100">
-                  <table className="w-full min-w-[850px] text-xs">
-                    <thead className="bg-blue-50 text-blue-900"><tr><th className="px-3 py-2 text-left">Class</th><th className="px-3 py-2 text-left">Tutor</th><th className="px-3 py-2 text-left">Student / Parent</th><th className="px-3 py-2 text-left">Date & Duration</th><th className="px-3 py-2 text-left">Topics</th><th className="px-3 py-2 text-left">Homework / Next Steps</th><th className="px-3 py-2 text-left">Status</th></tr></thead>
-                    <tbody className="divide-y divide-blue-50">
-                      {filteredOnlineSessionEntries.map((entry: any) => <tr key={entry.id} className="align-top"><td className="px-3 py-2 font-semibold">{entry.matchId ? `C${entry.matchId}` : "—"}</td><td className="px-3 py-2">{entry.tutorName ?? "—"}</td><td className="px-3 py-2">{entry.studentName ?? "—"}</td><td className="px-3 py-2 whitespace-nowrap">{entry.sessionDate}<br /><span className="text-gray-500">{entry.duration}</span></td><td className="px-3 py-2 max-w-xs whitespace-pre-wrap">{entry.topicsCovered}</td><td className="px-3 py-2 max-w-xs whitespace-pre-wrap">{entry.homeworkNotes || "—"}</td><td className="px-3 py-2"><span className="rounded-full bg-gray-100 px-2 py-0.5 font-semibold">{entry.paymentStatus.replace(/_/g, " ")}</span></td></tr>)}
-                    </tbody>
-                  </table>
+                <div className="space-y-3">
+                  {(Object.values(groupedOnlineSessionEntries) as Array<any>).map((group) => (
+                    <div key={group.key} className="rounded-xl border border-blue-100 overflow-hidden">
+                      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-blue-50">
+                        <div>
+                          <p className="text-sm font-bold text-blue-950">{group.matchId ? `Class C${group.matchId}` : "Class session log"}: {group.tutorName ?? "Tutor"} ↔ {group.studentName ?? "Student / Parent"}</p>
+                          <p className="text-xs text-blue-700 mt-0.5">{group.entries.length} online session{group.entries.length === 1 ? "" : "s"} recorded</p>
+                        </div>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-blue-800">{String(group.paymentStatus ?? "pending").replace(/_/g, " ")}</span>
+                      </div>
+                      <div className="divide-y divide-blue-50 bg-white">
+                        {group.entries.map((entry: any) => (
+                          <div key={entry.id} className="grid grid-cols-1 md:grid-cols-[150px_1fr_1fr] gap-2 px-4 py-3 text-xs">
+                            <div className="font-semibold text-gray-700">{entry.sessionDate}<br /><span className="font-normal text-gray-500">{entry.duration}</span></div>
+                            <div><span className="font-semibold text-gray-700">Topics: </span>{entry.topicsCovered}</div>
+                            <div><span className="font-semibold text-gray-700">Homework / next: </span>{entry.homeworkNotes || "—"}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

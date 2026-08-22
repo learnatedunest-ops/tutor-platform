@@ -532,7 +532,7 @@ export const appRouter = router({
             const compatibility = student ? scoreTutorMatch(student, t) : { matchScore: 0, matchReasons: [] };
             // Strip all exact-location data and contact details from non-admin responses.
             const { phone: _p, fullAddress: _fa, upiId: _u, latitude: _lat, longitude: _lng, ...safeTutor } = t;
-            return { ...safeTutor, ...compatibility, distKm: Math.round(distKm * 10) / 10 };
+            return { ...safeTutor, name: "Verified Tutor", ...compatibility, distKm: Math.round(distKm * 10) / 10 };
           })
           .filter(t => t.distKm <= input.radiusKm)
           .sort((a, b) => b.matchScore - a.matchScore || a.distKm - b.distKm);

@@ -720,6 +720,7 @@ export async function getDemoSlotsByStudent(studentProfileId: number): Promise<(
       createdAt: demoSlots.createdAt,
       updatedAt: demoSlots.updatedAt,
       confirmedMatchId: confirmedMatches.id,
+      confirmedClassStatus: confirmedMatches.classStatus,
       tutorName: tutorProfiles.name,
       tutorPhone: tutorProfiles.phone,
     })
@@ -728,7 +729,15 @@ export async function getDemoSlotsByStudent(studentProfileId: number): Promise<(
     .leftJoin(tutorProfiles, eq(tutorProfiles.id, demoSlots.tutorProfileId))
     .where(eq(demoSlots.studentProfileId, studentProfileId))
     .orderBy(desc(demoSlots.createdAt));
-  return rows.map(r => ({ ...r, confirmedMatchId: r.confirmedMatchId ?? null, tutorName: r.tutorName ?? null, tutorPhone: r.tutorPhone ?? null }));
+  return rows.map(r => {
+    const classStarted = r.confirmedClassStatus === "got_a_class";
+    return {
+      ...r,
+      confirmedMatchId: r.confirmedMatchId ?? null,
+      tutorName: classStarted ? r.tutorName ?? null : "Verified Tutor",
+      tutorPhone: classStarted ? r.tutorPhone ?? null : null,
+    };
+  });
 }
 
 export async function updateDemoSlotTutorConfirmedComing(
@@ -1023,10 +1032,9 @@ export async function getConfirmedMatchesByStudent(studentProfileId: number) {
       matchedAt: confirmedMatches.matchedAt,
       classStatus: confirmedMatches.classStatus,
       paymentAmount: confirmedMatches.paymentAmount,
-      // tutor profile info (full details for My Classes)
+      // Tutor details shared after the class starts (experience remains private).
       tutorQualification: tutorProfiles.qualification,
       tutorSubjects: tutorProfiles.subjects,
-      tutorExperience: tutorProfiles.experience,
       tutorMode: tutorProfiles.mode,
       tutorArea: tutorProfiles.area,
       tutorEducation: tutorProfiles.education,

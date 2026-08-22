@@ -64,6 +64,9 @@ function DemoSlotAvailabilityCard({ slot, onDone }: { slot: any; onDone: () => v
   const [showReschedule, setShowReschedule] = useState(false);
   const [suggestDate, setSuggestDate] = useState("");
   const [suggestTime, setSuggestTime] = useState("");
+  const mapsUrl = slot.studentAddress
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(slot.studentAddress)}`
+    : null;
 
   const tutorConfirmComing = trpc.demoSlot.tutorConfirmComing.useMutation({
     onSuccess: () => { onDone(); toast.success("Confirmed! The student will be notified."); },
@@ -80,6 +83,11 @@ function DemoSlotAvailabilityCard({ slot, onDone }: { slot: any; onDone: () => v
         🚗 Are you available for this demo?
       </p>
       <p className="text-xs mb-3" style={{ color: "oklch(0.55 0.01 270)" }}>Confirm so the parent knows to expect you, or suggest a new time if you can't make it.</p>
+      {slot.status === "scheduled" && mapsUrl && (
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mb-3 px-3 py-2 rounded-lg text-xs font-semibold text-white" style={{ backgroundColor: "oklch(0.45 0.18 240)" }}>
+          <ExternalLink size={12} /> Open Parent Address in Google Maps
+        </a>
+      )}
       {!showReschedule ? (
         <div className="flex gap-2">
           <button

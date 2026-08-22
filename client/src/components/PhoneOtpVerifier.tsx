@@ -58,6 +58,17 @@ export default function PhoneOtpVerifier({
     return () => clearTimeout(t);
   }, [countdown]);
 
+  const friendlyOtpError = (message?: string) => {
+    const normalized = (message ?? "").toLowerCase();
+    if (normalized.includes("no otp") || normalized.includes("expired") || normalized.includes("not found")) {
+      return "This OTP has expired or is no longer valid. Please generate a new OTP and try again.";
+    }
+    if (normalized.includes("invalid") || normalized.includes("incorrect")) {
+      return "That OTP is invalid. Please check the code or generate a new OTP.";
+    }
+    return "We could not verify that OTP. Please generate a new OTP and try again.";
+  };
+
   const sendOtp = trpc.otp.send.useMutation({
     onSuccess: (data) => {
       setStage("sent");
@@ -65,7 +76,7 @@ export default function PhoneOtpVerifier({
       setError("");
       setMaskedEmail(data.maskedEmail ?? null);
     },
-    onError: (e) => setError(e.message),
+    onError: () => setError("We could not send an OTP right now. Please try again in a moment."),
   });
 
   const verifyOtp = trpc.otp.verify.useMutation({
@@ -74,7 +85,7 @@ export default function PhoneOtpVerifier({
       setError("");
       onVerified();
     },
-    onError: (e) => setError(e.message),
+    onError: (e) => setError(friendlyOtpError(e.message)),
   });
 
   if (!phone || phone.length < 10) return null;
@@ -165,7 +176,7 @@ export default function PhoneOtpVerifier({
       )}
 
       {error && (
-        <p className="text-red-500 text-xs">{error}</p>
+        <p className="text-red-500 text-xs">{error} {stage === "sent" && <button type="button" onClick={() => sendOtp.mutate({ phone })} className="underline font-semibold">Generate new OTP</button>}</p>
       )}
     </div>
   );

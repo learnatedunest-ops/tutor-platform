@@ -496,3 +496,13 @@
 - [x] Add an admin view of online session-log entries with class, tutor, student/parent, date, duration, and learning details
 - [x] Add CSV export for filtered online session-log entries in the admin dashboard
 - [x] Persist subject and locality filters for parent/student tutor search and tutor student search
+
+## Round 52 — Reliability, Privacy, Maps, and Payment Log Refinements
+
+- [x] Redirect safely to the homepage if a client-side error occurs after the page has been idle
+- [x] Replace the OTP “No OTP found” message with clear invalid/expired OTP guidance and a resend action
+- [x] Rename the tutor registration schedule panel from “Locked Schedule Summary” to “Schedule Summary”
+- [x] Hide tutor names from parent/student search results until a class is confirmed and moved to My Classes
+- [x] Add an address-only Google Maps quick link for tutors after a demo is scheduled and throughout My Classes
+- [x] Remove tutor experience details from parent/student class views after a class starts
+- [x] Group digital session-log entries by tutor and parent/student class in Admin Session Payments
